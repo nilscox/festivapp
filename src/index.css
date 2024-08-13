@@ -3,4 +3,59 @@
 @tailwind utilities;
 
 @layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    background-color: theme(colors.secondary);
+    color: theme(colors.primary);
+    font-family: theme(fontFamily.sans);
+  }
+
+  label {
+    font-weight: theme(fontWeight.medium);
+  }
+
+  input,
+  select,
+  textarea {
+    @apply bg-white/25;
+    @apply border-2 border-primary/50;
+    @apply focus-visible:outline-primary focus:shadow;
+    border-radius: theme(borderRadius.md);
+    padding: theme(spacing[0.5]) theme(spacing.2);
+  }
+
+  input {
+    @apply focus-visible:outline-offset-0;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-primary/60;
+  }
+
+  select option {
+    color: theme(colors.black);
+  }
+}
+
+@layer utilities {
+  .col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .row {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .text-dim {
+    @apply text-primary/75;
+  }
 }
