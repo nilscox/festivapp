@@ -1,0 +1,111 @@
+{
+  "app": {
+    "name": "ZozorApp",
+    "background": "/background.png",
+    "theme": {
+      "primary": "153 27 27",
+      "secondary": "254 243 199"
+    },
+    "manifest": {
+      "name": "ZozorApp",
+      "short_name": "ZozorApp",
+      "description": "Zozora Festival application",
+      "lang": "en",
+      "theme_color": "#991b1b",
+      "background_color": "#fef3c7",
+      "icons": [
+        {
+          "src": "icon.svg",
+          "sizes": "512x512",
+          "type": "image/svg+xml",
+          "purpose": "any"
+        }
+      ]
+    }
+  },
+  "map": "/map.png",
+  "stages": {
+    "main": "Main stage",
+    "tek": "Tecktonik"
+  },
+  "types": {
+    "live": "Live",
+    "djset": "DJ Set"
+  },
+  "artists": {
+    "mario": {
+      "id": "mario",
+      "name": "Mario",
+      "image": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a9/MarioNSMBUDeluxe.png/170px-MarioNSMBUDeluxe.png",
+      "type": "live",
+      "styles": ["Plumber", "Coin Eater", "Mustache"],
+      "label": "Nintendo records",
+      "origin": "USA",
+      "description": [
+        "Mario is a character from the Mario franchise and the mascot of Japanese video game company Nintendo. Created by video game designer Shigeru Miyamoto, Mario is an Italian plumber who resides in the Mushroom Kingdom with his younger twin brother, Luigi.",
+        "Their adventures generally involve rescuing Princess Peach from the villain Bowser while using power-ups that give them different abilities"
+      ],
+      "social": [
+        "https://www.facebook.com/mario",
+        "http://instagram.com/mario",
+        "https://www.soundcloud.com/mario"
+      ]
+    },
+    "luidgi": {
+      "id": "luidgi",
+      "name": "Luidgi",
+      "image": "https://upload.wikimedia.org/wikipedia/en/thumb/7/73/Luigi_NSMBUDX.png/170px-Luigi_NSMBUDX.png",
+      "type": "djset",
+      "styles": ["Italian", "Coin Eater"],
+      "label": "",
+      "origin": "",
+      "description": [
+        "Luigi is a character from the Mario franchise. Luigi is portrayed as a kind-hearted, cowardly Italian plumber, and the younger fraternal twin brother and sidekick of Mario."
+      ],
+      "social": ["https://www.facebook.com/luidgi", "https://www.youtube.com/@luidgi"]
+    }
+  },
+  "timetables": {
+    "main": [
+      {
+        "start": "2024-09-01T12:00:00",
+        "end": "2024-09-01T14:00:00",
+        "artistId": "mario"
+      },
+      {
+        "start": "2024-09-01T14:00:00",
+        "end": "2024-09-01T15:30:00",
+        "artistId": "luidgi"
+      },
+      {
+        "start": "2024-09-01T16:00:00",
+        "end": "2024-09-01T18:00:00",
+        "artistId": "mario"
+      },
+      {
+        "start": "2024-09-01T18:30:00",
+        "end": "2024-09-01T20:30:00",
+        "label": "Video games",
+        "type": "Activity"
+      }
+    ],
+    "tek": [
+      {
+        "start": "2024-09-01T12:30:00",
+        "end": "2024-09-01T14:30:00",
+        "label": "Cacao ceremony",
+        "type": "Activity"
+      },
+      {
+        "start": "2024-09-01T14:30:00",
+        "end": "2024-09-01T15:30:00",
+        "artistId": "mario"
+      },
+      {
+        "start": "2024-09-01T15:30:00",
+        "end": "2024-09-01T16:00:00",
+        "artistId": "luidgi"
+      }
+    ]
+  }
+}
