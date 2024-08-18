@@ -9,8 +9,8 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 
 dotenv.config();
 
-function getEnv(name: string) {
-  const value = process.env[name];
+function getEnv(name: string, defaultValue?: string) {
+  const value = process.env[name] ?? defaultValue;
 
   if (value === undefined) {
     throw new Error(`Missing ${name} environment variable`);
@@ -21,6 +21,7 @@ function getEnv(name: string) {
 
 const dataPath = getEnv('DATA_PATH');
 const publicDir = getEnv('PUBLIC_DIR');
+const pwaDev = getEnv('PWA_DEV', 'false');
 
 const data = await fs.readFile(path.resolve(dataPath)).then(String);
 const { app } = JSON.parse(data);
@@ -32,6 +33,10 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: app.manifest,
+      devOptions: {
+        enabled: pwaDev === 'true',
+        type: 'module',
+      },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,woff2}'],
         maximumFileSizeToCacheInBytes: 5 * 1000 * 1000,
