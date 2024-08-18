@@ -264,7 +264,12 @@ class UserData {
   }
 
   getAllData(): ArtistUserData[] {
-    return Object.values(this.data);
+    return Object.values(this.data).sort((a, b) => {
+      const slotA = defined(data.findArtistDate(a.artistId));
+      const slotB = defined(data.findArtistDate(b.artistId));
+
+      return new Date(slotA.start).getTime() - new Date(slotB.start).getTime();
+    });
   }
 
   getArtistData(artistId: string): ArtistUserData {
