@@ -2,10 +2,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import dotenv from 'dotenv';
-import { defineConfig } from 'vite';
+import { defineConfig, Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import solidPlugin from 'vite-plugin-solid';
 import tsconfigPaths from 'vite-tsconfig-paths';
+
+import pkg from './package.json';
 
 dotenv.config();
 
@@ -38,11 +40,11 @@ export default defineConfig({
         type: 'module',
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,woff2,txt}'],
         maximumFileSizeToCacheInBytes: 5 * 1000 * 1000,
-        skipWaiting: true,
       },
     }),
+    outputFile('version.txt', pkg.version),
   ],
   publicDir,
   optimizeDeps: {
@@ -56,5 +58,20 @@ export default defineConfig({
   },
   define: {
     __DATA__: data,
+    __VERSION__: JSON.stringify(pkg.version),
   },
 });
+
+function outputFile(filePath: string, content: string): Plugin {
+  let dist = '';
+
+  return {
+    name: 'outputFile',
+    configResolved(config) {
+      dist = path.resolve(config.root, config.build.outDir);
+    },
+    async closeBundle() {
+      await fs.writeFile(path.join(dist, filePath), content);
+    },
+  };
+}
