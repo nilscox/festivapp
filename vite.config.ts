@@ -42,6 +42,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,jpg,woff2,txt}'],
         maximumFileSizeToCacheInBytes: 5 * 1000 * 1000,
+        clientsClaim: true,
+        skipWaiting: true,
       },
     }),
     outputFile('version.txt', pkg.version),
