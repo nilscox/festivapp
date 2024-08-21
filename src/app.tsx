@@ -4,8 +4,11 @@ import { JSX } from 'solid-js';
 
 import { Translate } from './components/intl';
 import { data } from './data';
+import { trackPageViews } from './utils/tracking';
 
 export function App(props: { children?: JSX.Element }) {
+  trackPageViews();
+
   return (
     <div
       class="col h-full bg-bottom bg-no-repeat sm:bg-cover sm:bg-center"

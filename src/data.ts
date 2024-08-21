@@ -4,6 +4,7 @@ import { createEffect } from 'solid-js';
 import { createStore, SetStoreFunction, Store } from 'solid-js/store';
 
 import { defined } from './utils/assert';
+import { trackEvent } from './utils/tracking';
 import { unique } from './utils/unique';
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -285,11 +286,19 @@ class UserData {
     return this.data[artistId];
   }
 
-  setArtistData(artistId: string, data: Partial<ArtistUserData>) {
+  setArtistData(artistId: string, data: Partial<Omit<ArtistUserData, 'artistId'>>) {
     this.setData(artistId, {
       ...this.getArtistData(artistId),
       ...data,
     });
+
+    if (data.bookmark === true) {
+      trackEvent('Artist', 'BookmarkAdded', `Artist ${artistId} bookmark added`);
+    }
+
+    if (data.bookmark === false) {
+      trackEvent('Artist', 'BookmarkRemoved', `Artist ${artistId} bookmark removed`);
+    }
   }
 
   removeArtistData(artistId: string) {

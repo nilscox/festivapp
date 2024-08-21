@@ -3,10 +3,41 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+
     <title></title>
+
+    <script>
+      var url = '%VITE_ANALYTICS_URL%';
+      var siteId = '%VITE_ANALYTICS_SITE_ID%';
+
+      var _paq = (window._paq = window._paq || []);
+
+      _paq.push(['trackPageView']);
+      _paq.push(['enableLinkTracking']);
+      _paq.push(['enableHeartBeatTimer']);
+
+      if (url) {
+        initMatomo();
+      }
+
+      function initMatomo() {
+        _paq.push(['setTrackerUrl', url + '/matomo.php']);
+        _paq.push(['setSiteId', siteId]);
+
+        var d = document,
+          g = d.createElement('script'),
+          s = d.getElementsByTagName('script')[0];
+
+        g.async = true;
+        g.src = url + '/matomo.js';
+        s.parentNode.insertBefore(g, s);
+      }
+    </script>
   </head>
+
   <body>
     <div id="root"></div>
     <script src="/src/index.tsx" type="module"></script>
