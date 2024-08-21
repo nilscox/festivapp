@@ -5,8 +5,8 @@ import { For, JSX, Match, Show, Switch } from 'solid-js';
 import { ActivityItem } from '../components/activity-item';
 import { ArtistItem } from '../components/artist-item';
 import { DocumentTitle } from '../components/document-title';
-import { FormattedDate, Translate } from '../components/intl';
-import { data, isArtistSlot } from '../data';
+import { DistanceToNow, Translate } from '../components/intl';
+import { Artist, data, isArtistSlot } from '../data';
 import { defined } from '../utils/assert';
 import { createNow } from '../utils/now';
 
@@ -67,9 +67,7 @@ function CurrentArtist(props: { stage: string }) {
       }
     >
       <Match when={!timetable().hasStarted(now())}>
-        <Fallback>
-          <Translate id="now.notStarted" />
-        </Fallback>
+        <NotStarted start={timetable().start} artist={timetable().firstArtist()} />
       </Match>
 
       <Match when={timetable().hasEnded(now())}>
@@ -86,6 +84,31 @@ function CurrentArtist(props: { stage: string }) {
 
       <Match when={activity()}>{(activity) => <ActivityItem {...activity()} />}</Match>
     </Switch>
+  );
+}
+
+function NotStarted(props: { start: Date; artist?: Artist }) {
+  const artistLink = (children: JSX.Element[]) => {
+    if (props.artist)
+      return (
+        <A href={`/timetables/${props.artist?.id}`} class="underline">
+          {children}
+        </A>
+      );
+  };
+
+  return (
+    <div>
+      <Translate
+        id="now.notStarted"
+        values={{
+          start: props.start,
+          artist: props.artist?.name,
+          relativeTime: <DistanceToNow date={props.start} />,
+          artistLink,
+        }}
+      />
+    </div>
   );
 }
 
@@ -115,9 +138,17 @@ function NextArtist(props: { stage: string }) {
     }
   };
 
+  const start = () => nextSlot()?.start;
+
   const date = (
     <span>
-      (<FormattedDate date={nextSlot()?.start} options={{ timeStyle: 'short' }} />)
+      <Translate
+        id="now.nextStart"
+        values={{
+          start: start(),
+          relativeTime: <DistanceToNow date={start()} />,
+        }}
+      />
     </span>
   );
 

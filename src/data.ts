@@ -210,6 +210,16 @@ class Timetable {
     return defined(this.slots[0]);
   }
 
+  get start(): Date {
+    return this.firstSlot.start;
+  }
+
+  firstArtist() {
+    if ('artistId' in this.firstSlot) {
+      return data.findArtist(this.firstSlot.artistId);
+    }
+  }
+
   private get lastSlot(): TimetableSlot {
     return defined(this.slots[this.slots.length - 1]);
   }
