@@ -197,9 +197,9 @@ function Stage(props: { selected: boolean; onClick: () => void; children: JSX.El
 function Day(props: { day: Date; slots: TimetableSlot[] }) {
   return (
     <div class="col gap-6">
-      <div class="text-center text-2xl font-semibold">
+      <h2>
         <FormattedDate date={props.day} options={{ weekday: 'long', day: 'numeric', month: 'long' }} />
-      </div>
+      </h2>
 
       <Show
         when={props.slots.length > 0}

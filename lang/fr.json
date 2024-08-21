@@ -21,5 +21,6 @@
   "userData.noNotes.title": "Vous n'avez pas de notes personnelles.",
   "userData.noNotes.line1": "Les notes vous permettent d'enregistrer quelques mots par rapport à un artiste, par exemple, pour vous souvenir de ce que vous en avez pensé.",
   "userData.noNotes.line2": "Pour en ajouter, utilisez le champ texte en bas de la page d'un artiste.",
-  "userData.confirmRemove": "Cette action va supprimer vos notes personnelles pour cet artiste. Voulez-vous continuer ?"
+  "userData.confirmRemove": "Cette action va supprimer vos notes personnelles pour cet artiste. Voulez-vous continuer ?",
+  "info.title": "Informations"
 }

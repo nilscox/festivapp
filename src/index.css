@@ -16,6 +16,11 @@
     font-family: theme(fontFamily.sans);
   }
 
+  h2 {
+    font-size: theme(fontSize.2xl);
+    font-weight: theme(fontWeight.semibold);
+  }
+
   label {
     font-weight: theme(fontWeight.medium);
   }
@@ -57,5 +62,26 @@
 
   .text-dim {
     @apply text-primary/75;
+  }
+}
+
+@layer components {
+  .info {
+    h2 {
+      margin-top: theme(spacing.4);
+    }
+
+    p {
+      margin: theme(spacing.2) 0;
+    }
+
+    a {
+      text-decoration: underline;
+    }
+
+    img {
+      border-radius: theme(borderRadius.lg);
+      box-shadow: theme(boxShadow.md);
+    }
   }
 }

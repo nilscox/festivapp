@@ -8,6 +8,7 @@ import fr from 'lang/fr.json';
 
 import { App } from './app';
 import { ArtistPage } from './pages/artist.page';
+import { InfoPage } from './pages/info.page';
 import { MapPage } from './pages/map.page';
 import { NowPage } from './pages/now.page';
 import { TimetablesPage } from './pages/timetables.page';
@@ -40,6 +41,8 @@ render(
         </Route>
 
         <Route path="/map" component={MapPage} />
+
+        <Route path="/info" component={InfoPage} />
 
         <Route path="/*" component={NotFound} />
       </Router>

@@ -24,6 +24,7 @@ namespace Data {
     name: string;
     background: string;
     theme: Theme;
+    info: string;
   };
 
   export type Theme = {
@@ -87,6 +88,10 @@ class Data {
 
   get background() {
     return this.data.app.background;
+  }
+
+  get info() {
+    return this.data.app.info;
   }
 
   get map() {

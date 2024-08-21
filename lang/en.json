@@ -21,5 +21,6 @@
   "userData.noNotes.title": "You don't have any personal notes.",
   "userData.noNotes.line1": "Notes allow you to save a few words about an artist, for example, to remember what you thought of them.",
   "userData.noNotes.line2": "To add notes, use the text field at the bottom of an artist's page.",
-  "userData.confirmRemove": "This action will clear your personal notes for this artist. Do you want to continue?"
+  "userData.confirmRemove": "This action will clear your personal notes for this artist. Do you want to continue?",
+  "info.title": "Information"
 }

@@ -25,7 +25,7 @@ export function NowPage() {
         <For each={data.stages}>
           {(stage) => (
             <li class="col gap-2">
-              <div class="text-xl font-semibold">{stage.label}</div>
+              <h2>{stage.label}</h2>
               <CurrentArtist stage={stage.id} />
               <NextArtist stage={stage.id} />
             </li>

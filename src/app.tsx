@@ -1,5 +1,5 @@
 import { A } from '@solidjs/router';
-import { MapPin, Pen, Play, TableCellsMerge } from 'lucide-solid';
+import { Info, MapPin, Pen, Play, TableCellsMerge } from 'lucide-solid';
 import { JSX } from 'solid-js';
 
 import { Translate } from './components/intl';
@@ -11,7 +11,7 @@ export function App(props: { children?: JSX.Element }) {
       class="col h-full bg-bottom bg-no-repeat sm:bg-cover sm:bg-center"
       style={{ 'background-image': `url("${data.background}")` }}
     >
-      <Styles />
+      <ThemeVariables />
       <AppHeader />
       <main class="flex-1 overflow-auto p-2">{props.children}</main>
       <AppFooter />
@@ -19,7 +19,7 @@ export function App(props: { children?: JSX.Element }) {
   );
 }
 
-function Styles() {
+function ThemeVariables() {
   const styles = `
     :root {
       --color-primary: ${data.theme.primary};
@@ -32,8 +32,12 @@ function Styles() {
 
 function AppHeader() {
   return (
-    <header class="bg-primary p-4 text-center text-xl font-bold tracking-wider text-secondary shadow-md">
-      {data.title}
+    <header class="row items-center justify-center bg-primary p-4 text-xl font-bold tracking-wider text-secondary shadow-md">
+      <div class="w-6" />
+      <h1 class="flex-1 text-center">{data.title}</h1>
+      <A href="/info" class="w-6">
+        <Info class="size-full" />
+      </A>
     </header>
   );
 }

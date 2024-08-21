@@ -35,7 +35,7 @@ function ArtistDetails(props: { artist: Artist }) {
       </Show>
 
       <div class="row my-2 items-center justify-center gap-2">
-        <h1 class="text-2xl font-semibold">{props.artist.name}</h1>
+        <h2>{props.artist.name}</h2>
         <button onClick={() => setBookmark(!artistUserData().bookmark)}>
           <Star class="size-4" classList={{ 'fill-primary': artistUserData()?.bookmark }} />
         </button>
