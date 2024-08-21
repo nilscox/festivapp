@@ -9,6 +9,7 @@ import { DocumentTitle } from '../components/document-title';
 import { ArtistDate, Translate } from '../components/intl';
 import { Artist, data } from '../data';
 import { defined } from '../utils/assert';
+import { trackEvent } from '../utils/tracking';
 
 export function ArtistPage() {
   const { artistId } = useParams();
@@ -72,7 +73,7 @@ function ArtistDetails(props: { artist: Artist }) {
         </div>
       </div>
 
-      <Description description={props.artist.description} />
+      <Description artistId={props.artist.id} description={props.artist.description} />
 
       <ul class="row justify-center gap-4">
         <For each={props.artist.social}>
@@ -91,7 +92,7 @@ function ArtistDetails(props: { artist: Artist }) {
   );
 }
 
-function Description(props: { description: string[] }) {
+function Description(props: { artistId: string; description: string[] }) {
   // eslint-disable-next-line solid/reactivity
   const [showMore, setShowMore] = createSignal(props.description.join(' ').length < 50);
 
@@ -102,7 +103,10 @@ function Description(props: { description: string[] }) {
       </div>
 
       <button
-        onClick={() => setShowMore(true)}
+        onClick={() => {
+          setShowMore(true);
+          trackEvent('Artist', 'ShowMoreClicked', `Show full description of ${props.artistId}`);
+        }}
         classList={{ '!hidden': showMore() }}
         class="row my-2 w-full items-center justify-center gap-2 text-sm font-bold uppercase"
       >
