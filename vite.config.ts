@@ -40,7 +40,7 @@ export default defineConfig({
         type: 'module',
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,woff2,txt}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,jpg,woff2,txt}'],
         maximumFileSizeToCacheInBytes: 5 * 1000 * 1000,
       },
     }),
