@@ -2,6 +2,8 @@
 import { IntlProvider } from '@cookbook/solid-intl';
 import { Navigate, Route, Router } from '@solidjs/router';
 import { render } from 'solid-js/web';
+// eslint-disable-next-line import-x/no-unresolved
+import { registerSW } from 'virtual:pwa-register';
 
 import en from 'lang/en.json';
 import fr from 'lang/fr.json';
@@ -16,6 +18,8 @@ import { BookmarksPage } from './pages/user-data.page';
 
 import '@fontsource-variable/open-sans';
 import './index.css';
+
+registerSW({ immediate: true });
 
 const root = document.getElementById('root')!;
 

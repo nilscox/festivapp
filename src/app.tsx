@@ -35,10 +35,10 @@ function ThemeVariables() {
 
 function AppHeader() {
   return (
-    <header class="row items-center justify-center bg-primary p-4 text-xl font-bold tracking-wider text-secondary shadow-md">
+    <header class="row items-center justify-center bg-primary p-4 text-xl font-bold tracking-wider shadow-md">
       <div class="w-6" />
-      <h1 class="flex-1 text-center">{data.title}</h1>
-      <A href="/info" class="w-6">
+      <h1 class="flex-1 text-center text-secondary">{data.title}</h1>
+      <A href="/info" class="w-6 text-secondary" inactiveClass="grayscale opacity-70">
         <Info class="size-full" />
       </A>
     </header>
