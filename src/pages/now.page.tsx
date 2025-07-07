@@ -113,7 +113,7 @@ function NotStarted(props: { start: Date; artist?: Artist }) {
 }
 
 function Fallback(props: { children: JSX.Element }) {
-  return <div class="text-dim my-2 text-center font-medium uppercase">— {props.children} —</div>;
+  return <div class="my-2 text-center font-medium text-dim uppercase">— {props.children} —</div>;
 }
 
 function NextArtist(props: { stage: string }) {
@@ -154,7 +154,7 @@ function NextArtist(props: { stage: string }) {
 
   return (
     <Show when={timetable().isPlaying(now())}>
-      <div class="text-dim row gap-1 text-sm">
+      <div class="row gap-1 text-sm text-dim">
         <span>
           <Translate id="now.next" />
         </span>

@@ -1,7 +1,7 @@
 import eslint from '@eslint/js';
+import tailwind from 'eslint-plugin-better-tailwindcss';
 import importX from 'eslint-plugin-import-x';
 import solid from 'eslint-plugin-solid/configs/typescript.js';
-import tailwind from 'eslint-plugin-tailwindcss';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
@@ -9,7 +9,6 @@ import tseslint from 'typescript-eslint';
 export default [
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
-  ...tailwind.configs['flat/recommended'],
   solid,
   {
     languageOptions: {
@@ -17,10 +16,14 @@ export default [
     },
     plugins: {
       'import-x': importX,
+      'better-tailwindcss': tailwind,
     },
     settings: {
       'import-x/resolver': {
         typescript: true,
+      },
+      'better-tailwindcss': {
+        entryPoint: 'src/index.css',
       },
     },
     rules: {
@@ -47,6 +50,9 @@ export default [
           ignoreRestSiblings: true,
         },
       ],
+      ...tailwind.configs['stylistic'].rules,
+      ...tailwind.configs['correctness'].rules,
+      'better-tailwindcss/enforce-consistent-line-wrapping': 'off',
     },
   },
 ];

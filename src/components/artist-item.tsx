@@ -47,18 +47,18 @@ export function ArtistItem(props: {
             classList={{ hidden: props.onRemove === undefined }}
             class="ml-auto"
           >
-            <X class="text-dim size-4" />
+            <X class="size-4 text-dim" />
           </button>
         </div>
 
-        <div class={clsx('text-dim text-xs', props.classes?.info)}>
+        <div class={clsx('text-xs text-dim', props.classes?.info)}>
           <ArtistDate date={data.findArtistDate(props.artist.id)?.start} /> |{' '}
           {data.stageLabel(defined(data.findArtistStage(props.artist.id)))}
         </div>
 
-        <div class="text-dim text-xs">{data.showTypeLabel(props.artist.type)}</div>
+        <div class="text-xs text-dim">{data.showTypeLabel(props.artist.type)}</div>
 
-        <div class="text-dim text-xs">{props.artist.styles.join(', ')}</div>
+        <div class="text-xs text-dim">{props.artist.styles.join(', ')}</div>
       </div>
     </A>
   );

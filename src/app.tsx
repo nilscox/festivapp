@@ -23,12 +23,16 @@ export function App(props: { children?: JSX.Element }) {
 }
 
 function ThemeVariables() {
+  /* eslint-disable better-tailwindcss/no-unregistered-classes, better-tailwindcss/no-duplicate-classes  */
   const styles = `
-    :root {
-      --color-primary: ${data.theme.primary};
-      --color-secondary: ${data.theme.secondary};
+    @layer theme {
+      :root {
+        --color-primary: rgb(${data.theme.primary});
+        --color-secondary: rgb(${data.theme.secondary});
+      }
     }
   `;
+  /* eslint-enable better-tailwindcss/no-unregistered-classes, better-tailwindcss/no-duplicate-classes */
 
   return <style innerText={styles} />;
 }

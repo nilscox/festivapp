@@ -35,7 +35,7 @@ function ArtistDetails(props: { artist: Artist }) {
         <img src={props.artist.image} class="rounded-lg bg-white shadow-lg" />
       </Show>
 
-      <div class="row my-2 items-center justify-center gap-2">
+      <div class="my-2 row items-center justify-center gap-2">
         <h2>{props.artist.name}</h2>
         <button onClick={() => setBookmark(!artistUserData().bookmark)}>
           <Star class="size-4" classList={{ 'fill-primary': artistUserData()?.bookmark }} />
@@ -107,8 +107,8 @@ function Description(props: { artistId: string; description: string[] }) {
           setShowMore(true);
           trackEvent('Artist', 'ShowMoreClicked', `Show full description of ${props.artistId}`);
         }}
-        classList={{ '!hidden': showMore() }}
-        class="row my-2 w-full items-center justify-center gap-2 text-sm font-bold uppercase"
+        classList={{ 'hidden!': showMore() }}
+        class="my-2 row w-full items-center justify-center gap-2 text-sm font-bold uppercase"
       >
         <Translate id="artist.showMore" />
         <ArrowDown class="size-4" />

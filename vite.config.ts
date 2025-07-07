@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import tailwindcss from '@tailwindcss/vite';
 import dotenv from 'dotenv';
 import { defineConfig, Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -32,6 +33,7 @@ export default defineConfig({
   plugins: [
     tsconfigPaths(),
     solidPlugin(),
+    tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
       manifest: app.manifest,

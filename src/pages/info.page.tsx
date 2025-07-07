@@ -22,7 +22,7 @@ export function InfoPage() {
       {/* eslint-disable-next-line solid/no-innerhtml */}
       <section innerHTML={html()} class="info" />
 
-      <div class="mt-auto pb-2 pt-4 text-center text-xs">
+      <div class="mt-auto pt-4 pb-2 text-center text-xs">
         <span>Version de l'app : {__VERSION__}</span>
         <span class="mx-2">&bullet;</span>
         <span>
