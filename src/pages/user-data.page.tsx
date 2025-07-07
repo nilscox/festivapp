@@ -17,7 +17,7 @@ export function BookmarksPage() {
       <For
         each={data.userData.getAllData()}
         fallback={
-          <div class="col my-6 gap-2">
+          <div class="my-6 col gap-2">
             <p class="text-lg font-medium">
               <Translate id="userData.noNotes.title" />
             </p>

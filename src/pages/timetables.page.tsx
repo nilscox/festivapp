@@ -184,7 +184,7 @@ function Stage(props: { selected: boolean; onClick: () => void; children: JSX.El
     <button
       class="rounded-md px-3 py-1 font-semibold"
       classList={{
-        'text-primary bg-primary/10 shadow': props.selected,
+        'text-primary bg-primary/10 shadow-sm': props.selected,
         'text-dim': !props.selected,
       }}
       onClick={() => props.onClick()}
@@ -204,7 +204,7 @@ function Day(props: { day: Date; slots: TimetableSlot[] }) {
       <Show
         when={props.slots.length > 0}
         fallback={
-          <div class="text-dim text-center">
+          <div class="text-center text-dim">
             <Translate id="timetables.noResults" />
           </div>
         }

@@ -1,6 +1,67 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --breakpoint-*: initial;
+  --breakpoint-sm: 450px;
+
+  --font-*: initial;
+  --font-sans: Open Sans Variable, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+
+  --color-primary: var(--color-primary);
+  --color-secondary: var(--color-secondary));
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility col {
+  display: flex;
+  flex-direction: column;
+}
+
+@utility row {
+  display: flex;
+  flex-direction: row;
+}
+
+@utility text-dim {
+  @apply text-primary/75;
+}
+
+@utility info {
+  h2 {
+    margin-top: --spacing(4);
+  }
+
+  p {
+    margin: --spacing(2) 0;
+  }
+
+  a {
+    text-decoration: underline;
+  }
+
+  img {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+  }
+}
 
 @layer base {
   html,
@@ -11,18 +72,18 @@
   }
 
   body {
-    background-color: theme(colors.secondary);
-    color: theme(colors.primary);
-    font-family: theme(fontFamily.sans);
+    background-color: var(--color-secondary);
+    color: var(--color-primary);
+    font-family: var(--font-sans);
   }
 
   h2 {
-    font-size: theme(fontSize.2xl);
-    font-weight: theme(fontWeight.semibold);
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-semibold);
   }
 
   label {
-    font-weight: theme(fontWeight.medium);
+    font-weight: var(--font-weight-medium);
   }
 
   input,
@@ -30,9 +91,9 @@
   textarea {
     @apply bg-white/25;
     @apply border-2 border-primary/50;
-    @apply focus-visible:outline-primary focus:shadow;
-    border-radius: theme(borderRadius.md);
-    padding: theme(spacing[0.5]) theme(spacing.2);
+    @apply focus-visible:outline-primary focus:shadow-sm;
+    border-radius: var(--radius-md);
+    padding: --spacing(0.5) --spacing(2);
   }
 
   input {
@@ -45,43 +106,6 @@
   }
 
   select option {
-    color: theme(colors.black);
-  }
-}
-
-@layer utilities {
-  .col {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .row {
-    display: flex;
-    flex-direction: row;
-  }
-
-  .text-dim {
-    @apply text-primary/75;
-  }
-}
-
-@layer components {
-  .info {
-    h2 {
-      margin-top: theme(spacing.4);
-    }
-
-    p {
-      margin: theme(spacing.2) 0;
-    }
-
-    a {
-      text-decoration: underline;
-    }
-
-    img {
-      border-radius: theme(borderRadius.lg);
-      box-shadow: theme(boxShadow.md);
-    }
+    color: var(--color-black);
   }
 }
