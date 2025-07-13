@@ -1,44 +1,22 @@
 @import 'tailwindcss';
 
 @theme {
-  --breakpoint-*: initial;
-  --breakpoint-sm: 450px;
-
   --font-*: initial;
-  --font-sans: Open Sans Variable, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-    'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-sans: 'Open Sans Variable', sans-serif;
 
   --color-primary: var(--color-primary);
-  --color-secondary: var(--color-secondary));
+  --color-secondary: var(--color-secondary);
 }
 
 @layer base {
-  html,
-  body,
-  #root {
-    height: 100%;
-    overflow: hidden;
-  }
-
-  *,
-  ::after,
-  ::before {
-    border-color: var(--color-gray-200, currentcolor);
-  }
-
   body {
-    background-color: var(--color-secondary);
     color: var(--color-primary);
+    background-color: var(--color-secondary);
     font-family: var(--font-sans);
   }
 
-  h2 {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-weight-semibold);
-  }
-
-  label {
-    font-weight: var(--font-weight-medium);
+  a {
+    text-decoration: underline;
   }
 
   input,
@@ -73,27 +51,4 @@
 @utility row {
   display: flex;
   flex-direction: row;
-}
-
-@utility text-dim {
-  @apply text-primary/75;
-}
-
-@utility info {
-  h2 {
-    margin-top: --spacing(4);
-  }
-
-  p {
-    margin: --spacing(2) 0;
-  }
-
-  a {
-    text-decoration: underline;
-  }
-
-  img {
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
-  }
 }

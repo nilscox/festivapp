@@ -1,17 +1,17 @@
 import { useIntl } from '@cookbook/solid-intl';
 
-import { DocumentTitle } from '../components/document-title';
-import { data } from '../data';
+import { DocumentTitle } from 'src/components/document-title';
+import { data } from 'src/data';
 
-export function MapPage() {
+export function Map() {
   const intl = useIntl();
 
   return (
-    <div class="col h-full items-center justify-center">
-      <DocumentTitle title={intl.formatMessage({ id: 'navigation.map' })} />
+    <div class="col flex-1 justify-center">
+      <DocumentTitle title={intl.formatMessage({ id: 'map.title' })} />
 
-      <a download href={data.map} class="max-h-full">
-        <img src={data.map} class="max-h-full" />
+      <a download="" href={data.map}>
+        <img src={data.map} class="w-full rounded-lg" />
       </a>
     </div>
   );

@@ -1,11 +1,11 @@
+/// <reference types="vite-plugin-solid-svg/types-component-solid" />
 /// <reference types="vite/client" />
 /// <reference types="vite-plugin-pwa/client" />
 
 declare const __DATA__: object;
 declare const __VERSION__: string;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare const _paq: any;
+declare const _paq: unknown[];
 
 interface ImportMetaEnv {
   readonly VITE_LANGUAGE: string;

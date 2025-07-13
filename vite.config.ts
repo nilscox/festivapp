@@ -1,11 +1,11 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-
 import tailwindcss from '@tailwindcss/vite';
 import dotenv from 'dotenv';
-import { defineConfig, Plugin } from 'vite';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { Plugin, defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import solidPlugin from 'vite-plugin-solid';
+import solidSvg from 'vite-plugin-solid-svg';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 import pkg from './package.json';
@@ -27,16 +27,17 @@ const publicDir = getEnv('PUBLIC_DIR');
 const pwaDev = getEnv('PWA_DEV', 'false');
 
 const data = await fs.readFile(path.resolve(dataPath)).then(String);
-const { app } = JSON.parse(data);
+const { manifest } = JSON.parse(data);
 
 export default defineConfig({
   plugins: [
     tsconfigPaths(),
     solidPlugin(),
+    solidSvg(),
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      manifest: app.manifest,
+      manifest,
       devOptions: {
         enabled: pwaDev === 'true',
         type: 'module',
@@ -63,6 +64,9 @@ export default defineConfig({
   define: {
     __DATA__: data,
     __VERSION__: JSON.stringify(pkg.version),
+  },
+  test: {
+    environment: 'node',
   },
 });
 
