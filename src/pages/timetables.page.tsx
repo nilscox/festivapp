@@ -1,229 +1,229 @@
 import { useIntl } from '@cookbook/solid-intl';
-import { createForm, Field, FormStore, getValue, getValues, setValue } from '@modular-forms/solid';
-import { useSearchParams } from '@solidjs/router';
-import { createEffect, For, JSX, Match, Show, Switch } from 'solid-js';
+import { A, useSearchParams } from '@solidjs/router';
+import { startOfDay } from 'date-fns';
+import { groupBy } from 'remeda';
+import { For, createEffect, createMemo } from 'solid-js';
 
-import { ActivityItem } from '../components/activity-item';
-import { ArtistItem } from '../components/artist-item';
-import { DocumentTitle } from '../components/document-title';
-import { FormattedDate, Translate } from '../components/intl';
-import { data, isArtistSlot, TimetableSlot } from '../data';
-import { defined } from '../utils/assert';
-import { searchString } from '../utils/search';
+import { DocumentTitle } from 'src/components/document-title';
+import { FormatDate, Translate } from 'src/components/intl';
+import { SlotItem } from 'src/components/slot-item';
+import { Artist, Event, SlotData, data } from 'src/data';
+import { searchString } from 'src/utils/search';
+import { Slot } from 'src/utils/timetable';
 
-type FiltersForm = {
-  search: string;
-  stage: string;
-  style: string;
-  type: string;
-};
-
-export function TimetablesPage() {
+export function Timetables() {
   const intl = useIntl();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [filters, { Form: FiltersForm }] = createForm<FiltersForm>({
-    initialValues: {
-      search: searchParams['search'] ?? '',
-      stage: searchParams['stage'] ?? defined(data.stages[0]).id,
-      style: searchParams['style'] ?? 'all',
-      type: searchParams['type'] ?? 'all',
-    },
-  });
+  const timetable = createMemo(() =>
+    data.timetables.find((timetable) => timetable.data.name === searchParams.location),
+  );
 
   createEffect(() => {
-    setSearchParams(getValues(filters), { replace: true });
+    if (timetable() === undefined) {
+      setSearchParams({ location: data.timetables.at(0)?.data.name }, { replace: true });
+    }
   });
 
-  const days = () => {
-    const stage = getValue(filters, 'stage');
+  const slots = () => {
+    const filters = getFilters(searchParams);
 
-    if (stage === undefined) {
-      return [];
-    }
+    return timetable()?.slots.filter((slot) => {
+      if (slot.data.type === 'event') {
+        return filters.event(data.events.get(slot.data.id)!);
+      }
 
-    return data.days.map((day): [Date, TimetableSlot[]] => {
-      const slots = data
-        .timetable(stage)
-        .getSlotsForDay(day)
-        .filter((day) => filter(day, getValues(filters)));
-
-      return [day, slots];
+      if (slot.data.type === 'artist') {
+        return filters.artist(data.artists.get(slot.data.id)!);
+      }
     });
   };
 
   return (
-    <div class="col gap-8">
-      <DocumentTitle title={intl.formatMessage({ id: 'navigation.timetables' })} />
+    <div class="col gap-6">
+      <DocumentTitle title={intl.formatMessage({ id: 'timetables.title' })} />
 
-      <FiltersForm onSubmit={() => {}} class="col gap-6">
-        <Filters stage={getValue(filters, 'stage')} form={filters} />
-      </FiltersForm>
+      <TimetableFilters
+        filters={searchParams}
+        onChange={(type, value) => setSearchParams({ [type]: value })}
+      />
 
-      <div class="col gap-12">
-        <For each={days()}>{([day, slots]) => <Day day={day} slots={slots} />}</For>
-      </div>
+      <TimetableLocations
+        location={searchParams.location as string | undefined}
+        onChange={(value) => setSearchParams({ location: value })}
+      />
+
+      <SlotList slots={slots()} />
     </div>
   );
 }
 
-const filter = (slot: TimetableSlot, { search, style, type }: Partial<FiltersForm>) => {
-  if (search === undefined || style === undefined || type === undefined) {
-    return true;
-  }
+function getFilters(filters: Partial<Record<'search' | 'style' | 'type', string>>) {
+  return {
+    event: (event: Event) => {
+      const search = (filter: string) => {
+        return searchString(event.name, filter);
+      };
 
-  if (isArtistSlot(slot)) {
-    const artist = data.findArtist(slot.artistId);
+      const style = (_filter: string) => {
+        return false;
+      };
 
-    return [
-      searchString(artist?.name, search) ||
-        searchString(artist?.label, search) ||
-        searchString(artist?.origin, search),
-      style === 'all' || artist?.styles.includes(style),
-      type === 'all' || artist?.type === type,
-    ].every(Boolean);
-  } else {
-    if (style !== 'all' || type !== 'all') {
-      return false;
-    }
+      const type = (filter: string) => {
+        return filter === 'event';
+      };
 
-    return searchString(slot.label, search) || searchString(slot.type, search);
-  }
-};
+      return [
+        typeof filters.search === 'string' ? search(filters.search) : true,
+        typeof filters.style === 'string' ? style(filters.style) : true,
+        typeof filters.type === 'string' ? type(filters.type) : true,
+      ].every(Boolean);
+    },
+    artist: (artist: Artist) => {
+      const search = (filter: string) => {
+        return searchString(artist.name, filter);
+      };
 
-type FiltersProps = {
-  stage?: string;
-  form: FormStore<FiltersForm>;
-};
+      const style = (filter: string) => {
+        return artist.styles.includes(filter);
+      };
 
-function Filters(props: FiltersProps) {
+      const type = (filter: string) => {
+        return artist.type === filter;
+      };
+
+      return [
+        typeof filters.search === 'string' ? search(filters.search) : true,
+        typeof filters.style === 'string' ? style(filters.style) : true,
+        typeof filters.type === 'string' ? type(filters.type) : true,
+      ].every(Boolean);
+    },
+  };
+}
+
+type Filter = 'search' | 'style' | 'type';
+
+export function TimetableFilters(props: {
+  filters: Partial<Record<Filter, string>>;
+  onChange: (type: Filter, value: string) => void;
+}) {
   const intl = useIntl();
-  const stage = () => props.stage;
+
+  const stylesOptions = () => {
+    return [
+      {
+        label: <Translate id="timetables.styles.all" />,
+        value: '',
+      },
+      ...data.styles.map((label) => ({
+        label,
+        value: label,
+      })),
+    ];
+  };
+
+  const typesOptions = () => {
+    return [
+      {
+        label: <Translate id="timetables.types.all" />,
+        value: '',
+      },
+      ...(['live', 'liveband', 'djset'] as const).map((value) => ({
+        label: <Translate id={`artistType.${value}`} />,
+        value,
+      })),
+      {
+        label: <Translate id="timetables.types.event" />,
+        value: 'event',
+      },
+    ];
+  };
 
   return (
-    <>
-      <div class="grid grid-cols-2 gap-2">
-        <Field of={props.form} name="style">
-          {(field, props) => (
-            <select {...props}>
-              <option value="all" selected={field.value === 'all'}>
-                <Translate id="timetables.allStyles" />
-              </option>
-              <For each={stage() ? data.stageStyles(stage()!) : []}>
-                {(style) => (
-                  <option value={style} selected={field.value === style}>
-                    {style}
-                  </option>
-                )}
-              </For>
-            </select>
-          )}
-        </Field>
+    <form class="grid grid-cols-2 gap-2">
+      <select
+        value={props.filters.style ?? ''}
+        onChange={(event) => props.onChange('style', event.target.value)}
+      >
+        <For each={stylesOptions()}>{({ value, label }) => <option value={value}>{label}</option>}</For>
+      </select>
 
-        <Field of={props.form} name="type">
-          {(field, props) => (
-            <select {...props}>
-              <option value="all" selected={field.value === 'all'}>
-                <Translate id="timetables.allTypes" />
-              </option>
-              <For each={data.showTypes}>
-                {({ id, label }) => (
-                  <option value={id} selected={field.value === id}>
-                    {label}
-                  </option>
-                )}
-              </For>
-            </select>
-          )}
-        </Field>
+      <select
+        value={props.filters.type ?? ''}
+        onChange={(event) => props.onChange('type', event.target.value)}
+      >
+        <For each={typesOptions()}>{({ value, label }) => <option value={value}>{label}</option>}</For>
+      </select>
 
-        <Field of={props.form} name="search">
-          {(field, props) => (
-            <input
-              {...props}
-              type="search"
-              placeholder={intl.formatMessage({ id: 'timetables.searchPlaceholder' })}
-              value={field.value}
-              class="col-span-2"
-            />
-          )}
-        </Field>
-      </div>
-
-      <Field of={props.form} name="stage">
-        {(field) => (
-          <Stages
-            selected={field.value}
-            setSelected={(stage) => {
-              setValue(props.form, 'stage', stage);
-              setValue(props.form, 'style', 'all');
-            }}
-          />
-        )}
-      </Field>
-    </>
+      <input
+        type="search"
+        placeholder={intl.formatMessage({ id: 'timetables.search.placeholder' })}
+        value={props.filters.search ?? ''}
+        onInput={(event) => props.onChange('search', event.target.value)}
+        class="col-span-2"
+      />
+    </form>
   );
 }
 
-function Stages(props: { selected?: string; setSelected: (stage: string) => void }) {
+export function TimetableLocations(props: { location?: string; onChange: (value: string) => void }) {
+  const isActive = ({ name }: { name: string }) => {
+    return name === props.location;
+  };
+
   return (
-    <div class="row flex-wrap justify-evenly whitespace-nowrap">
-      <For each={data.stages}>
-        {({ id, label }) => (
-          <Stage selected={props.selected === id} onClick={() => props.setSelected(id)}>
-            {label}
-          </Stage>
+    <div role="tablist" class="row justify-evenly overflow-x-auto">
+      <For each={data.timetables}>
+        {(timetable) => (
+          <button
+            role="tab"
+            onClick={() => props.onChange(timetable.data.name)}
+            class="rounded-md px-3 py-0.5 text-lg font-semibold text-nowrap"
+            classList={{ 'bg-primary/10 shadow-sm': isActive(timetable.data) }}
+          >
+            {timetable.data.name}
+          </button>
         )}
       </For>
     </div>
   );
 }
 
-function Stage(props: { selected: boolean; onClick: () => void; children: JSX.Element }) {
-  return (
-    <button
-      class="rounded-md px-3 py-1 font-semibold"
-      classList={{
-        'text-primary bg-primary/10 shadow-sm': props.selected,
-        'text-dim': !props.selected,
-      }}
-      onClick={() => props.onClick()}
-    >
-      {props.children}
-    </button>
-  );
-}
+export function SlotList(props: { slots?: Slot<SlotData>[] }) {
+  const groups = () => {
+    return groupBy(props.slots ?? [], (slot) => String(startOfDay(slot.start)));
+  };
 
-function Day(props: { day: Date; slots: TimetableSlot[] }) {
   return (
-    <div class="col gap-6">
-      <h2>
-        <FormattedDate date={props.day} options={{ weekday: 'long', day: 'numeric', month: 'long' }} />
-      </h2>
-
-      <Show
-        when={props.slots.length > 0}
+    <ul class="col gap-12">
+      <For
+        each={Object.entries(groups())}
         fallback={
-          <div class="text-center text-dim">
+          <li class="my-4 text-lg">
             <Translate id="timetables.noResults" />
-          </div>
+          </li>
         }
       >
-        <div class="col gap-4">
-          <For each={props.slots}>
-            {(slot) => (
-              <Switch>
-                <Match when={isArtistSlot(slot) ? data.findArtist(slot.artistId) : false}>
-                  {(artist) => <ArtistItem href={`/timetables/${artist().id}`} artist={artist()} />}
-                </Match>
-                <Match when={!isArtistSlot(slot) ? slot : false}>
-                  {(slot) => <ActivityItem {...slot()} />}
-                </Match>
-              </Switch>
-            )}
-          </For>
-        </div>
-      </Show>
-    </div>
+        {([day, slots]) => (
+          <li>
+            <div class="mb-4 text-2xl font-semibold capitalize">
+              <FormatDate date={day} weekday="long" day="numeric" month="long" />
+            </div>
+
+            <ul class="col gap-8">
+              <For each={slots}>
+                {(slot) => (
+                  <li>
+                    <A href={`/${slot.data.type}/${slot.data.id}`}>
+                      <SlotItem slot={slot} />
+                    </A>
+                  </li>
+                )}
+              </For>
+            </ul>
+          </li>
+        )}
+      </For>
+    </ul>
   );
 }

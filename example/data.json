@@ -1,43 +1,37 @@
 {
-  "app": {
+  "title": "ZozorApp",
+  "manifest": {
     "name": "ZozorApp",
-    "background": "/background.png",
-    "theme": {
-      "primary": "153 27 27",
-      "secondary": "254 243 199"
-    },
-    "info": "## Information\n\nNintendo characters have already had a **huge impact** on contemporary popular culture. Mario has gone from being just a corporate mascot to a cultural icon, as well as one of the most famous characters in the industry.\n\nAccording to John Taylor of Arcadia Investment Corp. the character is by far the biggest single property in electronic gaming.",
-    "manifest": {
-      "name": "ZozorApp",
-      "short_name": "ZozorApp",
-      "description": "Zozora Festival application",
-      "lang": "en",
-      "theme_color": "#991b1b",
-      "background_color": "#fef3c7",
-      "icons": [
-        {
-          "src": "icon.svg",
-          "sizes": "512x512",
-          "type": "image/svg+xml",
-          "purpose": "any"
-        }
-      ]
-    }
+    "short_name": "ZozorApp",
+    "description": "Zozora Festival application",
+    "lang": "en",
+    "theme_color": "#991b1b",
+    "background_color": "#fef3c7",
+    "icons": [
+      {
+        "src": "icon.svg",
+        "sizes": "512x512",
+        "type": "image/svg+xml",
+        "purpose": "any"
+      }
+    ]
   },
   "map": "/map.png",
-  "stages": {
-    "main": "Main stage",
-    "tek": "Tecktonik"
-  },
-  "types": {
-    "live": "Live",
-    "djset": "DJ Set"
-  },
-  "artists": {
-    "mario": {
+  "events": [
+    {
+      "id": "video-games",
+      "name": "Video games"
+    },
+    {
+      "id": "cacao-ceremony",
+      "name": "Cacao ceremony"
+    }
+  ],
+  "artists": [
+    {
       "id": "mario",
       "name": "Mario",
-      "image": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a9/MarioNSMBUDeluxe.png/170px-MarioNSMBUDeluxe.png",
+      "image": "https://static.fnac-static.com/multimedia/Images/FD/Comete/135565/CCP_IMG_1200x800/1777920.jpg",
       "type": "live",
       "styles": ["Plumber", "Coin Eater", "Mustache"],
       "label": "Nintendo records",
@@ -52,10 +46,10 @@
         "https://www.soundcloud.com/mario"
       ]
     },
-    "luidgi": {
+    {
       "id": "luidgi",
       "name": "Luidgi",
-      "image": "https://upload.wikimedia.org/wikipedia/en/thumb/7/73/Luigi_NSMBUDX.png/170px-Luigi_NSMBUDX.png",
+      "image": "https://static.fnac-static.com/multimedia/Images/FD/Comete/135542/CCP_IMG_1200x800/1777598.jpg",
       "type": "djset",
       "styles": ["Italian", "Coin Eater"],
       "label": "",
@@ -65,48 +59,60 @@
       ],
       "social": ["https://www.facebook.com/luidgi", "https://www.youtube.com/@luidgi"]
     }
-  },
-  "timetables": {
-    "main": [
-      {
-        "start": "2024-09-01T12:00:00",
-        "end": "2024-09-01T14:00:00",
-        "artistId": "mario"
-      },
-      {
-        "start": "2024-09-01T14:00:00",
-        "end": "2024-09-01T15:30:00",
-        "artistId": "luidgi"
-      },
-      {
-        "start": "2024-09-01T16:00:00",
-        "end": "2024-09-01T18:00:00",
-        "artistId": "mario"
-      },
-      {
-        "start": "2024-09-01T18:30:00",
-        "end": "2024-09-01T20:30:00",
-        "label": "Video games",
-        "type": "Activity"
-      }
-    ],
-    "tek": [
-      {
-        "start": "2024-09-01T12:30:00",
-        "end": "2024-09-01T14:30:00",
-        "label": "Cacao ceremony",
-        "type": "Activity"
-      },
-      {
-        "start": "2024-09-01T14:30:00",
-        "end": "2024-09-01T15:30:00",
-        "artistId": "mario"
-      },
-      {
-        "start": "2024-09-01T15:30:00",
-        "end": "2024-09-01T16:00:00",
-        "artistId": "luidgi"
-      }
-    ]
-  }
+  ],
+  "timetables": [
+    {
+      "name": "Main",
+      "slots": [
+        {
+          "type": "artist",
+          "id": "mario",
+          "start": "2025-09-01T12:00:00",
+          "end": "2025-09-01T14:00:00"
+        },
+        {
+          "type": "artist",
+          "id": "luidgi",
+          "start": "2025-09-01T14:00:00",
+          "end": "2025-09-01T15:30:00"
+        },
+        {
+          "type": "artist",
+          "id": "mario",
+          "start": "2025-09-01T16:00:00",
+          "end": "2025-09-01T18:00:00",
+          "artistId": "mario"
+        },
+        {
+          "type": "event",
+          "id": "video-games",
+          "start": "2025-09-01T18:30:00",
+          "end": "2025-09-01T20:30:00"
+        }
+      ]
+    },
+    {
+      "name": "Tek",
+      "slots": [
+        {
+          "type": "event",
+          "start": "2025-09-01T12:30:00",
+          "end": "2025-09-01T14:30:00",
+          "id": "cacao-ceremony"
+        },
+        {
+          "type": "artist",
+          "id": "mario",
+          "start": "2025-09-01T14:30:00",
+          "end": "2025-09-01T15:30:00"
+        },
+        {
+          "type": "artist",
+          "id": "luidgi",
+          "start": "2025-09-01T15:30:00",
+          "end": "2025-09-01T16:00:00"
+        }
+      ]
+    }
+  ]
 }

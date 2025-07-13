@@ -1,188 +1,80 @@
 import { useIntl } from '@cookbook/solid-intl';
 import { A } from '@solidjs/router';
-import { For, JSX, Match, Show, Switch } from 'solid-js';
+import { For, Match, Show, Switch } from 'solid-js';
 
-import { ActivityItem } from '../components/activity-item';
-import { ArtistItem } from '../components/artist-item';
-import { DocumentTitle } from '../components/document-title';
-import { DistanceToNow, Translate } from '../components/intl';
-import { Artist, data, isArtistSlot } from '../data';
-import { defined } from '../utils/assert';
-import { createNow } from '../utils/now';
+import { DocumentTitle } from 'src/components/document-title';
+import { FormatRelativeTime, Translate } from 'src/components/intl';
+import { SlotItem } from 'src/components/slot-item';
+import { SlotSwitch } from 'src/components/slot-switch';
+import { SlotData, data } from 'src/data';
+import { useNow } from 'src/utils/now';
+import { Slot, Timetable } from 'src/utils/timetable';
 
-export function NowPage() {
+export function Now() {
   const intl = useIntl();
+  const now = useNow();
 
   return (
     <>
-      <DocumentTitle title={intl.formatMessage({ id: 'navigation.now' })} />
+      <DocumentTitle title={intl.formatMessage({ id: 'now.title' })} />
 
-      <div class="my-8 text-center text-2xl font-bold">
+      <h2 class="my-8 text-center text-2xl font-bold">
         <Translate id="now.title" />
-      </div>
+      </h2>
 
-      <ul class="col gap-6">
-        <For each={data.stages}>
-          {(stage) => (
-            <li class="col gap-2">
-              <h2>{stage.label}</h2>
-              <CurrentArtist stage={stage.id} />
-              <NextArtist stage={stage.id} />
-            </li>
+      <div class="col gap-8">
+        <For each={data.timetables}>
+          {(timetable) => (
+            <div>
+              <div class="text-2xl font-semibold">{timetable.data.name}</div>
+
+              <Show when={timetable.at(now())} fallback={<SlotFallback now={now()} timetable={timetable} />}>
+                {(slot) => (
+                  <A href={`/${slot().data.type}/${slot().data.id}`} class="my-4 block">
+                    <SlotItem slot={slot()} />
+                  </A>
+                )}
+              </Show>
+
+              <Show when={timetable.next(now())}>{(slot) => <Next now={now()} slot={slot()} />}</Show>
+            </div>
           )}
         </For>
-      </ul>
+      </div>
     </>
   );
 }
 
-function CurrentArtist(props: { stage: string }) {
-  const now = createNow();
-
-  const timetable = () => data.timetable(props.stage);
-  const currentSlot = () => data.timetable(props.stage).findSlot(now());
-
-  const artist = () => {
-    const slot = currentSlot();
-
-    if (isArtistSlot(slot)) {
-      return defined(data.findArtist(slot.artistId));
-    }
-  };
-
-  const activity = () => {
-    const slotValue = currentSlot();
-
-    if (!isArtistSlot(slotValue)) {
-      return slotValue;
-    }
-  };
-
+function Next(props: { now: Date; slot: Slot<SlotData> }) {
   return (
-    <Switch
-      fallback={
-        <Fallback>
-          <Translate id="now.break" />
-        </Fallback>
-      }
-    >
-      <Match when={!timetable().hasStarted(now())}>
-        <NotStarted start={timetable().start} artist={timetable().firstArtist()} />
-      </Match>
+    <A href={`/${props.slot.data.type}/${props.slot.data.id}`} class="text-sm">
+      <Translate
+        id="now.next"
+        values={{
+          name: <SlotLabel slot={props.slot} />,
+          relativeTime: <FormatRelativeTime a={props.now} b={props.slot.start} />,
+        }}
+      />
+    </A>
+  );
+}
 
-      <Match when={timetable().hasEnded(now())}>
-        <Fallback>
+function SlotLabel(props: { slot: Slot<SlotData> }) {
+  return <SlotSwitch slot={props.slot} event={(event) => event.name} artist={(artist) => artist.name} />;
+}
+
+function SlotFallback(props: { now: Date; timetable: Timetable }) {
+  return (
+    <div class="my-4 text-lg">
+      <Switch fallback={<Translate id="now.break" />}>
+        <Match when={!props.timetable.hasStarted(props.now)}>
+          <Translate id="now.notStarted" values={{ start: props.timetable.slots.at(0)?.start }} />
+        </Match>
+
+        <Match when={props.timetable.hasEnded(props.now)}>
           <Translate id="now.ended" />
-        </Fallback>
-      </Match>
-
-      <Match when={artist()}>
-        {(artist) => (
-          <ArtistItem href={`/now/${artist().id}`} artist={artist()} classes={{ info: 'hidden' }} />
-        )}
-      </Match>
-
-      <Match when={activity()}>{(activity) => <ActivityItem {...activity()} />}</Match>
-    </Switch>
-  );
-}
-
-function NotStarted(props: { start: Date; artist?: Artist }) {
-  const artistLink = (children: JSX.Element[]) => {
-    if (props.artist)
-      return (
-        <A href={`/timetables/${props.artist?.id}`} class="underline">
-          {children}
-        </A>
-      );
-  };
-
-  return (
-    <div>
-      <Translate
-        id="now.notStarted"
-        values={{
-          start: props.start,
-          artist: props.artist?.name,
-          relativeTime: <DistanceToNow date={props.start} />,
-          artistLink,
-        }}
-      />
+        </Match>
+      </Switch>
     </div>
-  );
-}
-
-function Fallback(props: { children: JSX.Element }) {
-  return <div class="my-2 text-center font-medium text-dim uppercase">— {props.children} —</div>;
-}
-
-function NextArtist(props: { stage: string }) {
-  const now = createNow();
-
-  const timetable = () => data.timetable(props.stage);
-  const nextSlot = () => timetable().findNextSlot(now());
-
-  const artist = () => {
-    const slot = nextSlot();
-
-    if (isArtistSlot(slot)) {
-      return defined(data.findArtist(slot.artistId));
-    }
-  };
-
-  const activity = () => {
-    const slot = nextSlot();
-
-    if (!isArtistSlot(slot)) {
-      return slot;
-    }
-  };
-
-  const start = () => nextSlot()?.start;
-
-  const date = (
-    <span>
-      <Translate
-        id="now.nextStart"
-        values={{
-          start: start(),
-          relativeTime: <DistanceToNow date={start()} />,
-        }}
-      />
-    </span>
-  );
-
-  return (
-    <Show when={timetable().isPlaying(now())}>
-      <div class="row gap-1 text-sm text-dim">
-        <span>
-          <Translate id="now.next" />
-        </span>
-
-        <Switch
-          fallback={
-            <span class="uppercase">
-              <Translate id="now.break" />
-            </span>
-          }
-        >
-          <Match when={artist()}>
-            {(artist) => (
-              <A href={`/now/${artist().id}`} class="underline">
-                {artist().name} {date}
-              </A>
-            )}
-          </Match>
-
-          <Match when={activity()}>
-            {(activity) => (
-              <div>
-                {activity().label} {date}
-              </div>
-            )}
-          </Match>
-        </Switch>
-      </div>
-    </Show>
   );
 }
