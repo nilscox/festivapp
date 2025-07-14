@@ -1,5 +1,6 @@
 {
   "title": "ZozorApp",
+  "info": "Some custom information.",
   "manifest": {
     "name": "ZozorApp",
     "short_name": "ZozorApp",
@@ -16,7 +17,6 @@
       }
     ]
   },
-  "map": "/map.png",
   "events": [
     {
       "id": "video-games",

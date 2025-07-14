@@ -1,7 +1,7 @@
 {
   "navigation.now": "Maintenant",
   "navigation.timetables": "Timetables",
-  "navigation.map": "Carte",
+  "navigation.info": "Info",
   "navigation.bookmarks": "Favoris",
   "artistType.live": "Live",
   "artistType.liveband": "Live band",
@@ -19,7 +19,7 @@
   "timetables.noResults": "Aucun résultat pour cette timetable",
   "artist.origin": "<strong>Provenance</strong> : {origin}",
   "artist.label": "<strong>Label</strong> : {label}",
-  "map.title": "Carte",
+  "info.title": "Infos pratiques",
   "bookmarks.title": "Favoris",
   "bookmarks.empty": "Aucun favoris enregistré"
 }

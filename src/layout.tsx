@@ -1,5 +1,5 @@
 import { A } from '@solidjs/router';
-import { MapPinIcon, PlayIcon, StarIcon, TableCellsMergeIcon } from 'lucide-solid';
+import { InfoIcon, PlayIcon, StarIcon, TableCellsMergeIcon } from 'lucide-solid';
 import { Component, JSX } from 'solid-js';
 
 import { Translate } from './components/intl';
@@ -19,7 +19,7 @@ export function Layout(props: { children?: JSX.Element }) {
 
 function Header() {
   return (
-    <header class="fixed inset-x-0 top-0 z-10 mx-auto row h-16 max-w-3xl items-center justify-center bg-secondary/80 shadow-lg before:absolute before:inset-0 before:bg-white/5">
+    <header class="fixed inset-x-0 top-0 z-10 mx-auto row h-16 max-w-3xl items-center justify-center bg-secondary/80 shadow-sm before:absolute before:inset-0 before:bg-white/5">
       <h1 class="text-2xl font-semibold">{pageTitle()}</h1>
     </header>
   );
@@ -41,8 +41,8 @@ function Footer() {
           <Translate id="navigation.bookmarks" />
         </NavLink>
 
-        <NavLink href="/map" Icon={MapPinIcon}>
-          <Translate id="navigation.map" />
+        <NavLink href="/info" Icon={InfoIcon}>
+          <Translate id="navigation.info" />
         </NavLink>
       </nav>
     </footer>

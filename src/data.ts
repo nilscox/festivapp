@@ -75,8 +75,8 @@ class Data {
     return this.data.title;
   }
 
-  get map() {
-    return this.data.map;
+  get info() {
+    return this.data.info;
   }
 
   get styles() {
@@ -93,7 +93,7 @@ export const data = new Data(__DATA__ as JsonData);
 
 type JsonData = {
   title: string;
-  map: string;
+  info: string;
   events: Event[];
   artists: Artist[];
   timetables: Array<{

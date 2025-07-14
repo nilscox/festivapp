@@ -1,7 +1,7 @@
 {
   "navigation.now": "Now",
   "navigation.timetables": "Timetables",
-  "navigation.map": "Map",
+  "navigation.info": "Info",
   "navigation.bookmarks": "Bookmarks",
   "artistType.live": "Live",
   "artistType.liveband": "Live Band",
@@ -19,7 +19,7 @@
   "timetables.noResults": "No result",
   "artist.origin": "<strong>Origin</strong> : {origin}",
   "artist.label": "<strong>Label</strong> : {label}",
-  "map.title": "Map",
+  "info.title": "Practical info",
   "bookmarks.title": "Bookmarks",
   "bookmarks.empty": "No bookmark saved"
 }
