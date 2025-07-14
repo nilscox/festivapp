@@ -4,10 +4,10 @@ import { startOfDay } from 'date-fns';
 import { groupBy } from 'remeda';
 import { For, createEffect, createMemo } from 'solid-js';
 
-import { DocumentTitle } from 'src/components/document-title';
 import { FormatDate, Translate } from 'src/components/intl';
 import { SlotItem } from 'src/components/slot-item';
 import { Artist, Event, SlotData, data } from 'src/data';
+import { usePageTitle } from 'src/utils/page-title';
 import { searchString } from 'src/utils/search';
 import { Slot } from 'src/utils/timetable';
 
@@ -39,10 +39,10 @@ export function Timetables() {
     });
   };
 
+  usePageTitle(() => intl.formatMessage({ id: 'timetables.title' }));
+
   return (
     <div class="col gap-6">
-      <DocumentTitle title={intl.formatMessage({ id: 'timetables.title' })} />
-
       <TimetableFilters
         filters={searchParams}
         onChange={(type, value) => setSearchParams({ [type]: value })}

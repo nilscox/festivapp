@@ -2,46 +2,40 @@ import { useIntl } from '@cookbook/solid-intl';
 import { A } from '@solidjs/router';
 import { For, Match, Show, Switch } from 'solid-js';
 
-import { DocumentTitle } from 'src/components/document-title';
 import { FormatRelativeTime, Translate } from 'src/components/intl';
 import { SlotItem } from 'src/components/slot-item';
 import { SlotSwitch } from 'src/components/slot-switch';
 import { SlotData, data } from 'src/data';
 import { useNow } from 'src/utils/now';
+import { usePageTitle } from 'src/utils/page-title';
 import { Slot, Timetable } from 'src/utils/timetable';
 
 export function Now() {
   const intl = useIntl();
   const now = useNow();
 
+  usePageTitle(() => intl.formatMessage({ id: 'now.title' }));
+
   return (
-    <>
-      <DocumentTitle title={intl.formatMessage({ id: 'now.title' })} />
+    <div class="col gap-8">
+      <For each={data.timetables}>
+        {(timetable) => (
+          <div>
+            <div class="text-2xl font-semibold">{timetable.data.name}</div>
 
-      <h2 class="my-8 text-center text-2xl font-bold">
-        <Translate id="now.title" />
-      </h2>
+            <Show when={timetable.at(now())} fallback={<SlotFallback now={now()} timetable={timetable} />}>
+              {(slot) => (
+                <A href={`/${slot().data.type}/${slot().data.id}`} class="my-4 block">
+                  <SlotItem slot={slot()} />
+                </A>
+              )}
+            </Show>
 
-      <div class="col gap-8">
-        <For each={data.timetables}>
-          {(timetable) => (
-            <div>
-              <div class="text-2xl font-semibold">{timetable.data.name}</div>
-
-              <Show when={timetable.at(now())} fallback={<SlotFallback now={now()} timetable={timetable} />}>
-                {(slot) => (
-                  <A href={`/${slot().data.type}/${slot().data.id}`} class="my-4 block">
-                    <SlotItem slot={slot()} />
-                  </A>
-                )}
-              </Show>
-
-              <Show when={timetable.next(now())}>{(slot) => <Next now={now()} slot={slot()} />}</Show>
-            </div>
-          )}
-        </For>
-      </div>
-    </>
+            <Show when={timetable.next(now())}>{(slot) => <Next now={now()} slot={slot()} />}</Show>
+          </div>
+        )}
+      </For>
+    </div>
   );
 }
 

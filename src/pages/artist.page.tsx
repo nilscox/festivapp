@@ -1,9 +1,7 @@
 import { useParams } from '@solidjs/router';
 import { Clock4Icon, Link, MapPin, StarIcon } from 'lucide-solid';
-import { Component, For, Show } from 'solid-js';
-import { JSX } from 'solid-js';
+import { Component, For, JSX, Show } from 'solid-js';
 
-import { DocumentTitle } from 'src/components/document-title';
 import { FormatDate, Translate } from 'src/components/intl';
 import { type Artist, data } from 'src/data';
 import Bandcamp from 'src/icons/bandcamp.svg';
@@ -14,6 +12,7 @@ import Spotify from 'src/icons/spotify.svg';
 import Youtube from 'src/icons/youtube.svg';
 import { assert, defined } from 'src/utils/assert';
 import { isBookmarked, setBookmarked } from 'src/utils/bookmarks';
+import { usePageTitle } from 'src/utils/page-title';
 
 export function Artist() {
   const { artistId } = useParams();
@@ -31,10 +30,10 @@ export function Artist() {
     );
   };
 
+  usePageTitle(() => artist().name);
+
   return (
     <div class="col gap-8">
-      <DocumentTitle title={artist().name} />
-
       <div class="relative h-96">
         <button
           onClick={() => setBookmarked(artistId, !isBookmarked(artistId))}
