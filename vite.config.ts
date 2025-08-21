@@ -22,12 +22,8 @@ function getEnv(name: string, defaultValue?: string) {
   return value;
 }
 
-const dataPath = getEnv('DATA_PATH');
 const publicDir = getEnv('PUBLIC_DIR');
 const pwaDev = getEnv('PWA_DEV', 'false');
-
-const data = await fs.readFile(path.resolve(dataPath)).then(String);
-const { manifest } = JSON.parse(data);
 
 export default defineConfig({
   plugins: [
@@ -37,7 +33,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      manifest,
+      manifest: {},
       devOptions: {
         enabled: pwaDev === 'true',
         type: 'module',
@@ -62,7 +58,6 @@ export default defineConfig({
     target: 'esnext',
   },
   define: {
-    __DATA__: data,
     __VERSION__: JSON.stringify(pkg.version),
   },
   test: {

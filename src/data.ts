@@ -89,7 +89,7 @@ class Data {
   }
 }
 
-export const data = new Data(__DATA__ as JsonData);
+export const data = new Data(await fetch('/data.json').then((res) => res.json()));
 
 type JsonData = {
   title: string;
