@@ -12,7 +12,7 @@ export type Artist = {
   id: string;
   name: string;
   image: string;
-  type: 'live' | 'liveband' | 'djset';
+  type: 'live' | 'liveset' | 'liveband' | 'djset';
   styles: string[];
   origin?: string;
   label: string;
