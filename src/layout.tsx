@@ -1,5 +1,8 @@
 import { A } from '@solidjs/router';
-import { InfoIcon, PlayIcon, StarIcon, TableCellsMergeIcon } from 'lucide-solid';
+import InfoIcon from 'lucide-solid/icons/info';
+import PlayIcon from 'lucide-solid/icons/play';
+import StarIcon from 'lucide-solid/icons/star';
+import TableCellsMergeIcon from 'lucide-solid/icons/table-cells-merge';
 import { Component, JSX } from 'solid-js';
 
 import { Translate } from './components/intl';

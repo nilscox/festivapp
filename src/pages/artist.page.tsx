@@ -1,5 +1,8 @@
 import { useParams } from '@solidjs/router';
-import { Clock4Icon, Link, MapPin, StarIcon } from 'lucide-solid';
+import Clock4Icon from 'lucide-solid/icons/clock-4';
+import LinkIcon from 'lucide-solid/icons/link';
+import MapPinIcon from 'lucide-solid/icons/map';
+import StarIcon from 'lucide-solid/icons/star';
 import { Component, For, JSX, Show } from 'solid-js';
 
 import { FormatDate, Translate } from 'src/components/intl';
@@ -63,7 +66,7 @@ export function Artist() {
                 <FormatDate date={slot.start} weekday="long" hour="numeric" minute="numeric" />
               </div>
               <div class="row items-center gap-2">
-                <MapPin class="size-5" />
+                <MapPinIcon class="size-5" />
                 {timetable.data.name}
               </div>
             </div>
@@ -140,6 +143,6 @@ function getSocialLinks(artist: Artist): Array<[Component<{ class?: string }>, s
       return [Bandcamp, link] satisfies [unknown, unknown];
     }
 
-    return [Link, link];
+    return [LinkIcon, link];
   });
 }

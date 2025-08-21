@@ -1,4 +1,4 @@
-import { StarIcon } from 'lucide-solid';
+import StarIcon from 'lucide-solid/icons/star';
 import { Show } from 'solid-js';
 
 import { Artist } from 'src/data';
