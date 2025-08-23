@@ -15,6 +15,7 @@
   "timetables.title": "Timetables",
   "timetables.styles.all": "Tous les styles",
   "timetables.types.all": "Tous les types",
+  "timetables.types.bookmarks": "Favoris",
   "timetables.types.event": "Activité",
   "timetables.search.placeholder": "Rechercher...",
   "timetables.noResults": "Aucun résultat pour cette timetable",
