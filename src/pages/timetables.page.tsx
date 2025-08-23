@@ -7,6 +7,7 @@ import { For, createEffect, createMemo } from 'solid-js';
 import { FormatDate, Translate } from 'src/components/intl';
 import { SlotItem } from 'src/components/slot-item';
 import { Artist, Event, SlotData, data } from 'src/data';
+import { getBookmarks } from 'src/utils/bookmarks';
 import { usePageTitle } from 'src/utils/page-title';
 import { searchString } from 'src/utils/search';
 import { Slot } from 'src/utils/timetable';
@@ -89,6 +90,12 @@ function getFilters(filters: Partial<Record<'search' | 'style' | 'type', string>
       };
 
       const type = (filter: string) => {
+        if (filter === 'bookmarks') {
+          const bookmarks = getBookmarks();
+
+          return bookmarks.includes(artist.id);
+        }
+
         return artist.type === filter;
       };
 
@@ -127,6 +134,10 @@ export function TimetableFilters(props: {
       {
         label: <Translate id="timetables.types.all" />,
         value: '',
+      },
+      {
+        label: <Translate id="timetables.types.bookmarks" />,
+        value: 'bookmarks',
       },
       ...(['live', 'liveband', 'djset'] as const).map((value) => ({
         label: <Translate id={`artistType.${value}`} />,
