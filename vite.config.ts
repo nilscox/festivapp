@@ -37,6 +37,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       strategies: 'generateSW',
       manifest: data.manifest,
+      includeAssets: ['data.json', '**/*.jpg', '**/*.png', '**/*.webp'],
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,jpg,woff2,txt}'],
         maximumFileSizeToCacheInBytes: 5 * 1000 * 1000,
