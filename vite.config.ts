@@ -25,6 +25,8 @@ function getEnv(name: string, defaultValue?: string) {
 const publicDir = getEnv('PUBLIC_DIR');
 const pwaDev = getEnv('PWA_DEV', 'false');
 
+const data = JSON.parse(String(await fs.readFile(path.resolve(publicDir, 'data.json'))));
+
 export default defineConfig({
   plugins: [
     tsconfigPaths(),
@@ -33,16 +35,17 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      manifest: {},
-      devOptions: {
-        enabled: pwaDev === 'true',
-        type: 'module',
-      },
+      strategies: 'generateSW',
+      manifest: data.manifest,
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,jpg,woff2,txt}'],
         maximumFileSizeToCacheInBytes: 5 * 1000 * 1000,
         clientsClaim: true,
         skipWaiting: true,
+      },
+      devOptions: {
+        enabled: pwaDev === 'true',
+        type: 'module',
       },
     }),
     outputFile('version.txt', pkg.version),
