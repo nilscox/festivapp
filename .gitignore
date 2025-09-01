@@ -1,5 +1,5 @@
+data
 node_modules
+.env
 dist
 dev-dist
-data
-.env
