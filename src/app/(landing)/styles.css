@@ -1,0 +1,11 @@
+@import 'tailwindcss';
+
+@layer base {
+  html {
+    @apply scroll-smooth antialiased;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-title);
+  }
+}
