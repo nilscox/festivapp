@@ -8,5 +8,7 @@ export default defineConfig({
   options: {
     typeAware: true,
   },
-  rules: {},
+  rules: {
+    'next/no-img-element': 'off',
+  },
 });

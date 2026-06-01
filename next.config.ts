@@ -1,8 +1,10 @@
 import type { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {
-  /* config options here */
+export default {
   reactCompiler: true,
-};
-
-export default nextConfig;
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '5mb',
+    },
+  },
+} satisfies NextConfig;

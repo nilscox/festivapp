@@ -1,1 +1,56 @@
 @import 'tailwindcss';
+
+@theme {
+  --spacing-em: 1em;
+  --color-primary: white;
+  --color-accent: black;
+  --color-dark: var(--color-gray-950);
+  --color-light: var(--color-gray-50);
+}
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    color: var(--color-accent);
+  }
+
+  * {
+    border-color: theme(colors.accent/25%);
+  }
+
+  h1 {
+    @apply my-8 text-3xl font-semibold;
+  }
+}
+
+@utility text-dim {
+  color: var(--color-gray-600);
+}
+
+@utility row {
+  display: flex;
+  flex-direction: row;
+}
+
+@utility col {
+  display: flex;
+  flex-direction: column;
+}
+
+@utility text-middle {
+  &::before {
+    content: '';
+    margin-bottom: -0.1832em;
+    display: table;
+  }
+
+  &::after {
+    content: '';
+    margin-top: -0.2375em;
+    display: table;
+  }
+}
