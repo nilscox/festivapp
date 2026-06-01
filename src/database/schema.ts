@@ -16,6 +16,7 @@ const id = () => varchar({ length: 8 });
 export const festivals = pgTable('festivals', {
   id: id().primaryKey(),
   name: varchar({ length: 255 }).unique(),
+  domain: varchar({ length: 255 }).notNull(),
   start: timestamp().notNull(),
   end: timestamp().notNull(),
   map: varchar({ length: 255 }).notNull(),

@@ -8,7 +8,7 @@ import { defined } from 'src/utils';
 import { LocationFilter } from './location-filter';
 import { TimetableDay } from './timetable-day';
 
-export default async function ({ searchParams }: PageProps<'/timetables'>) {
+export default async function ({ searchParams }: PageProps<'/app/[festivalId]/timetables'>) {
   const search = await searchParams;
   const locations = await db.query.locations.findMany({ orderBy: { sortOrder: 'asc' } });
   const activeLocation = locations.find((location) => location.id === search.location) ?? defined(locations.at(0));

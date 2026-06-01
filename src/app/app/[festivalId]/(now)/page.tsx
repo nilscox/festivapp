@@ -39,8 +39,8 @@ export default async function Home() {
 }
 
 async function getEvents(): Promise<EventView[]> {
-  const now = await getNow();
   const festival = await getFestival();
+  const now = await getNow();
 
   const locations = await db.query.locations.findMany({
     where: { festivalId: { eq: festival.id } },

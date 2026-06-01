@@ -1,10 +1,10 @@
 import clsx from 'clsx';
 import { Open_Sans } from 'next/font/google';
 import { Festival } from 'src/database/model';
-import { getFestival } from 'src/server-utils';
+import { getFestival, setRequestContext } from 'src/server-utils';
 
-import '../styles.css';
-import { Navigation } from './navigation';
+import { Navigation } from './layout/navigation';
+import './styles.css';
 
 const openSans = Open_Sans({
   variable: '--font-sans',
@@ -24,7 +24,10 @@ function themeStyles(festival: Festival) {
   `;
 }
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function ({ params, children }: LayoutProps<'/app/[festivalId]'>) {
+  const { festivalId } = await params;
+  setRequestContext('festivalId', festivalId);
+
   const festival = await getFestival();
 
   return (
@@ -34,7 +37,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <style>{festival.globalStyles}</style>
       </head>
 
-      <body className="bg-primary text-accent">
+      <body>
         <div className="mx-auto col h-full max-w-4xl">
           <div className="flex-1 px-3 pb-16">{children}</div>
           <Navigation />

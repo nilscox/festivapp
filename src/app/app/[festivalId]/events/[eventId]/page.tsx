@@ -5,7 +5,7 @@ import { defined } from 'src/utils';
 
 import { SingleArtistEventDetails } from './single-artist-event-details';
 
-export default async function ({ params }: PageProps<'/events/[eventId]'>) {
+export default async function ({ params }: PageProps<'/app/[festivalId]/events/[eventId]'>) {
   const { eventId } = await params;
   const event = await getEvent(eventId);
 

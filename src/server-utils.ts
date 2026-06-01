@@ -1,8 +1,8 @@
 import { isValid } from 'date-fns';
 import { cookies, headers } from 'next/headers';
+import { notFound } from 'next/navigation';
 import { cache } from 'react';
 
-import notFound from './app/not-found';
 import { db } from './database/db';
 
 export async function getNow() {
@@ -24,11 +24,13 @@ export async function getCurrentHostname() {
   return `${proto}://${host}`;
 }
 
-export const getFestival = cache(async function () {
-  const cookieStore = await cookies();
-  const festivalId = cookieStore.get('festivalId');
+const getRequestContextCache = cache(() => new Map<string, string>());
+export const setRequestContext = (key: string, value: string) => getRequestContextCache().set(key, value);
+export const getRequestContext = (key: string) => getRequestContextCache().get(key);
 
-  const festival = await db.query.festivals.findFirst({ where: { id: { eq: festivalId?.value } } });
+export const getFestival = cache(async function () {
+  const festivalId = getRequestContext('festivalId');
+  const festival = await db.query.festivals.findFirst({ where: { id: { eq: festivalId } } });
 
   if (!festival) {
     throw notFound();

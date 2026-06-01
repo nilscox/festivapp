@@ -8,7 +8,7 @@ export async function Navigation() {
 
   return (
     <nav
-      className="fixed bottom-0 h-16 w-full max-w-4xl border-t"
+      className="fixed bottom-0 h-16 w-full max-w-4xl border-t z-10"
       style={{ backgroundColor: festival.primaryColor ?? undefined }}
     >
       <ul className="row h-full items-stretch">
