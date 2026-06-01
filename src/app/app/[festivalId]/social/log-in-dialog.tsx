@@ -17,7 +17,7 @@ export function LogInDialog() {
   }, [result.state]);
 
   return (
-    <Dialog id="log-in-dialog" popover="">
+    <Dialog id="log-in-dialog" popover="" className="max-w-md">
       <form action={action} className="col gap-4">
         <div className="text-lg font-semibold">Log in</div>
 
