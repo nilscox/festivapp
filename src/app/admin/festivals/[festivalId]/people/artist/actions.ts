@@ -44,6 +44,6 @@ export async function updateArtist(_prev: ActionResult, formData: FormData): Pro
 
     return { success: true, data: {} };
   } catch (error) {
-    return handleServerActionError(error);
+    return handleServerActionError(error, {});
   }
 }
