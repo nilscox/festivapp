@@ -1,5 +1,5 @@
+import { Button } from 'app/components/button';
 import { SendIcon } from 'lucide-react';
-import { Button } from 'src/components/button';
 import { getUser } from 'src/server-utils';
 
 import { createPost } from './actions';

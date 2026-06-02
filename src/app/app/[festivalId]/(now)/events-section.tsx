@@ -1,5 +1,5 @@
+import { EventCard } from 'app/components/event-card';
 import Link from 'next/link';
-import { EventCard } from 'src/components/event-card';
 import { EventView } from 'src/database/model';
 
 export function EventsSection({ title, events }: { title: React.ReactNode; events: EventView[] }) {

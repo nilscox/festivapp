@@ -1,7 +1,7 @@
+import { Button } from 'app/components/button';
+import { Dialog, DialogActions } from 'app/components/dialog';
+import { Input } from 'app/components/input';
 import { LogOutIcon } from 'lucide-react';
-import { Button } from 'src/components/button';
-import { Dialog, DialogActions } from 'src/components/dialog';
-import { Input } from 'src/components/input';
 import { User } from 'src/database/model';
 
 import { changeName, changeProfileImage, logOut } from './actions';

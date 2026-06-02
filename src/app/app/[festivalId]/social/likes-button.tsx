@@ -1,6 +1,6 @@
+import { Input } from 'app/components/input';
 import clsx from 'clsx';
 import { HeartIcon } from 'lucide-react';
-import { Input } from 'src/components/input';
 import { Post } from 'src/database/model';
 
 import { toggleLike } from './actions';

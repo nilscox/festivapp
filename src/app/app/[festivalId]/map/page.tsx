@@ -1,4 +1,4 @@
-import { HeaderBackLink } from 'src/components/header-back-link';
+import { HeaderBackLink } from 'app/components/header-back-link';
 import { getFestival } from 'src/server-utils';
 
 export default async function () {

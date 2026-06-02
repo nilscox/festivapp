@@ -1,9 +1,9 @@
 'use client';
 
+import { Button } from 'app/components/button';
+import { Dialog, DialogActions } from 'app/components/dialog';
+import { Input } from 'app/components/input';
 import { useActionState, useEffect } from 'react';
-import { Button } from 'src/components/button';
-import { Dialog, DialogActions } from 'src/components/dialog';
-import { Input } from 'src/components/input';
 
 import { logIn } from './actions';
 

@@ -1,6 +1,6 @@
+import { EventCard } from 'app/components/event-card';
 import { format, intlFormat } from 'date-fns';
 import Link from 'next/link';
-import { EventCard } from 'src/components/event-card';
 import { EventSlot } from 'src/database/model';
 
 export function TimetableDay({ day, events }: { day: Date; events: EventSlot[] }) {

@@ -1,5 +1,5 @@
+import { HeaderBackLink } from 'app/components/header-back-link';
 import { notFound } from 'next/navigation';
-import { HeaderBackLink } from 'src/components/header-back-link';
 import { db } from 'src/database/db';
 import { defined } from 'src/utils';
 
