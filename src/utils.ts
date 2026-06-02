@@ -3,7 +3,7 @@ import { customAlphabet } from 'nanoid';
 
 export type ActionResult<T = unknown> =
   | { success: true; data: T }
-  | { success: false; error?: string; fields?: Record<string, string> };
+  | { success: false; data?: T; error?: string; fields?: Record<string, string> };
 
 export function assert<T>(value: T | null | undefined, error = new Error('Assertion failed')): asserts value {
   if (value == null) {

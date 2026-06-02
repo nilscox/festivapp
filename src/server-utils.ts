@@ -1,5 +1,38 @@
 import fs from 'node:fs/promises';
-import { assert, createId } from 'src/utils';
+import { ActionResult, assert, createId } from 'src/utils';
+import z from 'zod';
+
+export function handleServerActionError<Data>(error: unknown, data: Data): ActionResult<Data> {
+  if (error instanceof z.ZodError) {
+    const fields: Record<string, string> = {};
+
+    for (const issue of error.issues) {
+      fields[issue.path.join('.')] = issue.message;
+    }
+
+    return {
+      success: false,
+      data,
+      fields,
+    };
+  }
+
+  console.error(error);
+
+  if (!(error instanceof Error)) {
+    return {
+      success: false,
+      data,
+      error: 'Unknown error',
+    };
+  }
+
+  return {
+    success: false,
+    data,
+    error: error.message,
+  };
+}
 
 const imageExtensions: Record<string, string> = {
   jpg: 'jpg',
@@ -22,4 +55,13 @@ export async function saveUploadedImage(file: File): Promise<string> {
   await fs.writeFile(`${process.env.UPLOAD_DIR}/${imageId}`, buffer);
 
   return imageId;
+}
+
+export function isUniqueViolation(error: unknown, column: string): boolean {
+  return z
+    .object({
+      code: z.literal('23505'),
+      details: z.string().includes(column),
+    })
+    .safeParse(error).success;
 }

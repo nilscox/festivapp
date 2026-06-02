@@ -15,11 +15,11 @@ const id = () => varchar({ length: 8 });
 
 export const festivals = pgTable('festivals', {
   id: id().primaryKey(),
-  name: varchar({ length: 255 }).unique(),
-  domain: varchar({ length: 255 }).notNull(),
+  name: varchar({ length: 255 }).notNull().unique(),
+  domain: varchar({ length: 255 }),
   start: timestamp().notNull(),
   end: timestamp().notNull(),
-  map: varchar({ length: 255 }).notNull(),
+  map: varchar({ length: 255 }),
   primaryColor: varchar({ length: 16 }),
   accentColor: varchar({ length: 16 }),
   backgroundImage: varchar({ length: 255 }),
