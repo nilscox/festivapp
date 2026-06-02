@@ -2,7 +2,7 @@ import { EventImage } from 'app/components/event-image';
 import { ShareButton } from 'app/components/share-button';
 import { getCurrentHostname, getNow } from 'app/server-utils';
 import { add, formatDistanceStrict, intlFormat, isWithinInterval } from 'date-fns';
-import { CalendarIcon, ClockIcon, MapPinIcon, Share2Icon } from 'lucide-react';
+import { CalendarIcon, ClockIcon, Disc3Icon, MapIcon, MapPinIcon, Share2Icon } from 'lucide-react';
 import Link from 'next/link';
 import { Artist, Event, Location } from 'src/database/model';
 
@@ -21,6 +21,23 @@ export async function SingleArtistEventDetails({
 
       <div className="col gap-4 p-4">
         <h1 className="my-0 text-2xl font-semibold">{event.title ?? artist.name}</h1>
+
+        {(artist.origin || artist.label) && (
+          <div className="row gap-4 items-center text-sm text-dim">
+            {artist.origin && (
+              <div className="row gap-1 items-center">
+                <MapIcon className="size-4" />
+                {artist.origin}
+              </div>
+            )}
+            {artist.label && (
+              <div className="row gap-1 items-center">
+                <Disc3Icon className="size-4" />
+                {artist.label}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="text-dim">{artist.styles.join(' / ')}</div>
 
