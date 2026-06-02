@@ -1,16 +1,16 @@
 'use server';
 
+import { getFestival, getUser } from 'app/server-utils';
 import assert from 'assert';
 import { and, eq } from 'drizzle-orm';
 import { customAlphabet } from 'nanoid';
 import { refresh } from 'next/cache';
 import { cookies } from 'next/headers';
-import fs from 'node:fs/promises';
 import nodemailer from 'nodemailer';
 import { isString } from 'remeda';
 import { db } from 'src/database/db';
 import { schema } from 'src/database/schema';
-import { getFestival, getUser } from 'src/server-utils';
+import { saveUploadedImage } from 'src/server-utils';
 import { createId, defined } from 'src/utils';
 import { promisify } from 'util';
 
@@ -145,13 +145,8 @@ export async function changeProfileImage(formData: FormData) {
 
   assert(image instanceof File);
 
-  const extension = { jpg: 'jpg', jpeg: 'jpg', png: 'png', bpm: 'bpm', gif: 'gif' }[image.type.replace(/^image\//, '')];
-  const buffer = Buffer.from(await image.arrayBuffer());
-  const imageRef = `${createId()}.${extension}`;
+  const imageRef = await saveUploadedImage(image);
 
-  assert(extension, new Error(`Invalid image format: ${image.type}`));
-
-  await fs.writeFile(`${process.env.UPLOAD_DIR}/${imageRef}`, buffer);
   await db.update(schema.users).set({ imageRef }).where(eq(schema.users.id, user.id));
   refresh();
 }

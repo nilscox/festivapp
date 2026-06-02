@@ -1,8 +1,8 @@
+import { getUser } from 'app/server-utils';
 import { count, eq, inArray } from 'drizzle-orm';
 import { db } from 'src/database/db';
 import { postToView } from 'src/database/model';
 import { schema } from 'src/database/schema';
-import { getUser } from 'src/server-utils';
 
 import { createPost } from './actions';
 import { CreatePostForm } from './create-post-form';

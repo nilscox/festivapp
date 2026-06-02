@@ -1,6 +1,6 @@
 import { Button } from 'app/components/button';
+import { getUser } from 'app/server-utils';
 import { SendIcon } from 'lucide-react';
-import { getUser } from 'src/server-utils';
 
 import { createPost } from './actions';
 import { UserImage } from './user-image';

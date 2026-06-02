@@ -1,8 +1,8 @@
+import { getNow } from 'app/server-utils';
 import clsx from 'clsx';
 import { add, format, isWithinInterval } from 'date-fns';
 import { ClockIcon, MapPinIcon } from 'lucide-react';
 import { EventView } from 'src/database/model';
-import { getNow } from 'src/server-utils';
 
 import { DistanceToNow } from './distance-to-now';
 import { EventImage } from './event-image';

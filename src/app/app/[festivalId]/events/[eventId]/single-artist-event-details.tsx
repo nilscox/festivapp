@@ -1,10 +1,10 @@
 import { EventImage } from 'app/components/event-image';
 import { ShareButton } from 'app/components/share-button';
+import { getCurrentHostname, getNow } from 'app/server-utils';
 import { add, formatDistanceStrict, intlFormat, isWithinInterval } from 'date-fns';
 import { CalendarIcon, ClockIcon, MapPinIcon, Share2Icon } from 'lucide-react';
 import Link from 'next/link';
 import { Artist, Event, Location } from 'src/database/model';
-import { getCurrentHostname, getNow } from 'src/server-utils';
 
 import { SocialIcon } from './social-icon';
 

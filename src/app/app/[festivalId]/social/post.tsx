@@ -3,12 +3,12 @@ import { CollapsibleContent, CollapsibleProvider, CollapsibleTrigger } from 'app
 import { Input } from 'app/components/input';
 import { ShareButton } from 'app/components/share-button';
 import { TextareaAutoResize } from 'app/components/textarea-auto-resize';
+import { getCurrentHostname, getNow, getUser } from 'app/server-utils';
 import clsx from 'clsx';
 import { formatDistance } from 'date-fns';
 import { HeartIcon, MessageCircleIcon, SendIcon, Share2Icon } from 'lucide-react';
 import Link from 'next/link';
 import { PostView } from 'src/database/model';
-import { getCurrentHostname, getNow, getUser } from 'src/server-utils';
 import { formatDistanceAbbreviated } from 'src/utils';
 
 import { toggleLike } from './actions';

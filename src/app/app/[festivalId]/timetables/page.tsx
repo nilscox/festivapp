@@ -1,8 +1,8 @@
+import { getNow } from 'app/server-utils';
 import { isEqual, isSameDay, startOfDay } from 'date-fns';
 import { uniqueWith } from 'remeda';
 import { db } from 'src/database/db';
 import { addEventsBreaks, eventToView } from 'src/database/model';
-import { getNow } from 'src/server-utils';
 import { defined } from 'src/utils';
 
 import { LocationFilter } from './location-filter';

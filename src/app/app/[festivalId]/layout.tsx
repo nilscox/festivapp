@@ -1,7 +1,7 @@
+import { getFestival, setRequestContext } from 'app/server-utils';
 import clsx from 'clsx';
 import { Open_Sans } from 'next/font/google';
 import { Festival } from 'src/database/model';
-import { getFestival, setRequestContext } from 'src/server-utils';
 
 import { Navigation } from './layout/navigation';
 import './styles.css';
@@ -19,7 +19,7 @@ function themeStyles(festival: Festival) {
     }
 
     body {
-      background-image: ${festival.backgroundImage ? `url(${festival.backgroundImage})` : 'none'};
+      background-image: ${festival.backgroundImage ? `url(/uploads/${festival.backgroundImage})` : 'none'};
     }
   `;
 }

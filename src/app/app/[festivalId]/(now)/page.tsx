@@ -1,8 +1,8 @@
+import { getFestival, getNow } from 'app/server-utils';
 import { add, isAfter, isBefore, isEqual, sub } from 'date-fns';
 import { RadioIcon } from 'lucide-react';
 import { db } from 'src/database/db';
 import { eventToView, EventView } from 'src/database/model';
-import { getFestival, getNow } from 'src/server-utils';
 
 import { EventsSection } from './events-section';
 

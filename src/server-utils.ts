@@ -1,49 +1,25 @@
-import { isValid } from 'date-fns';
-import { cookies, headers } from 'next/headers';
-import { notFound } from 'next/navigation';
-import { cache } from 'react';
+import fs from 'node:fs/promises';
+import { assert, createId } from 'src/utils';
 
-import { db } from './database/db';
+const imageExtensions: Record<string, string> = {
+  jpg: 'jpg',
+  jpeg: 'jpg',
+  png: 'png',
+  bmp: 'bmp',
+  gif: 'gif',
+  svg: 'svg',
+  webp: 'webp',
+};
 
-export async function getNow() {
-  const cookieStore = await cookies();
-  const now = new Date(cookieStore.get('now')?.value ?? '');
+export async function saveUploadedImage(file: File): Promise<string> {
+  const extension = imageExtensions[file.type.replace(/^image\//, '')];
 
-  if (isValid(now)) {
-    return now;
-  }
+  assert(extension, new Error(`Invalid image format: ${file.type}`));
 
-  return new Date();
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const imageId = `${createId()}.${extension}`;
+
+  await fs.writeFile(`${process.env.UPLOAD_DIR}/${imageId}`, buffer);
+
+  return imageId;
 }
-
-export async function getCurrentHostname() {
-  const headersList = await headers();
-  const proto = headersList.get('x-forwarded-proto');
-  const host = headersList.get('host');
-
-  return `${proto}://${host}`;
-}
-
-const getRequestContextCache = cache(() => new Map<string, string>());
-export const setRequestContext = (key: string, value: string) => getRequestContextCache().set(key, value);
-export const getRequestContext = (key: string) => getRequestContextCache().get(key);
-
-export const getFestival = cache(async function () {
-  const festivalId = getRequestContext('festivalId');
-  const festival = await db.query.festivals.findFirst({ where: { id: { eq: festivalId } } });
-
-  if (!festival) {
-    throw notFound();
-  }
-
-  return festival;
-});
-
-export const getUser = cache(async function () {
-  const cookieStore = await cookies();
-  const authCode = cookieStore.get('authCode');
-
-  if (authCode) {
-    return db.query.users.findFirst({ where: { authCode: { eq: authCode.value } } });
-  }
-});

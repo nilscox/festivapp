@@ -1,7 +1,7 @@
 'use client';
 
+import { useNow } from 'app/hooks/use-now';
 import { formatDistance, formatDistanceStrict } from 'date-fns';
-import { useNow } from 'src/hooks/use-now';
 import { formatDistanceAbbreviated } from 'src/utils';
 
 export function DistanceToNow({

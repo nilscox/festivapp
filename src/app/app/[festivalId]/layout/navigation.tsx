@@ -1,5 +1,5 @@
+import { getFestival } from 'app/server-utils';
 import { CalendarIcon, MapPinIcon, PlayIcon, UsersIcon } from 'lucide-react';
-import { getFestival } from 'src/server-utils';
 
 import { NavigationItem } from './navigation-item';
 

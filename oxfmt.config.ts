@@ -4,7 +4,7 @@ export default defineConfig({
   printWidth: 120,
   singleQuote: true,
   sortImports: {
-    internalPattern: ['^src/.+'],
+    internalPattern: ['^src/.+', '^app/.+'],
     groups: [['builtin', 'external'], 'internal', ['value-parent', 'value-sibling', 'value-index'], 'unknown'],
   },
   sortTailwindcss: {
