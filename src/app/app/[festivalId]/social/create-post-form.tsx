@@ -13,7 +13,13 @@ export async function CreatePostForm() {
       <form action={createPost} className="my-8 col gap-2 rounded-md bg-light p-2 text-dark">
         <div className="row items-start gap-2">
           <UserImage user={user} openUserDialog className="shrink-0" />
-          <textarea name="message" placeholder="What's up?" rows={3} className="w-full rounded-lg p-2" />
+          <textarea
+            name="message"
+            aria-label="Message"
+            placeholder="What's up?"
+            rows={3}
+            className="w-full rounded-lg p-2"
+          />
         </div>
 
         <button type="submit" className="ml-auto row items-center gap-2 rounded-md px-3 py-1">

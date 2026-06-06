@@ -20,9 +20,10 @@ export function NavigationItem({
       <Link
         href={href}
         className={clsx(
-          'px-2 py-1 font-medium rounded-md no-underline hover:bg-gray-100 before:border-indigo-400 before:absolute before:inset-y-0 relative before:left-0 overflow-hidden transition-colors row gap-2 items-center',
+          'relative row items-center gap-2 overflow-hidden rounded-md px-2 py-1 font-medium no-underline transition-colors hover:bg-gray-100',
+          'before:absolute before:inset-y-0 before:left-0 before:border-indigo-400',
           {
-            'bg-gray-100 pointer-events-none text-inherit before:border-l-3': isActive,
+            'pointer-events-none bg-gray-100 text-inherit before:border-l-3': isActive,
             'text-dim': !isActive,
           },
         )}

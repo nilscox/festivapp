@@ -14,7 +14,7 @@ export default async function AdminArtistsPage({
   const { search } = await searchParams;
 
   const artists = await db.query.artists.findMany({
-    where: { festivalId: { eq: festivalId }, name: search ? { ilike: `%${search}%` } : undefined },
+    where: { festivalId: { eq: festivalId }, name: typeof search === 'string' ? { ilike: `%${search}%` } : undefined },
     orderBy: { name: 'asc' },
   });
 
@@ -27,14 +27,14 @@ export default async function AdminArtistsPage({
           <li key={artist.id}>
             <Card asChild>
               <Collapsible.Root>
-                <Collapsible.Trigger className="row gap-2 text-start w-full cursor-pointer hover:bg-gray-100 transition-colors rounded-t-lg data-[state=closed]:rounded-b-lg">
+                <Collapsible.Trigger className="row w-full cursor-pointer gap-2 rounded-t-lg text-start transition-colors hover:bg-gray-100 data-[state=closed]:rounded-b-lg">
                   <Image
                     src={artist.image}
-                    className="size-20 object-cover rounded-tl-lg in-data-[state=closed]:rounded-bl-lg"
+                    className="size-20 rounded-tl-lg object-cover in-data-[state=closed]:rounded-bl-lg"
                   />
-                  <div className="p-2 col gap-1">
+                  <div className="col gap-1 p-2">
                     <div className="text-lg font-medium">{artist.name}</div>
-                    <div className="text-dim text-sm">{artist.styles.join(' / ')}</div>
+                    <div className="text-sm text-dim">{artist.styles.join(' / ')}</div>
                   </div>
                 </Collapsible.Trigger>
                 <Collapsible.Content>

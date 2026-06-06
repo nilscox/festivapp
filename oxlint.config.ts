@@ -9,6 +9,7 @@ export default defineConfig({
     typeAware: true,
   },
   rules: {
-    'next/no-img-element': 'off',
+    'jsx-a11y/prefer-tag-over-role': 'off',
+    'nextjs/no-img-element': 'off',
   },
 });

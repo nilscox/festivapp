@@ -34,6 +34,7 @@ export function ImageInput({ name, src }: { name: string; src: string | null | u
         <button type="button" onClick={() => inputRef.current?.click()} className="cursor-pointer">
           {preview ? (
             <img
+              alt=""
               src={preview.match(/(https?|blob):\/\//) ? preview : `/uploads/${src}`}
               className="size-30 rounded-md border object-cover"
             />
@@ -48,7 +49,7 @@ export function ImageInput({ name, src }: { name: string; src: string | null | u
           <button
             type="button"
             onClick={handleClear}
-            className="absolute top-0 right-0 cursor-pointer bg-white rounded-sm m-2"
+            className="absolute top-0 right-0 m-2 cursor-pointer rounded-sm bg-white"
           >
             <XIcon className="size-4" />
           </button>
@@ -58,11 +59,12 @@ export function ImageInput({ name, src }: { name: string; src: string | null | u
       <input
         ref={inputRef}
         id={id}
+        aria-labelledby={`${id}-label`}
         type="file"
         name={name}
         accept="image/*"
         onChange={handleChange}
-        className="flex-1 text-sm sr-only"
+        className="sr-only flex-1 text-sm"
       />
     </div>
   );

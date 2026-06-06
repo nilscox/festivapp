@@ -15,7 +15,7 @@ const dmSans = DM_Sans({
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html className={clsx(plusJakartaSans.variable, dmSans.variable)}>
+    <html lang="en" className={clsx(plusJakartaSans.variable, dmSans.variable)}>
       <body>{children}</body>
     </html>
   );

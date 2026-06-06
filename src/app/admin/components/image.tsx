@@ -10,5 +10,5 @@ export function Image({ src, className }: { src?: string | null; className?: str
     );
   }
 
-  return <img src={src} className={className} />;
+  return <img alt="" src={src} className={className} />;
 }

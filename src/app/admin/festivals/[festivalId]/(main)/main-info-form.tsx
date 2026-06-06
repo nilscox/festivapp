@@ -30,7 +30,7 @@ export function MainInfoForm({ festival }: { festival: Festival }) {
         <Input name="domain" defaultValue={festival.domain ?? ''} />
       </Field>
 
-      <div className="col md:row gap-4 md:items-center max-w-lg">
+      <div className="col max-w-lg gap-4 md:row md:items-center">
         <Field label="Start" error={fieldError('start')} className="flex-1">
           <Input type="datetime-local" name="start" required defaultValue={formatDateInput(festival.start)} />
         </Field>

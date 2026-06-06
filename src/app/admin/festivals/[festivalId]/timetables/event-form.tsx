@@ -6,7 +6,7 @@ import { ImageInput } from 'admin/components/image-input';
 import { Input } from 'admin/components/input';
 import { Textarea } from 'admin/components/textarea';
 import { formatDateInput } from 'admin/utils';
-import { useActionState, useEffect } from 'react';
+import { useActionState, useCallback, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Select } from 'src/app/admin/components/select';
 import { Artist, Event } from 'src/database/model';
@@ -29,13 +29,16 @@ export function EventForm({
   actions: React.ReactNode;
   onSuccessAction?: () => void;
 }) {
+  // oxlint-disable-next-line react-hooks/exhaustive-deps
+  const onSuccess = useCallback(() => onSuccessAction?.(), []);
+
   const [state, action] = useActionState(event ? updateEvent : createEvent, { success: false });
 
   useEffect(() => {
     if (state.success) {
-      onSuccessAction?.();
+      onSuccess?.();
     }
-  }, [state]);
+  }, [onSuccess, state]);
 
   const getTypeLabel = (type: Event['type']) => {
     return {
@@ -73,7 +76,7 @@ export function EventForm({
         />
       </Field>
 
-      <div className="row gap-4 max-w-lg">
+      <div className="row max-w-lg gap-4">
         <Field label="Start" className="flex-1">
           <Input type="datetime-local" name="start" required defaultValue={event ? formatDateInput(event.start) : ''} />
         </Field>
@@ -125,9 +128,9 @@ export function EventFormDelete() {
   return (
     <Button
       type="submit"
-      formAction={async (formData: FormData) => {
+      formAction={(formData: FormData) => {
         if (window.confirm('Delete this event?')) {
-          await deleteAction(formData);
+          deleteAction(formData);
         }
       }}
       variant="ghost"

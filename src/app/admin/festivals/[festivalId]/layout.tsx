@@ -23,7 +23,7 @@ export default async function FestivalLayout({ params, children }: LayoutProps<'
     <div>
       <Breadcrumb parts={[{ label: 'Festivals', href: '/admin' }, { label: festival.name }]} />
 
-      <div className="row gap-4 md:gap-6 items-start mt-6">
+      <div className="mt-6 row items-start gap-4 md:gap-6">
         <Navigation festivalId={festivalId} />
         <div className="flex-1">{children}</div>
       </div>

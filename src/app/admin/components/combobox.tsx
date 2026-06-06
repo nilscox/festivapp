@@ -62,17 +62,17 @@ export function Combobox<T>({
   });
 
   return (
-    <div className="relative col gap-2 max-w-lg">
-      <div className="row gap-1 items-stretch">
+    <div className="relative col max-w-lg gap-2">
+      <div className="row items-stretch gap-1">
         <Input {...getInputProps(getDropdownProps({ id: fieldId }))} className="w-full" />
-        <button type="button" {...getToggleButtonProps()} className="px-2 cursor-pointer">
+        <button type="button" {...getToggleButtonProps()} className="cursor-pointer px-2">
           <ArrowDownIcon className={clsx('size-4', { '-scale-y-100': isOpen })} />
         </button>
       </div>
 
       <ul
         className={clsx(
-          'absolute w-full bg-white shadow-md max-h-80 overscroll-y-contain overflow-y-auto z-10 mt-10 rounded-md border',
+          'absolute z-10 mt-10 max-h-80 w-full overflow-y-auto overscroll-y-contain rounded-md border bg-white shadow-md',
           { hidden: !isOpen },
         )}
         {...getMenuProps()}
@@ -80,7 +80,7 @@ export function Combobox<T>({
         {isOpen &&
           filteredItems.map((item, index) => (
             <li
-              className={clsx('py-2 px-3 col', highlightedIndex === index && 'bg-gray-100')}
+              className={clsx('col px-3 py-2', highlightedIndex === index && 'bg-gray-100')}
               key={`${itemToKey(item)}_${index}`}
               {...getItemProps({ item })}
             >
@@ -89,11 +89,11 @@ export function Combobox<T>({
           ))}
       </ul>
 
-      <div className="row gap-2 items-center flex-wrap">
+      <div className="row flex-wrap items-center gap-2">
         {selectedItems.map((item) => (
           <div
             key={itemToKey(item)}
-            className="bg-gray-100 rounded-full max-w-fit px-3 py-0.5 row gap-1 items-center"
+            className="row max-w-fit items-center gap-1 rounded-full bg-gray-100 px-3 py-0.5"
             {...getSelectedItemProps({ selectedItem: item })}
           >
             {renderSelectedItem(item, () => removeSelectedItem(item))}

@@ -14,7 +14,7 @@ export function FieldArray({ values: initialValues, name }: { values: string[]; 
   return (
     <>
       {values.map(({ value, id }, index) => (
-        <div key={id} className="row gap-2 items-center">
+        <div key={id} className="row items-center gap-2">
           <Input
             name={name}
             id={index === 0 ? fieldId : [fieldId, id].join('_')}

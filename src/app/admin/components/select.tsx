@@ -31,16 +31,21 @@ export function Select<T>({
   });
 
   return (
-    <div className="relative col gap-2 max-w-lg">
+    <div className="relative col max-w-lg gap-2">
       <button
         {...getToggleButtonProps({ id: fieldId })}
         type="button"
-        className="rounded-md border px-2 py-1 bg-white text-ellipsis text-start row justify-between items-stretch"
+        className="row items-stretch justify-between rounded-md border bg-white px-2 py-1 text-start text-ellipsis"
       >
         {selectedItem ? (
           <div>{renderSelectedItem(selectedItem)}</div>
         ) : (
-          <input readOnly placeholder={placeholder} className="cursor-default outline-none flex-1" />
+          <input
+            readOnly
+            placeholder={placeholder}
+            aria-label="placeholder"
+            className="flex-1 cursor-default outline-none"
+          />
         )}
 
         <div className="row items-center">
@@ -50,7 +55,7 @@ export function Select<T>({
 
       <ul
         className={clsx(
-          'absolute w-full bg-white shadow-md max-h-80 overscroll-y-contain overflow-y-auto z-10 mt-10 rounded-md border',
+          'absolute z-10 mt-10 max-h-80 w-full overflow-y-auto overscroll-y-contain rounded-md border bg-white shadow-md',
           { hidden: !isOpen },
         )}
         {...getMenuProps()}
@@ -58,7 +63,7 @@ export function Select<T>({
         {isOpen &&
           items.map((item, index) => (
             <li
-              className={clsx('py-2 px-3 col', highlightedIndex === index && 'bg-gray-100')}
+              className={clsx('col px-3 py-2', highlightedIndex === index && 'bg-gray-100')}
               key={`${itemToKey(item)}_${index}`}
               {...getItemProps({ item })}
             >

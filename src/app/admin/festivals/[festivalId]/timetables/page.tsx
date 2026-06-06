@@ -34,7 +34,7 @@ export default async function ({ params, searchParams }: PageProps<'/admin/festi
 
   if (locations.length === 0) {
     return (
-      <div className="min-h-32 row items-center justify-center">
+      <div className="row min-h-32 items-center justify-center">
         <p className="text-dim">
           You don't have any location yet. Start by creating one{' '}
           <Link href={`/admin/festivals/${festivalId}/map`}>here</Link>.
@@ -74,9 +74,9 @@ function LocationEvents({ events, artists }: { events: Array<Event & { artists: 
         <li key={event.id} id={event.id}>
           <Collapsible.Root>
             <Card>
-              <Collapsible.Trigger className="group row items-center gap-4 text-start w-full cursor-pointer hover:bg-gray-100 transition-colors rounded-t-lg data-[state=closed]:rounded-b-lg px-4 py-3">
+              <Collapsible.Trigger className="group row w-full cursor-pointer items-center gap-4 rounded-t-lg px-4 py-3 text-start transition-colors hover:bg-gray-100 data-[state=closed]:rounded-b-lg">
                 <div className="w-32">
-                  <div className="text-dim text-sm">{intlFormat(event.start, { dateStyle: 'long' })}</div>
+                  <div className="text-sm text-dim">{intlFormat(event.start, { dateStyle: 'long' })}</div>
                   <div className="text-dim">
                     {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
                   </div>
@@ -102,7 +102,7 @@ function LocationEvents({ events, artists }: { events: Array<Event & { artists: 
                     event={event}
                     artists={artists}
                     actions={
-                      <div className="row gap-2 items-center">
+                      <div key="actions" className="row items-center gap-2">
                         <EventFormSubmit event={event} />
                         <EventFormDelete />
                       </div>

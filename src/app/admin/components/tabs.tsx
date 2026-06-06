@@ -9,14 +9,18 @@ function Root(props: React.ComponentProps<typeof RadixTabs.Root>) {
 
 function List({ className, ...props }: React.ComponentProps<typeof RadixTabs.List>) {
   return (
-    <RadixTabs.List className={clsx(className, 'inline-flex flex-row gap-2 bg-gray-200 rounded-md p-1')} {...props} />
+    <RadixTabs.List className={clsx(className, 'inline-flex flex-row gap-2 rounded-md bg-gray-200 p-1')} {...props} />
   );
 }
 
 function Trigger(props: React.ComponentProps<typeof RadixTabs.Trigger>) {
   return (
     <RadixTabs.Trigger
-      className="px-2 py-1 data-[state=active]:bg-white data-[state=active]:shadow rounded-sm cursor-pointer font-medium text-dim"
+      className={clsx(
+        'cursor-pointer rounded-sm px-2 py-1 font-medium text-dim transition-colors',
+        'data-[state=active]:bg-white data-[state=active]:shadow',
+        'not-data-[state=active]:hover:bg-white/50',
+      )}
       {...props}
     />
   );

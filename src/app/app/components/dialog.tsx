@@ -6,7 +6,7 @@ export function Dialog({ className, ...props }: React.ComponentProps<'dialog'>) 
     <dialog
       className={clsx(
         className,
-        'fixed top-1/2 mx-auto max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] -translate-y-1/2 overflow-auto rounded-md p-4 backdrop:bg-black/20 backdrop:backdrop-blur-xs not-open:hidden',
+        'fixed top-1/2 mx-auto max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] -translate-y-1/2 overflow-auto rounded-md p-4 not-open:hidden backdrop:bg-black/20 backdrop:backdrop-blur-xs',
       )}
       {...props}
     />

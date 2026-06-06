@@ -99,11 +99,11 @@ async function RepliesButton({ post }: { post: PostView }) {
   );
 }
 
-function SharePostButton({ post }: { post: PostView }) {
+async function SharePostButton({ post }: { post: PostView }) {
   return (
     <ShareButton
       title={`Message from ${post.author.name}`}
-      url={`${getCurrentHostname()}/social#${post.id}`}
+      url={`${await getCurrentHostname()}/social#${post.id}`}
       className="row items-center gap-1 rounded-sm outline-offset-4"
     >
       <Share2Icon className="size-4" />

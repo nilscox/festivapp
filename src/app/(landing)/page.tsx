@@ -58,20 +58,20 @@ function Button({
 
 function FeatureCard({ icon: Icon, title, description }: { icon: LucideIcon; title: string; description: string }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-shadow duration-200 space-y-3">
-      <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+    <div className="space-y-3 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
         <Icon size={20} />
       </div>
       <h3 className="font-semibold text-slate-800">{title}</h3>
-      <p className="text-sm text-slate-500 leading-relaxed">{description}</p>
+      <p className="text-sm leading-relaxed text-slate-500">{description}</p>
     </div>
   );
 }
 
 function Nav() {
   return (
-    <header className="border-b border-slate-200 sticky top-0 bg-white/90 backdrop-blur z-50">
-      <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
         <span className="text-xl font-extrabold tracking-tight text-indigo-600">FestivApp</span>
         <Button href="#contact" variant="outline">
           Nous contacter
@@ -83,21 +83,21 @@ function Nav() {
 
 function Hero() {
   return (
-    <section className="py-28 px-6 text-center bg-linear-to-b from-indigo-50 to-white">
-      <div className="max-w-3xl mx-auto">
-        <span className="text-xs font-semibold uppercase tracking-widest text-indigo-500">
+    <section className="bg-linear-to-b from-indigo-50 to-white px-6 py-28 text-center">
+      <div className="mx-auto max-w-3xl">
+        <span className="text-xs font-semibold tracking-widest text-indigo-500 uppercase">
           Festivals, conférences, ateliers &amp; plus
         </span>
-        <h1 className="mt-4 text-5xl font-extrabold tracking-tight leading-tight text-slate-900">
+        <h1 className="mt-4 text-5xl leading-tight font-extrabold tracking-tight text-slate-900">
           Votre événement,
           <br />
           dans votre poche.
         </h1>
-        <p className="mt-6 text-lg text-slate-500 max-w-xl mx-auto leading-relaxed">
+        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-slate-500">
           FestivApp est une application mobile white-label qui donne à vos participants tout ce dont ils ont besoin —
           programme, carte, fil social et mises à jour en direct.
         </p>
-        <div className="mt-10 flex justify-center gap-4 flex-wrap">
+        <div className="mt-10 flex flex-wrap justify-center gap-4">
           <Button href="#contact">Démarrer</Button>
           <Button href="#demo" variant="outline">
             Voir la démo
@@ -110,11 +110,11 @@ function Hero() {
 
 function Features() {
   return (
-    <section className="py-24 px-6 bg-slate-50">
-      <div className="max-w-5xl mx-auto">
-        <h2 className="text-3xl font-bold tracking-tight text-slate-900 text-center">Tout en une seule app</h2>
-        <p className="mt-3 text-slate-500 text-center">Conçue pour les participants. Pensée pour les organisateurs.</p>
-        <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <section className="bg-slate-50 px-6 py-24">
+      <div className="mx-auto max-w-5xl">
+        <h2 className="text-center text-3xl font-bold tracking-tight text-slate-900">Tout en une seule app</h2>
+        <p className="mt-3 text-center text-slate-500">Conçue pour les participants. Pensée pour les organisateurs.</p>
+        <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f) => (
             <FeatureCard key={f.title} {...f} />
           ))}
@@ -126,10 +126,10 @@ function Features() {
 
 function Organizers() {
   return (
-    <section className="py-24 px-6 text-center">
-      <div className="max-w-5xl mx-auto">
+    <section className="px-6 py-24 text-center">
+      <div className="mx-auto max-w-5xl">
         <h2 className="text-3xl font-bold tracking-tight text-slate-900">Une plateforme, tous vos événements</h2>
-        <p className="mt-4 text-slate-500 max-w-xl mx-auto leading-relaxed">
+        <p className="mx-auto mt-4 max-w-xl leading-relaxed text-slate-500">
           FestivApp est une plateforme multi-tenant. Chaque événement bénéficie de sa propre expérience de marque, gérée
           depuis un back-office dédié. Un événement ou cent — l'architecture s'adapte.
         </p>
@@ -144,7 +144,7 @@ function Organizers() {
 function Footer() {
   return (
     <footer className="mt-auto border-t border-slate-200">
-      <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between text-sm text-slate-400">
+      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6 text-sm text-slate-400">
         <span>© 2025 FestivApp</span>
         <span>Fait pour les créateurs d'événements</span>
       </div>
@@ -154,7 +154,7 @@ function Footer() {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-white text-slate-900 antialiased">
+    <div className="flex min-h-screen flex-col bg-white text-slate-900 antialiased">
       <Nav />
       <Hero />
       <Features />

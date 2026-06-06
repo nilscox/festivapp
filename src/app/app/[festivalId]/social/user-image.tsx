@@ -7,7 +7,7 @@ export function UserImage({
   size = 'medium',
   className,
 }: {
-  user?: { imageRef: string | null };
+  user?: { name: string; imageRef: string | null };
   openUserDialog?: boolean;
   size?: 'small' | 'medium';
   className?: string;
@@ -23,7 +23,7 @@ export function UserImage({
       })}
     >
       {user?.imageRef ? (
-        <img src={`/uploads/${user.imageRef}`} className="size-full object-cover" />
+        <img alt={user.name} src={`/uploads/${user.imageRef}`} className="size-full object-cover" />
       ) : (
         <div className={clsx('bg-primary', { 'p-2': size === 'medium', 'p-1': size === 'small' })}>
           <UserRoundIcon className="size-full text-accent" />

@@ -34,7 +34,7 @@ export function CreateEvent({
         locationId={locationId}
         artists={artists}
         actions={
-          <div className="row gap-4 items-center">
+          <div className="row items-center gap-4">
             <EventFormSubmit />
             <Button variant="ghost" onClick={() => setShowForm(false)}>
               Cancel

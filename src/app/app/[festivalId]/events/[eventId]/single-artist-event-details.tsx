@@ -23,15 +23,15 @@ export async function SingleArtistEventDetails({
         <h1 className="my-0 text-2xl font-semibold">{event.title ?? artist.name}</h1>
 
         {(artist.origin || artist.label) && (
-          <div className="row gap-4 items-center text-sm text-dim">
+          <div className="row items-center gap-4 text-sm text-dim">
             {artist.origin && (
-              <div className="row gap-1 items-center">
+              <div className="row items-center gap-1">
                 <MapIcon className="size-4" />
                 {artist.origin}
               </div>
             )}
             {artist.label && (
-              <div className="row gap-1 items-center">
+              <div className="row items-center gap-1">
                 <Disc3Icon className="size-4" />
                 {artist.label}
               </div>

@@ -28,7 +28,7 @@ export default async function AdminPage() {
             <li key={festival.id}>
               <CardLink
                 href={`/admin/festivals/${festival.id}`}
-                className="px-4 py-3 row items-center justify-between gap-4"
+                className="row items-center justify-between gap-4 px-4 py-3"
               >
                 <div className="col">
                   <span className="font-medium">{festival.name}</span>

@@ -12,7 +12,7 @@ export function Card({ asChild, className, ...props }: Extend<React.ComponentPro
 export function CardLink({ className, ...props }: React.ComponentProps<typeof Link>) {
   return (
     <Card asChild>
-      <Link {...props} className={clsx(className, 'hover:bg-gray-100 no-underline text-inherit transition-colors')} />
+      <Link {...props} className={clsx(className, 'text-inherit no-underline transition-colors hover:bg-gray-100')} />
     </Card>
   );
 }

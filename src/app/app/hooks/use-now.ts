@@ -26,7 +26,7 @@ export function useNow() {
     return () => {
       clearInterval(interval);
     };
-  }, []);
+  }, [now]);
 
   return now;
 }

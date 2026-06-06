@@ -1,6 +1,7 @@
 import { defineConfig } from 'oxfmt';
 
 export default defineConfig({
+  ignorePatterns: ['drizzle/**'],
   printWidth: 120,
   singleQuote: true,
   sortImports: {

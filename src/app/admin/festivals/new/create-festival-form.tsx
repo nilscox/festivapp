@@ -20,7 +20,7 @@ export function CreateFestivalForm() {
   };
 
   return (
-    <form action={action} className="max-w-lg col gap-4">
+    <form action={action} className="col max-w-lg gap-4">
       {!state.success && state.error && (
         <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">{state.error}</div>
       )}
@@ -29,7 +29,7 @@ export function CreateFestivalForm() {
         <Input name="name" required defaultValue={defaultValue('name')} />
       </Field>
 
-      <div className="row gap-4 items-center">
+      <div className="row items-center gap-4">
         <Field label="Start" error={fieldError('start')} className="flex-1">
           <Input type="datetime-local" name="start" required defaultValue={defaultValue('start')} />
         </Field>

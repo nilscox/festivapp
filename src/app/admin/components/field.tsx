@@ -20,7 +20,7 @@ export function Field({ label, error, hint, className, children }: FieldProps) {
     <fieldContext.Provider value={{ id }}>
       <div className={clsx('col gap-1', className)}>
         {label && (
-          <label htmlFor={id} className="max-w-fit">
+          <label id={`${id}-label`} htmlFor={id} className="max-w-fit">
             {label}
           </label>
         )}
