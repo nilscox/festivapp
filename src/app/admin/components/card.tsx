@@ -1,14 +1,18 @@
 import clsx from 'clsx';
 import Link from 'next/link';
+import { Slot } from 'radix-ui';
+import { Extend } from 'src/utils';
+
+export function Card({ asChild, className, ...props }: Extend<React.ComponentProps<'div'>, { asChild?: boolean }>) {
+  const Comp = asChild ? Slot.Root : 'div';
+
+  return <Comp {...props} className={clsx(className, 'rounded-lg border bg-white')} />;
+}
 
 export function CardLink({ className, ...props }: React.ComponentProps<typeof Link>) {
   return (
-    <Link
-      {...props}
-      className={clsx(
-        className,
-        'rounded-lg overflow-hidden border bg-white hover:border-gray-500 no-underline text-inherit transition-colors',
-      )}
-    />
+    <Card asChild>
+      <Link {...props} className={clsx(className, 'hover:bg-gray-100 no-underline text-inherit transition-colors')} />
+    </Card>
   );
 }

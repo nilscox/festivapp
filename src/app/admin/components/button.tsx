@@ -1,24 +1,38 @@
-import { cva, type VariantProps } from 'class-variance-authority';
-import Link from 'next/link';
+import { cva } from 'class-variance-authority';
+import { Slot } from 'radix-ui';
+import { Extend } from 'src/utils';
 
-export type ButtonProps = React.ComponentProps<'button'> &
-  VariantProps<typeof buttonVariants> & {
+export function Button({
+  asChild,
+  variant,
+  size,
+  loading,
+  left,
+  right,
+  className,
+  children,
+  ...props
+}: Extend<
+  React.ComponentProps<'button'>,
+  {
+    asChild?: boolean;
+    variant?: 'solid' | 'outline' | 'ghost';
+    size?: 'small' | 'medium';
     loading?: boolean;
-  };
+    left?: React.ReactNode;
+    right?: React.ReactNode;
+  }
+>) {
+  const Comp = asChild ? Slot.Root : 'button';
 
-export function Button({ loading, variant, className, children, ...props }: ButtonProps) {
   return (
-    <button type="button" className={buttonVariants({ variant, className })} {...props}>
-      {children}
+    <Comp type="button" className={buttonVariants({ variant, size, className })} {...props}>
+      {left}
+      <Slot.Slottable>{children}</Slot.Slottable>
+      {right}
       {loading && '...'}
-    </button>
+    </Comp>
   );
-}
-
-export type LinkButtonProps = React.ComponentProps<typeof Link> & VariantProps<typeof buttonVariants>;
-
-export function LinkButton({ variant, className, ...props }: LinkButtonProps) {
-  return <Link className={buttonVariants({ variant, className })} {...props} />;
 }
 
 const buttonVariants = cva(
@@ -26,7 +40,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-dark text-light hover:bg-gray-800',
+        solid: 'bg-dark text-light hover:bg-gray-800',
         outline: 'border-gray-400!',
         ghost: 'bg-transparent hover:bg-dark/5',
       },
@@ -36,8 +50,8 @@ const buttonVariants = cva(
       },
     },
     defaultVariants: {
-      variant: 'primary',
-      size: 'small',
+      variant: 'solid',
+      size: 'medium',
     },
   },
 );

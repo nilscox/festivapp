@@ -1,7 +1,9 @@
 import { format } from 'date-fns';
+import { PlusIcon } from 'lucide-react';
+import Link from 'next/link';
 import { db } from 'src/database/db';
 
-import { LinkButton } from './components/button';
+import { Button } from './components/button';
 import { CardLink } from './components/card';
 
 export default async function AdminPage() {
@@ -13,7 +15,9 @@ export default async function AdminPage() {
     <>
       <div className="row items-center justify-between">
         <h1 className="my-6">Festivals</h1>
-        <LinkButton href="/admin/festivals/new">New festival</LinkButton>
+        <Button asChild left={<PlusIcon className="size-4" />}>
+          <Link href="/admin/festivals/new">New festival</Link>
+        </Button>
       </div>
 
       {festivals.length === 0 ? (

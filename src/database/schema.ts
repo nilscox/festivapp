@@ -47,7 +47,7 @@ export const events = pgTable('events', {
   locationId: id()
     .notNull()
     .references(() => locations.id),
-  type: eventType(),
+  type: eventType().notNull(),
   start: timestamp().notNull(),
   end: timestamp().notNull(),
   title: varchar({ length: 255 }),

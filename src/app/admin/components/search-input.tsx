@@ -1,8 +1,8 @@
 'use client';
 
+import { Input } from 'admin/components/input';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ChangeEvent } from 'react';
-import { Input } from 'src/app/admin/components/input';
 
 export function SearchInput() {
   const router = useRouter();

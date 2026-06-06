@@ -1,6 +1,8 @@
 import type { FormatDistanceFn } from 'date-fns';
 import { customAlphabet } from 'nanoid';
 
+export type Extend<A, B> = Omit<A, keyof B> & B;
+
 export type ActionResult<T = unknown> =
   | { success: true; data: T }
   | { success: false; data?: T; error?: string; fields?: Record<string, string> };

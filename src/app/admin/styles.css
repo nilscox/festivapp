@@ -7,7 +7,7 @@
 
 @layer base {
   * {
-    border-color: var(--color-gray-400);
+    border-color: var(--color-gray-300);
   }
 
   html,

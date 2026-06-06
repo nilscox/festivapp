@@ -22,7 +22,8 @@
     ],
     "paths": {
       "src/*": ["./src/*"],
-      "app/*": ["./src/app/app/*"]
+      "app/*": ["./src/app/app/*"],
+      "admin/*": ["./src/app/admin/*"]
     }
   },
   "include": ["next-env.d.ts", "drizzle.config.ts", "src/**/*", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],

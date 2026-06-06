@@ -1,14 +1,13 @@
 'use client';
 
+import { Button } from 'admin/components/button';
+import { Field } from 'admin/components/field';
+import { ImageInput } from 'admin/components/image-input';
+import { Input } from 'admin/components/input';
+import { Textarea } from 'admin/components/textarea';
+import { updateFestival } from 'admin/festivals/actions';
 import { useActionState } from 'react';
-import { Button } from 'src/app/admin/components/button';
-import { Field } from 'src/app/admin/components/field';
-import { ImageInput } from 'src/app/admin/components/image-input';
-import { Input } from 'src/app/admin/components/input';
-import { Textarea } from 'src/app/admin/components/textarea';
 import { Festival } from 'src/database/model';
-
-import { updateFestival } from '../../actions';
 
 export function ThemeForm({ festival }: { festival: Festival }) {
   const [state, action, pending] = useActionState(updateFestival, { success: false });
@@ -47,7 +46,7 @@ export function ThemeForm({ festival }: { festival: Festival }) {
         error={fieldError('backgroundImage')}
         hint="Leave empty to keep the current image"
       >
-        <ImageInput name="backgroundImage" currentRef={festival.backgroundImage} />
+        <ImageInput name="backgroundImage" src={festival.backgroundImage} />
       </Field>
 
       <Field label="Global styles" error={fieldError('globalStyles')} hint="Raw CSS">

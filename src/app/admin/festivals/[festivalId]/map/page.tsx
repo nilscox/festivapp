@@ -1,5 +1,5 @@
+import { getFestival } from 'admin/server-utils';
 import { notFound } from 'next/navigation';
-import { getFestival } from 'src/app/admin/server-utils';
 
 import { MapForm } from './map-form';
 

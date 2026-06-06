@@ -1,9 +1,9 @@
 'use client';
 
+import { Button } from 'admin/components/button';
+import { Field } from 'admin/components/field';
+import { ImageInput } from 'admin/components/image-input';
 import { useActionState } from 'react';
-import { Button } from 'src/app/admin/components/button';
-import { Field } from 'src/app/admin/components/field';
-import { ImageInput } from 'src/app/admin/components/image-input';
 import { Festival } from 'src/database/model';
 
 import { updateFestival } from '../../actions';
@@ -21,7 +21,7 @@ export function MapForm({ festival }: { festival: Festival }) {
       <input type="hidden" name="festivalId" value={festival.id} />
 
       <Field error={fieldError('map')} hint="Leave empty to keep the current image">
-        <ImageInput name="map" currentRef={festival.map} />
+        <ImageInput name="map" src={festival.map} />
       </Field>
 
       <div className="row items-center gap-3 pt-2">

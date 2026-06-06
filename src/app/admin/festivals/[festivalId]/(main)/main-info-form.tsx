@@ -1,11 +1,11 @@
 'use client';
 
+import { Button } from 'admin/components/button';
+import { Field } from 'admin/components/field';
+import { Input } from 'admin/components/input';
+import { Textarea } from 'admin/components/textarea';
+import { formatDateInput } from 'admin/utils';
 import { useActionState } from 'react';
-import { Button } from 'src/app/admin/components/button';
-import { Field } from 'src/app/admin/components/field';
-import { Input } from 'src/app/admin/components/input';
-import { Textarea } from 'src/app/admin/components/textarea';
-import { formatDateInput } from 'src/app/admin/utils';
 import { Festival } from 'src/database/model';
 
 import { updateFestival } from '../../actions';
