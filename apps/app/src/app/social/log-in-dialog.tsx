@@ -1,5 +1,6 @@
 'use client';
 
+import { Trans, useLingui } from '@lingui/react/macro';
 import { useActionState, useEffect } from 'react';
 
 import { Button } from '@/components/button';
@@ -9,6 +10,8 @@ import { Input } from '@/components/input';
 import { logIn } from './actions';
 
 export function LogInDialog() {
+  const { t } = useLingui();
+
   const [result, action, pending] = useActionState(logIn, { state: 'email' });
 
   useEffect(() => {
@@ -20,20 +23,26 @@ export function LogInDialog() {
   return (
     <Dialog id="log-in-dialog" popover="" className="max-w-md">
       <form action={action} className="col gap-4">
-        <div className="text-lg font-semibold">Log in</div>
+        <div className="text-lg font-semibold">
+          <Trans>Log in</Trans>
+        </div>
 
         {result.state === 'email' && (
           <>
-            <p className="text-sm text-dim">I know, having to log in sucks. But it's required for moderation.</p>
-            <Input name="name" required placeholder="Display name" />
-            <Input name="email" required placeholder="your@email.com" />
+            <p className="text-sm text-dim">
+              <Trans>I know, having to log in sucks. But it's required for moderation.</Trans>
+            </p>
+            <Input name="name" required placeholder={t`Display name`} />
+            <Input name="email" required placeholder={t`your@email.com`} />
           </>
         )}
 
         {result.state === 'verify' && (
           <>
-            <p className="text-sm text-dim">We've send you a code by email.</p>
-            <Input name="code" required placeholder="123456" />
+            <p className="text-sm text-dim">
+              <Trans>We've send you a code by email.</Trans>
+            </p>
+            <Input name="code" required placeholder={t`123456`} />
             <Input type="hidden" name="email" value={result.email} />
           </>
         )}
@@ -42,11 +51,11 @@ export function LogInDialog() {
 
         <DialogActions>
           <Button variant="ghost" popoverTarget="log-in-dialog" popoverTargetAction="hide">
-            Close
+            <Trans>Close</Trans>
           </Button>
           <Button type="submit">
-            {result.state === 'email' && <>Log in</>}
-            {result.state === 'verify' && <>Verify</>}
+            {result.state === 'email' && <Trans>Log in</Trans>}
+            {result.state === 'verify' && <Trans>Verify</Trans>}
             {pending && '...'}
           </Button>
         </DialogActions>

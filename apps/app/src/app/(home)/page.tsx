@@ -1,31 +1,46 @@
 import { db, eventToView, EventView } from '@festivapp/persistence';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { add, isAfter, isBefore, isEqual, sub } from 'date-fns';
-import { RadioIcon } from 'lucide-react';
+import { LanguagesIcon, RadioIcon } from 'lucide-react';
 
+import { configureI18n } from '@/i18n/i18n';
 import { getFestival, getNow } from '@/server-utils';
 
 import { EventsSection } from './events-section';
+import { LanguageDialog } from './language-dialog';
 
 export default async function Home() {
+  await configureI18n();
+
+  const { t } = useLingui();
+
   const now = await getNow();
   const festival = await getFestival();
   const events = await getEvents(festival.id, now);
 
   return (
     <div>
+      <div className="absolute top-0 right-0">
+        <button type="button" aria-label={t`Change language`} popoverTarget="language-dialog" className="p-2">
+          <LanguagesIcon className="size-5" />
+        </button>
+      </div>
+
+      <LanguageDialog />
+
       <h1 className="text-center">{festival.name}</h1>
 
       <EventsSection
         title={
           <div className="row items-center gap-2">
             <RadioIcon className="size-5 text-red-500" />
-            Live now
+            <Trans>Live now</Trans>
           </div>
         }
         events={events.filter((event) => event.isLive)}
       />
 
-      <EventsSection title={<>Coming up</>} events={events.filter((event) => !event.isLive)} />
+      <EventsSection title={<Trans>Coming up</Trans>} events={events.filter((event) => !event.isLive)} />
 
       {isBefore(now, sub(festival.start, { days: 1 })) && (
         <div className="min-h-32 rounded-lg bg-light p-4 text-dark shadow-sm">{festival.beforeStartInfo}</div>

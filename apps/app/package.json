@@ -7,11 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "oxlint",
-    "format": "oxfmt"
+    "format": "oxfmt",
+    "i18n:extract": "lingui extract --clean",
+    "i18n:compile": "lingui compile --typescript"
   },
   "dependencies": {
     "@festivapp/persistence": "workspace:*",
     "@festivapp/utils": "workspace:*",
+    "@lingui/core": "^6.2.0",
+    "@lingui/react": "^6.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
@@ -28,6 +32,8 @@
   },
   "devDependencies": {
     "@festivapp/config": "workspace:*",
+    "@lingui/cli": "^6.2.0",
+    "@lingui/swc-plugin": "^6.3.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.0",

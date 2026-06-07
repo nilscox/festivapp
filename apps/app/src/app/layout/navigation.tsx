@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro';
 import { CalendarIcon, MapPinIcon, PlayIcon, UsersIcon } from 'lucide-react';
 
 import { getFestival } from '@/server-utils';
@@ -14,19 +15,23 @@ export async function Navigation() {
     >
       <ul className="row h-full items-stretch">
         <li className="flex-1 py-2">
-          <NavigationItem icon={<PlayIcon className="size-5" />} label="Now" href="/" strict />
+          <NavigationItem icon={<PlayIcon className="size-5" />} label={<Trans>Now</Trans>} href="/" strict />
         </li>
 
         <li className="flex-1 py-2">
-          <NavigationItem icon={<CalendarIcon className="size-5" />} label="Timetables" href="/timetables" />
+          <NavigationItem
+            icon={<CalendarIcon className="size-5" />}
+            label={<Trans>Timetables</Trans>}
+            href="/timetables"
+          />
         </li>
 
         <li className="flex-1 py-2">
-          <NavigationItem icon={<MapPinIcon className="size-5" />} label="Map" href="/map" />
+          <NavigationItem icon={<MapPinIcon className="size-5" />} label={<Trans>Map</Trans>} href="/map" />
         </li>
 
         <li className="flex-1 py-2">
-          <NavigationItem icon={<UsersIcon className="size-5" />} label="Social" href="/social" />
+          <NavigationItem icon={<UsersIcon className="size-5" />} label={<Trans>Social</Trans>} href="/social" />
         </li>
       </ul>
     </nav>

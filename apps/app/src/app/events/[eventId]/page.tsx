@@ -3,10 +3,13 @@ import { defined } from '@festivapp/utils';
 import { notFound } from 'next/navigation';
 
 import { HeaderBackLink } from '@/components/header-back-link';
+import { configureI18n } from '@/i18n/i18n';
 
 import { SingleArtistEventDetails } from './single-artist-event-details';
 
 export default async function ({ params }: PageProps<'/events/[eventId]'>) {
+  await configureI18n();
+
   const { eventId } = await params;
   const event = await getEvent(eventId);
 

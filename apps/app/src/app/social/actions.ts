@@ -1,9 +1,11 @@
 'use server';
 
-import { db } from '@festivapp/persistence';
+import { db, User } from '@festivapp/persistence';
 import { schema } from '@festivapp/persistence/src/schema';
 import { defined } from '@festivapp/utils';
 import { createId, saveUploadedImage } from '@festivapp/utils/server';
+import { msg } from '@lingui/core/macro';
+import { getI18n } from '@lingui/react/server';
 import assert from 'assert';
 import { and, eq } from 'drizzle-orm';
 import { customAlphabet } from 'nanoid';
@@ -36,11 +38,13 @@ type LoginState = {
 };
 
 export async function logIn(prevState: LoginState, formData: FormData): Promise<LoginState> {
+  const { i18n } = defined(getI18n());
+
   try {
     const cookieStore = await cookies();
 
     if (cookieStore.has('authCode')) {
-      throw new Error("You're already authenticated");
+      throw new Error(i18n._(msg`You're already authenticated`));
     }
 
     if (!formData.has('code')) {
@@ -67,6 +71,7 @@ export async function logIn(prevState: LoginState, formData: FormData): Promise<
 }
 
 async function requestAuthCode(formData: FormData) {
+  const { i18n } = defined(getI18n());
   const festival = await getFestival();
 
   const name = formData.get('name');
@@ -95,13 +100,15 @@ async function requestAuthCode(formData: FormData) {
     from: process.env.EMAIL_FROM,
     to: email,
     // replyTo: '',
-    subject: `${authCode} - Your festivapp authentication code`,
-    text: `Hey ${name}, here's your authentication code: ${authCode}.`,
+    subject: i18n._(msg`${authCode} - Your festivapp authentication code`),
+    text: i18n._(msg`Hey ${name}, here's your authentication code: ${authCode}.`),
     // html: '',
   });
 }
 
 async function verifyAuthCode(formData: FormData) {
+  const { i18n } = defined(getI18n());
+
   const code = formData.get('code');
   const email = formData.get('email');
 
@@ -113,7 +120,7 @@ async function verifyAuthCode(formData: FormData) {
   });
 
   if (!user) {
-    throw new Error('Invalid authentication code');
+    throw new Error(i18n._(msg`Invalid authentication code`));
   }
 
   const cookieStore = await cookies();
@@ -130,8 +137,16 @@ export async function logOut() {
   refresh();
 }
 
+function auth(user: User | undefined) {
+  const { i18n } = defined(getI18n());
+
+  assert(user, new Error(i18n._(msg`Authentication required`)));
+
+  return user;
+}
+
 export async function changeName(formData: FormData) {
-  const user = defined(await getUser(), new Error('Authentication required'));
+  const user = auth(await getUser());
   const name = formData.get('name');
 
   assert(isString(name));
@@ -141,7 +156,7 @@ export async function changeName(formData: FormData) {
 }
 
 export async function changeProfileImage(formData: FormData) {
-  const user = defined(await getUser(), new Error('Authentication required'));
+  const user = auth(await getUser());
   const image = formData.get('image');
 
   assert(image instanceof File);
@@ -154,7 +169,7 @@ export async function changeProfileImage(formData: FormData) {
 
 export async function createPost(formData: FormData) {
   const festival = await getFestival();
-  const user = defined(await getUser(), new Error('Authentication required'));
+  const user = auth(await getUser());
 
   const parentId = formData.get('parentId');
   const message = formData.get('message');
@@ -175,7 +190,7 @@ export async function createPost(formData: FormData) {
 }
 
 export async function toggleLike(formData: FormData) {
-  const user = defined(await getUser(), new Error('Authentication required'));
+  const user = auth(await getUser());
 
   const postId = formData.get('postId');
 

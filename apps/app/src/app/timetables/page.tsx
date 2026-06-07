@@ -1,8 +1,10 @@
 import { db, eventToView, EventView } from '@festivapp/persistence';
 import { assert, defined } from '@festivapp/utils';
+import { Trans } from '@lingui/react/macro';
 import { isEqual, isSameDay, startOfDay } from 'date-fns';
 import { uniqueWith } from 'remeda';
 
+import { configureI18n } from '@/i18n/i18n';
 import { getFestival, getNow } from '@/server-utils';
 
 import { EventBreak } from './event-break';
@@ -10,6 +12,8 @@ import { LocationFilter } from './location-filter';
 import { TimetableDay } from './timetable-day';
 
 export default async function ({ searchParams }: PageProps<'/timetables'>) {
+  await configureI18n();
+
   const search = await searchParams;
 
   const festival = await getFestival();
@@ -30,7 +34,9 @@ export default async function ({ searchParams }: PageProps<'/timetables'>) {
   return (
     <div>
       <header>
-        <h1>Timetables</h1>
+        <h1>
+          <Trans>Timetables</Trans>
+        </h1>
         <LocationFilter locations={locations} active={activeLocation} />
       </header>
 

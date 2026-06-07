@@ -1,5 +1,6 @@
 import { PostView } from '@festivapp/persistence';
 import { formatDistanceAbbreviated } from '@festivapp/utils/client';
+import { Trans, useLingui } from '@lingui/react/macro';
 import clsx from 'clsx';
 import { formatDistance } from 'date-fns';
 import { HeartIcon, MessageCircleIcon, SendIcon, Share2Icon } from 'lucide-react';
@@ -108,7 +109,9 @@ async function SharePostButton({ post }: { post: PostView }) {
       className="row items-center gap-1 rounded-sm outline-offset-4"
     >
       <Share2Icon className="size-4" />
-      <div className="text-middle text-sm font-medium">Share</div>
+      <div className="text-middle text-sm font-medium">
+        <Trans>Share</Trans>
+      </div>
     </ShareButton>
   );
 }
@@ -142,6 +145,7 @@ async function Replies({ post }: { post: PostView }) {
 }
 
 async function ReplyForm({ post, createPost }: { post: PostView; createPost: (formData: FormData) => Promise<void> }) {
+  const { t } = useLingui();
   const user = await getUser();
 
   if (!user) {
@@ -156,7 +160,7 @@ async function ReplyForm({ post, createPost }: { post: PostView; createPost: (fo
 
       <TextareaAutoResize
         name="message"
-        placeholder="Write a comment..."
+        placeholder={t`Write a comment...`}
         rows={1}
         className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
       />

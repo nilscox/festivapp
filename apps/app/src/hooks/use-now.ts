@@ -16,7 +16,9 @@ export function useNow() {
       setNow(date);
       return;
     }
+  }, []);
 
+  useEffect(() => {
     const interval = setInterval(() => {
       if (!isSameMinute(now, new Date())) {
         setNow(new Date());

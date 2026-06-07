@@ -1,0 +1,190 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-06-07 18:49+0200\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: src/app/social/actions.ts:103
+msgid "{authCode} - Your festivapp authentication code"
+msgstr "{authCode} - Your festivapp authentication code"
+
+#: src/app/social/log-in-dialog.tsx:45
+msgid "123456"
+msgstr "123456"
+
+#: src/app/not-found.tsx:6
+msgid "404 - Not found."
+msgstr "404 - Not found."
+
+#: src/app/social/actions.ts:143
+msgid "Authentication required"
+msgstr "Authentication required"
+
+#: src/components/header-back-link.tsx:11
+msgid "Back"
+msgstr "Back"
+
+#: src/app/timetables/timetable-day.tsx:43
+msgid "Break"
+msgstr "Break"
+
+#: src/app/(home)/language-dialog.tsx:21
+#: src/app/(home)/page.tsx:24
+msgid "Change language"
+msgstr "Change language"
+
+#: src/app/social/user-dialog.tsx:24
+msgid "Change your name"
+msgstr "Change your name"
+
+#: src/app/social/user-dialog.tsx:36
+msgid "Change your profile image"
+msgstr "Change your profile image"
+
+#: src/app/(home)/language-dialog.tsx:48
+#: src/app/social/log-in-dialog.tsx:54
+#: src/app/social/user-dialog.tsx:54
+msgid "Close"
+msgstr "Close"
+
+#: src/app/(home)/page.tsx:43
+msgid "Coming up"
+msgstr "Coming up"
+
+#: src/app/social/page.tsx:28
+msgid "Community"
+msgstr "Community"
+
+#: src/app/events/[eventId]/single-artist-event-details.tsx:65
+msgid "Date"
+msgstr "Date"
+
+#: src/app/social/log-in-dialog.tsx:35
+#: src/app/social/user-dialog.tsx:27
+msgid "Display name"
+msgstr "Display name"
+
+#: src/app/map/page.tsx:17
+msgid "Download map"
+msgstr "Download map"
+
+#. placeholder {0}: error.message
+#: src/components/share-button.tsx:24
+msgid "Error while sharing: {0}"
+msgstr "Error while sharing: {0}"
+
+#: src/app/social/actions.ts:104
+msgid "Hey {name}, here's your authentication code: {authCode}."
+msgstr "Hey {name}, here's your authentication code: {authCode}."
+
+#: src/app/social/log-in-dialog.tsx:33
+msgid "I know, having to log in sucks. But it's required for moderation."
+msgstr "I know, having to log in sucks. But it's required for moderation."
+
+#: src/app/social/actions.ts:123
+msgid "Invalid authentication code"
+msgstr "Invalid authentication code"
+
+#: src/components/share-button.tsx:17
+msgid "Link copied to clipboard"
+msgstr "Link copied to clipboard"
+
+#: src/components/event-card.tsx:51
+#: src/components/event-card.tsx:63
+msgid "Live"
+msgstr "Live"
+
+#: src/app/(home)/page.tsx:37
+msgid "Live now"
+msgstr "Live now"
+
+#: src/app/events/[eventId]/single-artist-event-details.tsx:95
+msgid "Location"
+msgstr "Location"
+
+#: src/app/social/create-post-form.tsx:39
+#: src/app/social/log-in-dialog.tsx:27
+#: src/app/social/log-in-dialog.tsx:57
+msgid "Log in"
+msgstr "Log in"
+
+#: src/app/social/user-dialog.tsx:50
+msgid "Log out"
+msgstr "Log out"
+
+#: src/app/layout/navigation.tsx:30
+#: src/app/map/page.tsx:18
+msgid "Map"
+msgstr "Map"
+
+#: src/app/map/page.tsx:22
+msgid "No map available."
+msgstr "No map available."
+
+#: src/app/layout/navigation.tsx:18
+msgid "Now"
+msgstr "Now"
+
+#: src/app/social/create-post-form.tsx:31
+msgid "Post"
+msgstr "Post"
+
+#: src/app/social/user-dialog.tsx:29
+#: src/app/social/user-dialog.tsx:41
+msgid "Save"
+msgstr "Save"
+
+#: src/app/events/[eventId]/single-artist-event-details.tsx:125
+#: src/app/social/post.tsx:113
+msgid "Share"
+msgstr "Share"
+
+#: src/app/layout/navigation.tsx:34
+msgid "Social"
+msgstr "Social"
+
+#: src/app/events/[eventId]/single-artist-event-details.tsx:77
+msgid "Time"
+msgstr "Time"
+
+#: src/app/layout/navigation.tsx:24
+#: src/app/timetables/page.tsx:38
+msgid "Timetables"
+msgstr "Timetables"
+
+#: src/app/social/log-in-dialog.tsx:58
+msgid "Verify"
+msgstr "Verify"
+
+#: src/app/events/[eventId]/single-artist-event-details.tsx:101
+msgid "View on map"
+msgstr "View on map"
+
+#: src/app/social/log-in-dialog.tsx:43
+msgid "We've send you a code by email."
+msgstr "We've send you a code by email."
+
+#: src/app/social/create-post-form.tsx:22
+msgid "What's up?"
+msgstr "What's up?"
+
+#: src/app/social/post.tsx:163
+msgid "Write a comment..."
+msgstr "Write a comment..."
+
+#: src/app/social/actions.ts:47
+msgid "You're already authenticated"
+msgstr "You're already authenticated"
+
+#: src/app/social/log-in-dialog.tsx:36
+msgid "your@email.com"
+msgstr "your@email.com"

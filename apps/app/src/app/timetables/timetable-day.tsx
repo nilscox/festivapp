@@ -1,4 +1,5 @@
 import { EventView } from '@festivapp/persistence';
+import { Trans } from '@lingui/react/macro';
 import { format, intlFormat } from 'date-fns';
 import Link from 'next/link';
 
@@ -38,7 +39,9 @@ function EventItem({ event }: { event: EventView | EventBreak }) {
   if (event.type === 'break') {
     return (
       <div className="col items-center overflow-hidden rounded-lg border bg-light p-8 text-dark shadow-sm">
-        <div className="text-lg font-medium">Break</div>
+        <div className="text-lg font-medium">
+          <Trans>Break</Trans>
+        </div>
         <div className="text-dim">
           {format(event.start, 'HH:mm aa')} - {format(event.end, 'HH:mm aa')}
         </div>

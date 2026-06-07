@@ -1,4 +1,5 @@
 import { Artist, Event, Location } from '@festivapp/persistence';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { add, formatDistanceStrict, intlFormat, isWithinInterval } from 'date-fns';
 import { CalendarIcon, ClockIcon, Disc3Icon, MapIcon, MapPinIcon, Share2Icon } from 'lucide-react';
 import Link from 'next/link';
@@ -57,20 +58,23 @@ export async function SingleArtistEventDetails({
 }
 
 function StartDateInfo({ event }: { event: Event }) {
+  const { t } = useLingui();
+
   return (
     <li className="row gap-2">
-      <CalendarIcon aria-label="Date" className="size-5 text-dim mt-0.5" />
+      <CalendarIcon aria-label={t`Date`} className="size-5 text-dim mt-0.5" />
       <div>{intlFormat(event.start, { dateStyle: 'full' })}</div>
     </li>
   );
 }
 
 async function StartTimeInfo({ event }: { event: Event }) {
+  const { t } = useLingui();
   const now = await getNow();
 
   return (
     <li className="row gap-2">
-      <ClockIcon aria-label="Time" className="size-5 text-dim mt-0.5" />
+      <ClockIcon aria-label={t`Time`} className="size-5 text-dim mt-0.5" />
 
       <div>
         <div>{intlFormat(event.start, { timeStyle: 'medium' })}</div>
@@ -84,15 +88,17 @@ async function StartTimeInfo({ event }: { event: Event }) {
 }
 
 function LocationInfo({ event }: { event: Event & { location: Location } }) {
+  const { t } = useLingui();
+
   return (
     <li className="row gap-2">
-      <MapPinIcon aria-label="Location" className="size-5 text-dim mt-0.5" />
+      <MapPinIcon aria-label={t`Location`} className="size-5 text-dim mt-0.5" />
 
       <div>
         <div>{event.location.label}</div>
 
         <Link href="/map" className="text-sm text-dim underline">
-          View on map
+          <Trans>View on map</Trans>
         </Link>
       </div>
     </li>
@@ -115,7 +121,9 @@ async function SocialLinks({ event, artist }: { event: Event; artist: Artist }) 
         className="row items-center gap-2 rounded-md bg-gray-200 p-2"
       >
         <Share2Icon className="size-6 shrink-0 text-gray-600" />
-        <div className="text-sm font-semibold">Share</div>
+        <div className="text-sm font-semibold">
+          <Trans>Share</Trans>
+        </div>
       </ShareButton>
     </div>
   );

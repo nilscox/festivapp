@@ -1,4 +1,5 @@
 import { EventView } from '@festivapp/persistence';
+import { Trans } from '@lingui/react/macro';
 import clsx from 'clsx';
 import { add, format, isWithinInterval } from 'date-fns';
 import { ClockIcon, MapPinIcon } from 'lucide-react';
@@ -47,7 +48,7 @@ function LiveBadge() {
   return (
     <div className="absolute top-3 right-3 row items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white uppercase">
       <div className="size-2 animate-pulse rounded-full bg-white" />
-      Live
+      <Trans>Live</Trans>
     </div>
   );
 }
@@ -59,7 +60,7 @@ async function StartTimeInfo({ event, layout }: { event: EventView; layout?: 'la
     return (
       <div className="row items-center gap-1 text-sm leading-none text-red-600">
         <div className="size-2 animate-pulse rounded-full bg-current" />
-        Live
+        <Trans>Live</Trans>
       </div>
     );
   }

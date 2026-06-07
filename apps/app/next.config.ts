@@ -1,3 +1,4 @@
+import { linguiMacroSwcPlugin } from '@lingui/swc-plugin/options';
 import type { NextConfig } from 'next';
 
 export default {
@@ -6,5 +7,6 @@ export default {
     serverActions: {
       bodySizeLimit: '5mb',
     },
+    swcPlugins: [linguiMacroSwcPlugin()],
   },
 } satisfies NextConfig;
