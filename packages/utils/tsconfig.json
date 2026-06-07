@@ -1,0 +1,8 @@
+{
+  "extends": "@festivapp/config/tsconfig",
+  "includes": ["src/**/*"],
+  "compilerOptions": {
+    "outDir": "dist",
+    "types": ["node"]
+  }
+}

@@ -1,6 +1,8 @@
+/data
+/uploads
 node_modules
-.env
 .next
 next-env.d.ts
-data
-public/uploads
+dist
+.env
+

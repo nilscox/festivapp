@@ -1,0 +1,10 @@
+{
+  "name": "@festivapp/config",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tsconfig": "./tsconfig.base.json",
+    "./oxlint": "./oxlint.base.config.ts",
+    "./oxfmt": "./oxfmt.base.config.ts"
+  }
+}
