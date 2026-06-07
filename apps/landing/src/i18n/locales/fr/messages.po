@@ -1,0 +1,128 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-06-07 05:04+0200\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: fr\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: src/app/[locale]/page.tsx:42
+msgid "© 2025 FestivApp"
+msgstr "© 2025 FestivApp"
+
+#: src/app/[locale]/features.tsx:53
+msgid "Browse the full programme and build your personalised agenda."
+msgstr "Parcourez le planning complet et construisez votre agenda personnalisé."
+
+#: src/app/[locale]/features.tsx:17
+msgid "Built for attendees. Designed for organisers."
+msgstr "Conçue pour les participants. Pensée pour les organisateurs."
+
+#: src/app/[locale]/page.tsx:30
+msgid "Contact us"
+msgstr "Nous contacter"
+
+#: src/app/[locale]/features.tsx:73
+msgid "Each event has its own visual identity. Colours, logo, content — "
+"everything is customisable."
+msgstr "Chaque événement dispose de sa propre identité visuelle. Couleurs, "
+"logo, contenu — tout est personnalisable."
+
+#: src/app/[locale]/features.tsx:13
+msgid "Everything in one app"
+msgstr "Tout en une seule app"
+
+#: src/app/[locale]/hero.tsx:10
+msgid "Festivals, conferences, workshops & more"
+msgstr "Festivals, conférences, ateliers & plus"
+
+#: src/app/[locale]/organizers.tsx:14
+msgid "FestivApp is a multi-tenant platform. Each event gets its own branded "
+"experience, managed from a dedicated back-office. One event or a hundred "
+"— the architecture scales."
+msgstr "FestivApp est une plateforme multi-tenant. Chaque événement bénéficie "
+"de sa propre expérience de marque, gérée depuis un back-office dédié. "
+"Un événement ou cent — l'architecture s'adapte."
+
+#: src/app/[locale]/hero.tsx:22
+msgid "FestivApp is a white-label mobile application that gives your attendees "
+"everything they need — schedule, map, social feed and live updates."
+msgstr "FestivApp est une application mobile white-label qui donne à vos "
+"participants tout ce dont ils ont besoin — programme, carte, fil social "
+"et mises à jour en direct."
+
+#: src/app/[locale]/hero.tsx:30
+msgid "Get started"
+msgstr "Démarrer"
+
+#: src/app/[locale]/features.tsx:57
+msgid "Interactive map"
+msgstr "Carte interactive"
+
+#: src/app/[locale]/organizers.tsx:22
+msgid "Let's talk"
+msgstr "Parlons-en"
+
+#: src/app/[locale]/features.tsx:47
+msgid "Live view"
+msgstr "Vue en direct"
+
+#: src/app/[locale]/page.tsx:45
+msgid "Made for event creators"
+msgstr "Fait pour les créateurs d'événements"
+
+#: src/app/[locale]/features.tsx:58
+msgid "Navigate the venue, filter points of interest and never get lost."
+msgstr "Naviguez sur le site, filtrez les points d'intérêt et ne vous perdez "
+"plus."
+
+#: src/app/[locale]/features.tsx:67
+msgid "Notifications"
+msgstr "Notifications"
+
+#: src/app/[locale]/organizers.tsx:10
+msgid "One platform, all your events"
+msgstr "Une plateforme, tous vos événements"
+
+#: src/app/[locale]/features.tsx:68
+msgid "Receive organiser announcements instantly — changes, alerts, practical "
+"info."
+msgstr "Recevez les annonces des organisateurs instantanément — changements, "
+"alertes, infos pratiques."
+
+#: src/app/[locale]/features.tsx:52
+msgid "Schedule"
+msgstr "Programme"
+
+#: src/app/[locale]/hero.tsx:33
+msgid "See the demo"
+msgstr "Voir la démo"
+
+#: src/app/[locale]/features.tsx:48
+msgid "See what's happening right now on each stage, and plan what's next."
+msgstr "Consultez ce qui se passe en ce moment sur chaque scène, et anticipez "
+"la suite."
+
+#: src/app/[locale]/features.tsx:63
+msgid "Share your reactions and connect with other attendees in real time."
+msgstr "Partagez vos réactions et échangez avec les autres participants en "
+"temps réel."
+
+#: src/app/[locale]/features.tsx:62
+msgid "Social feed"
+msgstr "Fil social"
+
+#: src/app/[locale]/features.tsx:72
+msgid "White-label"
+msgstr "White-label"
+
+#: src/app/[locale]/hero.tsx:14
+msgid "Your event,<0/>in your pocket."
+msgstr "Votre événement,<0/>dans votre poche."
