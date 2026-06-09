@@ -1,1 +1,0 @@
-ALTER TABLE "festivals" ADD COLUMN "domain" varchar(255) NOT NULL;
