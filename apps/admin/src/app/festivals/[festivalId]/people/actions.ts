@@ -8,7 +8,11 @@ import { ActionResult } from 'next/dist/shared/lib/app-router-types';
 import { fromEntries, pick } from 'remeda';
 import z from 'zod';
 
+import { getAuthUser } from '@/server-utils';
+
 export async function updateArtist(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  await getAuthUser();
+
   try {
     const parsed = z
       .object({

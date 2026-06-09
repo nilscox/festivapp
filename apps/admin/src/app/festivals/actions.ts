@@ -9,10 +9,14 @@ import { redirect } from 'next/navigation';
 import { fromEntries, pick } from 'remeda';
 import { z } from 'zod';
 
+import { getAuthUser } from '@/server-utils';
+
 export async function createFestival(
   _prev: ActionResult<FormData>,
   formData: FormData,
 ): Promise<ActionResult<FormData>> {
+  const admin = await getAuthUser();
+
   try {
     const festivalId = createId();
 
@@ -29,6 +33,11 @@ export async function createFestival(
       ...parsed,
     });
 
+    await db.insert(schema.adminsFestivals).values({
+      festivalId,
+      adminId: admin.id,
+    });
+
     redirect(`/festivals/${festivalId}`);
   } catch (error) {
     if (isUniqueViolation(error, 'name')) {
@@ -43,6 +52,8 @@ export async function updateFestival(
   _prev: ActionResult<FormData>,
   formData: FormData,
 ): Promise<ActionResult<FormData>> {
+  await getAuthUser();
+
   try {
     const parsed = z
       .object({

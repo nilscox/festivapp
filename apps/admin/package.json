@@ -12,12 +12,14 @@
   "dependencies": {
     "@festivapp/persistence": "workspace:*",
     "@festivapp/utils": "workspace:*",
+    "bcrypt": "^6.0.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "downshift": "^9.3.6",
     "drizzle-orm": "1.0.0-beta.22",
     "immer": "^11.1.8",
     "lucide-react": "^1.17.0",
+    "nanoid": "^5.1.11",
     "next": "16.2.7",
     "radix-ui": "^1.5.0",
     "react": "19.2.4",
@@ -28,6 +30,7 @@
   "devDependencies": {
     "@festivapp/config": "workspace:*",
     "@tailwindcss/postcss": "^4",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

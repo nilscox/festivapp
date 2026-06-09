@@ -133,6 +133,35 @@ export const likes = pgTable('likes', {
     .references(() => posts.id),
 });
 
+export const admins = pgTable('admins', {
+  id: id().primaryKey(),
+  name: varchar({ length: 255 }).notNull(),
+  email: varchar({ length: 255 }).notNull(),
+  password: varchar({ length: 255 }).notNull(),
+});
+
+export const adminsFestivals = pgTable(
+  'admins_festivals',
+  {
+    adminId: id()
+      .notNull()
+      .references(() => admins.id),
+    festivalId: id()
+      .notNull()
+      .references(() => festivals.id),
+  },
+  (t) => [primaryKey({ columns: [t.adminId, t.festivalId] })],
+);
+
+export const authTokens = pgTable('authTokens', {
+  id: id().primaryKey(),
+  adminId: id()
+    .notNull()
+    .references(() => admins.id),
+  value: varchar({ length: 16 }).notNull(),
+  expires: timestamp().notNull(),
+});
+
 export const schema = {
   festivals,
   locations,
@@ -144,6 +173,9 @@ export const schema = {
   users,
   posts,
   likes,
+  admins,
+  adminsFestivals,
+  authTokens,
 };
 
 export const relations = defineRelations(schema, (r) => ({
@@ -202,6 +234,21 @@ export const relations = defineRelations(schema, (r) => ({
     replies: r.many.posts({
       from: r.posts.id,
       to: r.posts.parentId,
+    }),
+  },
+
+  admins: {
+    festivals: r.many.festivals({
+      from: r.admins.id.through(r.adminsFestivals.adminId),
+      to: r.festivals.id.through(r.adminsFestivals.festivalId),
+    }),
+  },
+
+  authTokens: {
+    admin: r.one.admins({
+      from: r.authTokens.adminId,
+      to: r.admins.id,
+      optional: false,
     }),
   },
 }));

@@ -8,6 +8,10 @@ import { assert } from './index';
 export const createId = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 8);
 
 export function handleServerActionError<Data>(error: unknown, data: Data): ActionResult<Data> {
+  if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+    throw error;
+  }
+
   if (error instanceof z.ZodError) {
     const fields: Record<string, string> = {};
 

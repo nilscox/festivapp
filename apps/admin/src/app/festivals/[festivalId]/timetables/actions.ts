@@ -9,6 +9,8 @@ import { refresh } from 'next/cache';
 import { fromEntries } from 'remeda';
 import z from 'zod';
 
+import { getAuthUser } from '@/server-utils';
+
 const eventSchema = z
   .object({
     type: z.enum(['live', 'dj_set', 'talk', 'workshop']),
@@ -25,6 +27,8 @@ const eventSchema = z
   });
 
 export async function createEvent(prev: ActionResult<FormData>, formData: FormData): Promise<ActionResult<FormData>> {
+  await getAuthUser();
+
   try {
     const parsed = eventSchema
       .extend({
@@ -74,6 +78,8 @@ export async function createEvent(prev: ActionResult<FormData>, formData: FormDa
 }
 
 export async function updateEvent(prev: ActionResult<FormData>, formData: FormData): Promise<ActionResult<FormData>> {
+  await getAuthUser();
+
   const parsed = eventSchema.extend({ eventId: z.string().min(1) }).parse({
     ...fromEntries(Array.from(formData.entries())),
     artistId: formData.getAll('artistId'),
@@ -113,6 +119,8 @@ export async function updateEvent(prev: ActionResult<FormData>, formData: FormDa
 }
 
 export async function deleteEvent(prev: ActionResult<FormData>, formData: FormData): Promise<ActionResult<FormData>> {
+  await getAuthUser();
+
   try {
     const eventId = z.string().parse(formData.get('eventId'));
 

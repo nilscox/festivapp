@@ -3,11 +3,20 @@ import { format } from 'date-fns';
 import { PlusIcon } from 'lucide-react';
 import Link from 'next/link';
 
+import { getAuthUser } from '@/server-utils';
+
 import { Button } from '../components/button';
 import { CardLink } from '../components/card';
 
 export default async function AdminPage() {
+  const admin = await getAuthUser();
+
+  const festivalIds = await db.query.adminsFestivals.findMany({
+    where: { adminId: admin.id },
+  });
+
   const festivals = await db.query.festivals.findMany({
+    where: { id: { in: festivalIds.map(({ festivalId }) => festivalId) } },
     orderBy: { start: 'desc' },
   });
 

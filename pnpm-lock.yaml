@@ -32,6 +32,9 @@ importers:
       '@festivapp/utils':
         specifier: workspace:*
         version: link:../../packages/utils
+      bcrypt:
+        specifier: ^6.0.0
+        version: 6.0.0
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -50,6 +53,9 @@ importers:
       lucide-react:
         specifier: ^1.17.0
         version: 1.17.0(react@19.2.4)
+      nanoid:
+        specifier: ^5.1.11
+        version: 5.1.11
       next:
         specifier: 16.2.7
         version: 16.2.7(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -75,6 +81,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.3.0
+      '@types/bcrypt':
+        specifier: ^6.0.0
+        version: 6.0.0
       '@types/node':
         specifier: ^20
         version: 20.19.41
@@ -239,6 +248,37 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.3
+
+  data/seed:
+    dependencies:
+      '@festivapp/persistence':
+        specifier: link:../../packages/persistence
+        version: link:../../packages/persistence
+      '@festivapp/utils':
+        specifier: link:../../packages/utils
+        version: link:../../packages/utils
+      '@types/node':
+        specifier: ^25.9.2
+        version: 25.9.2
+      date-fns:
+        specifier: ^4.4.0
+        version: 4.4.0
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
+      drizzle-orm:
+        specifier: 1.0.0-beta.22
+        version: 1.0.0-beta.22(pg@8.21.0)
+      nanoid:
+        specifier: ^5.1.11
+        version: 5.1.11
+      pg:
+        specifier: ^8.21.0
+        version: 8.21.0
+    devDependencies:
+      tsx:
+        specifier: ^4.22.4
+        version: 4.22.4
 
   packages/config: {}
 
@@ -2063,6 +2103,9 @@ packages:
   '@tailwindcss/postcss@4.3.0':
     resolution: {integrity: sha512-Jm05Tjx+9yCLGv5qw1c+84Psds8MnyrEQYCB+FFk2lgGiUjlRqdxke4mVTuYrj2xnVZqKim2Apr5ySuQRYAw/w==}
 
+  '@types/bcrypt@6.0.0':
+    resolution: {integrity: sha512-/oJGukuH3D2+D+3H4JWLaAsJ/ji86dhRidzZ/Od7H/i8g+aCmvkeCc6Ni/f9uxGLSQVCRZkX2/lqEFG2BvWtlQ==}
+
   '@types/istanbul-lib-coverage@2.0.6':
     resolution: {integrity: sha512-2QF/t/auWm0lsy8XtKVPG19v3sSOQlJe/YHZgfjb/KBBHOGSV+J2q/S671rcq9uTBrLAXmZpqJiaQbMT+zNU1w==}
 
@@ -2125,6 +2168,10 @@ packages:
     resolution: {integrity: sha512-bA6+tcSLpz2tIEdDXZPpPTIuxBcC4+w6SieaYyfigIa4h8GlFxbA17v22Vx3JUtuZQj9SgOsnbK+aTBzyDyEuw==}
     engines: {node: '>=6.0.0'}
     hasBin: true
+
+  bcrypt@6.0.0:
+    resolution: {integrity: sha512-cU8v/EGSrnH+HnxV2z0J7/blxH8gq7Xh2JFT6Aroax7UohdmiJJlxApMxtKfuI7z68NvvVcmR78k2LbT6efhRg==}
+    engines: {node: '>= 18'}
 
   braces@3.0.3:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
@@ -2601,6 +2648,14 @@ packages:
         optional: true
       sass:
         optional: true
+
+  node-addon-api@8.8.0:
+    resolution: {integrity: sha512-c5Ko1fZJIJmzhFIkhRN76WTq+fC6tWnGy9CXA0fA+XygsWZmEwG8vmbkNqxMyoaa0Tin4djul49NzdVcJJcjeA==}
+    engines: {node: ^18 || ^20 || >= 21}
+
+  node-gyp-build@4.8.4:
+    resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
+    hasBin: true
 
   node-releases@2.0.47:
     resolution: {integrity: sha512-Uzmd6LXpouKo8EUK68IjH4+E01w/hXyV3R3g/geCJo+rXLNfh1xucB+LOzYEOQPSiUK3h/xZf0cQGcSsmyL2Og==}
@@ -4444,6 +4499,10 @@ snapshots:
       postcss: 8.5.15
       tailwindcss: 4.3.0
 
+  '@types/bcrypt@6.0.0':
+    dependencies:
+      '@types/node': 25.9.2
+
   '@types/istanbul-lib-coverage@2.0.6': {}
 
   '@types/istanbul-lib-report@3.0.3':
@@ -4505,6 +4564,11 @@ snapshots:
       '@babel/types': 7.29.7
 
   baseline-browser-mapping@2.10.33: {}
+
+  bcrypt@6.0.0:
+    dependencies:
+      node-addon-api: 8.8.0
+      node-gyp-build: 4.8.4
 
   braces@3.0.3:
     dependencies:
@@ -4603,6 +4667,10 @@ snapshots:
       '@types/pg': 8.20.0
       pg: 8.21.0
       zod: 4.4.3
+
+  drizzle-orm@1.0.0-beta.22(pg@8.21.0):
+    optionalDependencies:
+      pg: 8.21.0
 
   electron-to-chromium@1.5.368: {}
 
@@ -4840,6 +4908,10 @@ snapshots:
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
+
+  node-addon-api@8.8.0: {}
+
+  node-gyp-build@4.8.4: {}
 
   node-releases@2.0.47: {}
 
