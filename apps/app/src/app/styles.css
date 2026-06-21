@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@plugin '@tailwindcss/typography';
 
 @theme {
   --spacing-em: 1em;
@@ -29,7 +30,7 @@
 }
 
 @utility text-dim {
-  color: var(--color-gray-600);
+  color: color-mix(in srgb, currentColor 70%, transparent);
 }
 
 @utility row {

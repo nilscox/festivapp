@@ -6,6 +6,7 @@ import { LanguagesIcon, RadioIcon } from 'lucide-react';
 import { configureI18n } from '@/i18n/i18n';
 import { getFestival, getNow } from '@/server-utils';
 
+import { BeforeStart } from './before-start';
 import { EventsSection } from './events-section';
 import { LanguageDialog } from './language-dialog';
 
@@ -43,7 +44,7 @@ export default async function Home() {
       <EventsSection title={<Trans>Coming up</Trans>} events={events.filter((event) => !event.isLive)} />
 
       {isBefore(now, sub(festival.start, { days: 1 })) && (
-        <div className="min-h-32 rounded-lg bg-light p-4 text-dark shadow-sm">{festival.beforeStartInfo}</div>
+        <BeforeStart festival={festival} info={festival.beforeStartInfo} />
       )}
 
       {isAfter(now, festival.end) && (

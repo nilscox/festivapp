@@ -1,6 +1,5 @@
 import { db, postToView } from '@festivapp/persistence';
 import { schema } from '@festivapp/persistence/src/schema';
-import { Trans } from '@lingui/react/macro';
 import { count, eq, inArray } from 'drizzle-orm';
 
 import { configureI18n } from '@/i18n/i18n';
@@ -22,12 +21,6 @@ export default async function () {
     <>
       {!user && <LogInDialog />}
       {user && <UserDialog user={user} />}
-
-      <header>
-        <h1>
-          <Trans>Community</Trans>
-        </h1>
-      </header>
 
       <CreatePostForm />
 

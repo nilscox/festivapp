@@ -13,6 +13,11 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. placeholder {0}: festival.name
+#: src/app/(home)/before-start.tsx:19
+msgid "{0} has not started yet."
+msgstr "{0} has not started yet."
+
 #: src/app/social/actions.ts:103
 msgid "{authCode} - Your festivapp authentication code"
 msgstr "{authCode} - Your festivapp authentication code"
@@ -38,7 +43,7 @@ msgid "Break"
 msgstr "Break"
 
 #: src/app/(home)/language-dialog.tsx:21
-#: src/app/(home)/page.tsx:24
+#: src/app/(home)/page.tsx:25
 msgid "Change language"
 msgstr "Change language"
 
@@ -50,23 +55,23 @@ msgstr "Change your name"
 msgid "Change your profile image"
 msgstr "Change your profile image"
 
-#: src/app/(home)/language-dialog.tsx:48
+#: src/app/(home)/language-dialog.tsx:58
 #: src/app/social/log-in-dialog.tsx:54
 #: src/app/social/user-dialog.tsx:54
 msgid "Close"
 msgstr "Close"
 
-#: src/app/(home)/page.tsx:43
+#: src/app/(home)/page.tsx:44
 msgid "Coming up"
 msgstr "Coming up"
-
-#: src/app/social/page.tsx:28
-msgid "Community"
-msgstr "Community"
 
 #: src/app/events/[eventId]/single-artist-event-details.tsx:65
 msgid "Date"
 msgstr "Date"
+
+#: src/app/(home)/before-start.tsx:26
+msgid "days"
+msgstr "days"
 
 #: src/app/social/log-in-dialog.tsx:35
 #: src/app/social/user-dialog.tsx:27
@@ -86,6 +91,10 @@ msgstr "Error while sharing: {0}"
 msgid "Hey {name}, here's your authentication code: {authCode}."
 msgstr "Hey {name}, here's your authentication code: {authCode}."
 
+#: src/app/(home)/before-start.tsx:33
+msgid "hours"
+msgstr "hours"
+
 #: src/app/social/log-in-dialog.tsx:33
 msgid "I know, having to log in sucks. But it's required for moderation."
 msgstr "I know, having to log in sucks. But it's required for moderation."
@@ -103,7 +112,7 @@ msgstr "Link copied to clipboard"
 msgid "Live"
 msgstr "Live"
 
-#: src/app/(home)/page.tsx:37
+#: src/app/(home)/page.tsx:38
 msgid "Live now"
 msgstr "Live now"
 
@@ -125,6 +134,10 @@ msgstr "Log out"
 #: src/app/map/page.tsx:18
 msgid "Map"
 msgstr "Map"
+
+#: src/app/(home)/before-start.tsx:40
+msgid "minutes"
+msgstr "minutes"
 
 #: src/app/map/page.tsx:22
 msgid "No map available."
@@ -157,7 +170,6 @@ msgid "Time"
 msgstr "Time"
 
 #: src/app/layout/navigation.tsx:24
-#: src/app/timetables/page.tsx:38
 msgid "Timetables"
 msgstr "Timetables"
 

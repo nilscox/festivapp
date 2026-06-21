@@ -26,7 +26,7 @@ export const getNow = cache(async function () {
 export const getFestival = cache(async function () {
   const headersList = await headers();
   const host = headersList.get('host');
-  const subdomain = host?.split('.').at(-2);
+  const subdomain = host?.split('.').at(0);
 
   const festival = await db.query.festivals.findFirst({ where: { domain: subdomain } });
 

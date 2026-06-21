@@ -1,6 +1,5 @@
 import { db, eventToView, EventView } from '@festivapp/persistence';
 import { assert, defined } from '@festivapp/utils';
-import { Trans } from '@lingui/react/macro';
 import { isEqual, isSameDay, startOfDay } from 'date-fns';
 import { uniqueWith } from 'remeda';
 
@@ -34,9 +33,6 @@ export default async function ({ searchParams }: PageProps<'/timetables'>) {
   return (
     <div>
       <header>
-        <h1>
-          <Trans>Timetables</Trans>
-        </h1>
         <LocationFilter locations={locations} active={activeLocation} />
       </header>
 
