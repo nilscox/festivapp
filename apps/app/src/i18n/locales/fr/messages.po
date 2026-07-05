@@ -26,7 +26,7 @@ msgstr "{authCode} - Votre code d'authentification festivapp"
 msgid "123456"
 msgstr "123456"
 
-#: src/app/not-found.tsx:6
+#: src/app/not-found.tsx:10
 msgid "404 - Not found."
 msgstr "404 - Non trouvé."
 
@@ -65,7 +65,7 @@ msgstr "Fermer"
 msgid "Coming up"
 msgstr "À venir"
 
-#: src/app/events/[eventId]/single-artist-event-details.tsx:65
+#: src/app/events/[eventId]/single-artist-event-details.tsx:66
 msgid "Date"
 msgstr "Date"
 
@@ -83,7 +83,7 @@ msgid "Download map"
 msgstr "Télécharger la carte"
 
 #. placeholder {0}: error.message
-#: src/components/share-button.tsx:24
+#: src/components/share-button.tsx:28
 msgid "Error while sharing: {0}"
 msgstr "Erreur lors du partage: {0}"
 
@@ -104,12 +104,12 @@ msgstr "Je sais, c'est relou de devoir se connecter. Mais c'est nécessaire pour
 msgid "Invalid authentication code"
 msgstr "Code d'authentification invalide"
 
-#: src/components/share-button.tsx:17
+#: src/components/share-button.tsx:21
 msgid "Link copied to clipboard"
 msgstr "Lien copié dans le clipboard"
 
-#: src/components/event-card.tsx:51
-#: src/components/event-card.tsx:63
+#: src/components/event-card.tsx:58
+#: src/components/event-card.tsx:70
 msgid "Live"
 msgstr "Live"
 
@@ -117,7 +117,7 @@ msgstr "Live"
 msgid "Live now"
 msgstr "En ce moment"
 
-#: src/app/events/[eventId]/single-artist-event-details.tsx:95
+#: src/app/events/[eventId]/single-artist-event-details.tsx:99
 msgid "Location"
 msgstr "Lieu"
 
@@ -144,6 +144,10 @@ msgstr "minutes"
 msgid "No map available."
 msgstr "Aucune carte disponible."
 
+#: src/app/timetables/page.tsx:49
+msgid "No saved events"
+msgstr "Pas d'événements enregistrés"
+
 #: src/app/layout/navigation.tsx:18
 msgid "Now"
 msgstr "Maintenant"
@@ -154,10 +158,16 @@ msgstr "Publier"
 
 #: src/app/social/user-dialog.tsx:29
 #: src/app/social/user-dialog.tsx:41
+#: src/components/save-button/save-button.tsx:20
 msgid "Save"
 msgstr "Enregistrer"
 
-#: src/app/events/[eventId]/single-artist-event-details.tsx:125
+#: src/app/timetables/saved-events-filter.tsx:22
+#: src/components/save-button/save-button.tsx:20
+msgid "Saved"
+msgstr "Enregistrés"
+
+#: src/app/events/[eventId]/single-artist-event-details.tsx:129
 #: src/app/social/post.tsx:113
 msgid "Share"
 msgstr "Partager"
@@ -166,7 +176,7 @@ msgstr "Partager"
 msgid "Social"
 msgstr "Messages"
 
-#: src/app/events/[eventId]/single-artist-event-details.tsx:77
+#: src/app/events/[eventId]/single-artist-event-details.tsx:78
 msgid "Time"
 msgstr "Heure"
 
@@ -178,7 +188,7 @@ msgstr "Timetables"
 msgid "Verify"
 msgstr "Vérifier"
 
-#: src/app/events/[eventId]/single-artist-event-details.tsx:101
+#: src/app/events/[eventId]/single-artist-event-details.tsx:105
 msgid "View on map"
 msgstr "Voir sur la carte"
 

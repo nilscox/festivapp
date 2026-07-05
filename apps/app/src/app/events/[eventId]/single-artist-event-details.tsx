@@ -5,6 +5,7 @@ import { CalendarIcon, ClockIcon, Disc3Icon, MapIcon, MapPinIcon, Share2Icon } f
 import Link from 'next/link';
 
 import { EventImage } from '@/components/event-image';
+import { SaveEvent } from '@/components/save-button/save-event';
 import { ShareButton } from '@/components/share-button';
 import { getCurrentHostname, getNow } from '@/server-utils';
 
@@ -77,12 +78,15 @@ async function StartTimeInfo({ event }: { event: Event }) {
       <ClockIcon aria-label={t`Time`} className="size-5 text-dim mt-0.5" />
 
       <div>
-        <div>{intlFormat(event.start, { timeStyle: 'medium' })}</div>
+        <div>{intlFormat(event.start, { timeStyle: 'short' })}</div>
 
-        {isWithinInterval(event.start, { start: now, end: add(now, { hours: 6 }) }) && (
-          <div className="text-sm text-dim">{formatDistanceStrict(event.start, now, { addSuffix: true })}</div>
-        )}
+        {isWithinInterval(event.start, {
+          start: now,
+          end: add(now, { hours: 6 }),
+        }) && <div className="text-sm text-dim">{formatDistanceStrict(event.start, now, { addSuffix: true })}</div>}
       </div>
+
+      <SaveEvent eventId={event.id} />
     </li>
   );
 }
@@ -118,7 +122,7 @@ async function SocialLinks({ event, artist }: { event: Event; artist: Artist }) 
         url={`${await getCurrentHostname()}/events/${event.id}`}
         title={event.title ?? artist.name}
         type="button"
-        className="row items-center gap-2 rounded-md bg-gray-200 p-2"
+        className="row items-center gap-2 rounded-md bg-gray-200 p-2 cursor-pointer"
       >
         <Share2Icon className="size-6 shrink-0 text-gray-600" />
         <div className="text-sm font-semibold">
