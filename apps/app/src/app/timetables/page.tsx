@@ -1,10 +1,12 @@
 import { db, eventToView, EventView } from '@festivapp/persistence';
 import { assert, defined } from '@festivapp/utils';
+import { Trans } from '@lingui/react/macro';
 import { isEqual, isSameDay, startOfDay } from 'date-fns';
 import { uniqueWith } from 'remeda';
 
+import { SavedEventsFilter } from '@/app/timetables/saved-events-filter';
 import { configureI18n } from '@/i18n/i18n';
-import { getFestival, getNow } from '@/server-utils';
+import { getFestival, getNow, getSavedEvents } from '@/server-utils';
 
 import { EventBreak } from './event-break';
 import { LocationFilter } from './location-filter';
@@ -13,7 +15,7 @@ import { TimetableDay } from './timetable-day';
 export default async function ({ searchParams }: PageProps<'/timetables'>) {
   await configureI18n();
 
-  const search = await searchParams;
+  const search: { savedOnly?: string; location?: string } = await searchParams;
 
   const festival = await getFestival();
   const locations = await db.query.locations.findMany({
@@ -23,7 +25,7 @@ export default async function ({ searchParams }: PageProps<'/timetables'>) {
 
   const activeLocation = locations.find((location) => location.id === search.location) ?? defined(locations.at(0));
 
-  const events = await getEvents(activeLocation.id);
+  const events = await getEvents(activeLocation.id, Boolean(search.savedOnly));
 
   const days = uniqueWith(
     events.map((event) => startOfDay(event.start)),
@@ -32,18 +34,27 @@ export default async function ({ searchParams }: PageProps<'/timetables'>) {
 
   return (
     <div>
-      <header>
-        <LocationFilter locations={locations} active={activeLocation} />
+      <header className="row items-center justify-between">
+        <LocationFilter locations={locations} active={activeLocation} searchParams={search} />
+        <SavedEventsFilter isActive={Boolean(search.savedOnly)} searchParams={search} />
       </header>
 
-      {days.map((day) => (
-        <TimetableDay key={day.getTime()} day={day} events={events.filter((event) => isSameDay(event.start, day))} />
-      ))}
+      {events.length > 0 ? (
+        days.map((day) => (
+          <TimetableDay key={day.getTime()} day={day} events={events.filter((event) => isSameDay(event.start, day))} />
+        ))
+      ) : (
+        <div className="sticky top-2 z-10 mx-auto w-fit rounded-md bg-primary text-accent">
+          <p className="text-lg font-medium px-4 py-2">
+            <Trans>No saved events</Trans>
+          </p>
+        </div>
+      )}
     </div>
   );
 }
 
-async function getEvents(locationId: string) {
+async function getEvents(locationId: string, savedOnly: boolean) {
   const now = await getNow();
 
   const events = await db.query.events.findMany({
@@ -51,6 +62,12 @@ async function getEvents(locationId: string) {
     where: { locationId },
     orderBy: { start: 'asc' },
   });
+
+  if (savedOnly) {
+    const savedEvents = await getSavedEvents();
+
+    return events.filter(({ id }) => savedEvents.includes(id)).map((event) => eventToView(now, event));
+  }
 
   return addEventsBreaks(events.map((event) => eventToView(now, event)));
 }

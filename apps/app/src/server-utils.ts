@@ -28,7 +28,9 @@ export const getFestival = cache(async function () {
   const host = headersList.get('host');
   const subdomain = host?.split('.').at(0);
 
-  const festival = await db.query.festivals.findFirst({ where: { domain: subdomain } });
+  const festival = await db.query.festivals.findFirst({
+    where: { domain: subdomain },
+  });
 
   if (!festival) {
     notFound();
@@ -45,3 +47,30 @@ export const getUser = cache(async function () {
     return db.query.users.findFirst({ where: { authCode: authCode.value } });
   }
 });
+
+export const getSavedEvents = cache(async function () {
+  const cookieStore = await cookies();
+  const savedEvents: string[] = JSON.parse(cookieStore.get('savedEvents')?.value || JSON.stringify([]));
+
+  return savedEvents;
+});
+
+export const appendQuery = (
+  searchParams: Record<string, string | string[] | undefined>,
+  key: string,
+  value?: string,
+) => {
+  const params = new URLSearchParams(
+    Object.entries(searchParams).flatMap(([key, value]) =>
+      Array.isArray(value) ? value.map((value) => [key, value]) : [[key, value ?? '']],
+    ),
+  );
+
+  if (value === undefined) {
+    params.delete(key);
+  } else {
+    params.set(key, value);
+  }
+
+  return `?${params.toString()}`;
+};
