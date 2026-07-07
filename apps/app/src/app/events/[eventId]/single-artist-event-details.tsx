@@ -4,8 +4,8 @@ import { add, formatDistanceStrict, intlFormat, isWithinInterval } from 'date-fn
 import { CalendarIcon, ClockIcon, Disc3Icon, MapIcon, MapPinIcon, Share2Icon } from 'lucide-react';
 import Link from 'next/link';
 
+import { SaveEvent } from '@/app/components/save-button/save-event';
 import { EventImage } from '@/components/event-image';
-import { SaveEvent } from '@/components/save-button/save-event';
 import { ShareButton } from '@/components/share-button';
 import { getCurrentHostname, getNow } from '@/server-utils';
 
