@@ -57,10 +57,9 @@ export const getSavedEventIds = cache(async function () {
   return savedEvents;
 });
 
-export const updateQuery = (
-  searchParams: Record<string, string | string[] | undefined>,
-  update: (search: URLSearchParams) => void,
-): string => {
+type SearchParams = Record<string, string | string[] | undefined>;
+
+export const updateSearchParams = (searchParams: SearchParams, update: (search: URLSearchParams) => void): string => {
   const params = new URLSearchParams(
     Object.entries(searchParams).flatMap(([key, value]) =>
       Array.isArray(value) ? value.map((value) => [key, value]) : [[key, value ?? '']],
@@ -69,5 +68,15 @@ export const updateQuery = (
 
   update(params);
 
-  return `?${params.toString()}`;
+  return params.toString();
+};
+
+export const toggleSearchParam = (searchParams: SearchParams, name: string): string => {
+  return updateSearchParams(searchParams, (params) => {
+    if (params.get(name) === 'true') {
+      params.delete(name);
+    } else {
+      params.set(name, 'true');
+    }
+  });
 };
