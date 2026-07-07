@@ -4,7 +4,6 @@ import clsx from 'clsx';
 import { add, format, isWithinInterval } from 'date-fns';
 import { ClockIcon, MapPinIcon } from 'lucide-react';
 
-import { SaveEvent } from '@/components/save-button/save-event';
 import { getNow } from '@/server-utils';
 
 import { DistanceToNow } from './distance-to-now';
@@ -28,23 +27,17 @@ export function EventCard({ event, layout }: { event: EventView; layout?: 'large
         {layout === 'large' && event.isLive && <LiveBadge />}
       </div>
 
-      <div className="flex-1 divide-y divide-gray-200 min-w-0">
-        <div className="col gap-2 px-4 py-3">
-          <div className="row items-start justify-between gap-2">
-            <div className="text-lg font-medium truncate">{event.title}</div>
-            <StartTimeInfo event={event} layout={layout} />
-          </div>
-
-          <div className="line-clamp-2 text-sm text-dim truncate">{event.shortInfo}</div>
-
-          <div className="row flex-wrap items-center gap-3 text-sm leading-none text-dim">
-            <LocationInfo event={event} />
-            <TimeInfo event={event} />
-          </div>
+      <div className="col flex-1 gap-2 p-4">
+        <div className="row items-start justify-between gap-2">
+          <div className="text-lg font-medium">{event.title}</div>
+          <StartTimeInfo event={event} layout={layout} />
         </div>
 
-        <div className={clsx('row justify-end px-4 text-sm', layout === 'large' ? ' py-2' : 'py-1')}>
-          <SaveEvent eventId={event.id} />
+        <div className="line-clamp-2 text-sm text-dim">{event.shortInfo}</div>
+
+        <div className="row flex-wrap items-center gap-3 text-sm leading-none text-dim">
+          <LocationInfo event={event} />
+          <TimeInfo event={event} />
         </div>
       </div>
     </div>

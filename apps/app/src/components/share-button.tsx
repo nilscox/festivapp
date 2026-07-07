@@ -7,11 +7,7 @@ export function ShareButton({
   title,
   text,
   ...props
-}: {
-  url: string;
-  title?: string;
-  text?: string;
-} & React.ComponentProps<'button'>) {
+}: { url: string; title?: string; text?: string } & React.ComponentProps<'button'>) {
   const { t } = useLingui();
 
   const handleShare = async (url: string, title?: string, text?: string) => {

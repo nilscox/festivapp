@@ -48,29 +48,26 @@ export const getUser = cache(async function () {
   }
 });
 
-export const getSavedEvents = cache(async function () {
+export const getSavedEventIds = cache(async function () {
   const cookieStore = await cookies();
-  const savedEvents: string[] = JSON.parse(cookieStore.get('savedEvents')?.value || JSON.stringify([]));
+  const rawSavedEvents = cookieStore.get('savedEvents')?.value;
+
+  const savedEvents = new Set(rawSavedEvents?.split(';'));
 
   return savedEvents;
 });
 
-export const appendQuery = (
+export const updateQuery = (
   searchParams: Record<string, string | string[] | undefined>,
-  key: string,
-  value?: string,
-) => {
+  update: (search: URLSearchParams) => void,
+): string => {
   const params = new URLSearchParams(
     Object.entries(searchParams).flatMap(([key, value]) =>
       Array.isArray(value) ? value.map((value) => [key, value]) : [[key, value ?? '']],
     ),
   );
 
-  if (value === undefined) {
-    params.delete(key);
-  } else {
-    params.set(key, value);
-  }
+  update(params);
 
   return `?${params.toString()}`;
 };

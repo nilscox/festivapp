@@ -6,7 +6,7 @@ import { uniqueWith } from 'remeda';
 
 import { SavedEventsFilter } from '@/app/timetables/saved-events-filter';
 import { configureI18n } from '@/i18n/i18n';
-import { getFestival, getNow, getSavedEvents } from '@/server-utils';
+import { getFestival, getNow, getSavedEventIds } from '@/server-utils';
 
 import { EventBreak } from './event-break';
 import { LocationFilter } from './location-filter';
@@ -25,7 +25,8 @@ export default async function ({ searchParams }: PageProps<'/timetables'>) {
 
   const activeLocation = locations.find((location) => location.id === search.location) ?? defined(locations.at(0));
 
-  const events = await getEvents(activeLocation.id, Boolean(search.savedOnly));
+  const savedOnly = search.savedOnly === 'true';
+  const events = await getEvents(activeLocation.id, savedOnly);
 
   const days = uniqueWith(
     events.map((event) => startOfDay(event.start)),
@@ -46,7 +47,7 @@ export default async function ({ searchParams }: PageProps<'/timetables'>) {
       ) : (
         <div className="sticky top-2 z-10 mx-auto w-fit rounded-md bg-primary text-accent">
           <p className="text-lg font-medium px-4 py-2">
-            <Trans>No saved events</Trans>
+            {savedOnly ? <Trans>No saved events</Trans> : <Trans>No events</Trans>}
           </p>
         </div>
       )}
@@ -64,9 +65,9 @@ async function getEvents(locationId: string, savedOnly: boolean) {
   });
 
   if (savedOnly) {
-    const savedEvents = await getSavedEvents();
+    const savedEvents = await getSavedEventIds();
 
-    return events.filter(({ id }) => savedEvents.includes(id)).map((event) => eventToView(now, event));
+    return events.filter(({ id }) => savedEvents.has(id)).map((event) => eventToView(now, event));
   }
 
   return addEventsBreaks(events.map((event) => eventToView(now, event)));

@@ -4,14 +4,14 @@ import { Trans } from '@lingui/react/macro';
 import clsx from 'clsx';
 import { BookmarkIcon } from 'lucide-react';
 
-import { onSaveEvent } from '@/components/save-button/actions';
+import { onSaveEvent } from './actions';
 
 export function SaveButton({ eventId, isSaved }: { eventId: string; isSaved: boolean }) {
-  const handleSave = async (eventButton: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    eventButton.stopPropagation();
-    eventButton.preventDefault();
+  const handleSave: React.MouseEventHandler = (event) => {
+    event.stopPropagation();
+    event.preventDefault();
 
-    await onSaveEvent(eventId);
+    onSaveEvent(eventId);
   };
 
   return (

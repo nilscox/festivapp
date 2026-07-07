@@ -83,7 +83,7 @@ msgid "Download map"
 msgstr "Télécharger la carte"
 
 #. placeholder {0}: error.message
-#: src/components/share-button.tsx:28
+#: src/components/share-button.tsx:24
 msgid "Error while sharing: {0}"
 msgstr "Erreur lors du partage: {0}"
 
@@ -104,12 +104,12 @@ msgstr "Je sais, c'est relou de devoir se connecter. Mais c'est nécessaire pour
 msgid "Invalid authentication code"
 msgstr "Code d'authentification invalide"
 
-#: src/components/share-button.tsx:21
+#: src/components/share-button.tsx:17
 msgid "Link copied to clipboard"
 msgstr "Lien copié dans le clipboard"
 
-#: src/components/event-card.tsx:58
-#: src/components/event-card.tsx:70
+#: src/components/event-card.tsx:51
+#: src/components/event-card.tsx:63
 msgid "Live"
 msgstr "Live"
 
@@ -140,13 +140,17 @@ msgstr "Carte"
 msgid "minutes"
 msgstr "minutes"
 
+#: src/app/timetables/page.tsx:50
+msgid "No events"
+msgstr "Aucun événement"
+
 #: src/app/map/page.tsx:22
 msgid "No map available."
 msgstr "Aucune carte disponible."
 
-#: src/app/timetables/page.tsx:49
+#: src/app/timetables/page.tsx:50
 msgid "No saved events"
-msgstr "Pas d'événements enregistrés"
+msgstr "Aucun événement enregistré"
 
 #: src/app/layout/navigation.tsx:18
 msgid "Now"
@@ -156,14 +160,14 @@ msgstr "Maintenant"
 msgid "Post"
 msgstr "Publier"
 
+#: src/app/components/save-button/save-button.tsx:20
 #: src/app/social/user-dialog.tsx:29
 #: src/app/social/user-dialog.tsx:41
-#: src/components/save-button/save-button.tsx:20
 msgid "Save"
 msgstr "Enregistrer"
 
-#: src/app/timetables/saved-events-filter.tsx:22
-#: src/components/save-button/save-button.tsx:20
+#: src/app/components/save-button/save-button.tsx:20
+#: src/app/timetables/saved-events-filter.tsx:28
 msgid "Saved"
 msgstr "Enregistrés"
 
