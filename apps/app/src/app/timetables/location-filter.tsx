@@ -2,7 +2,7 @@ import { Location } from '@festivapp/persistence';
 import clsx from 'clsx';
 import Link from 'next/link';
 
-import { updateQuery } from '@/server-utils';
+import { updateSearchParams } from '@/server-utils';
 
 export function LocationFilter({
   locations,
@@ -18,9 +18,7 @@ export function LocationFilter({
       {locations.map((location) => (
         <Link
           key={location.id}
-          href={updateQuery(searchParams, (params: URLSearchParams) => {
-            params.set('location', location.id);
-          })}
+          href={updateSearchParams(searchParams, (params) => params.set('location', location.id))}
           className={clsx('rounded-full px-2 py-1.5 text-sm leading-none font-medium', {
             'bg-primary text-accent': location.id !== active.id,
             'bg-accent text-primary': location.id === active.id,
