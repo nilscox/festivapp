@@ -13,7 +13,7 @@ export function SavedEventsFilter({
 }) {
   return (
     <Link
-      href={toggleSearchParam(searchParams, 'savedOnly')}
+      href={`?${toggleSearchParam(searchParams, 'savedOnly')}`}
       className={clsx('rounded-full px-2 py-1.5 text-sm leading-none font-medium', {
         'bg-primary text-accent': !isActive,
         'bg-accent text-primary': isActive,
