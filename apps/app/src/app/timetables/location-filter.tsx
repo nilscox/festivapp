@@ -18,7 +18,7 @@ export function LocationFilter({
       {locations.map((location) => (
         <Link
           key={location.id}
-          href={updateSearchParams(searchParams, (params) => params.set('location', location.id))}
+          href={`?${updateSearchParams(searchParams, (params) => params.set('location', location.id))}`}
           className={clsx('rounded-full px-2 py-1.5 text-sm leading-none font-medium', {
             'bg-primary text-accent': location.id !== active.id,
             'bg-accent text-primary': location.id === active.id,

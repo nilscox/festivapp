@@ -59,7 +59,10 @@ export const getSavedEventIds = cache(async function () {
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-export const updateSearchParams = (searchParams: SearchParams, update: (search: URLSearchParams) => void): string => {
+export const updateSearchParams = (
+  searchParams: SearchParams,
+  update: (search: URLSearchParams) => void,
+): URLSearchParams => {
   const params = new URLSearchParams(
     Object.entries(searchParams).flatMap(([key, value]) =>
       Array.isArray(value) ? value.map((value) => [key, value]) : [[key, value ?? '']],
@@ -68,10 +71,10 @@ export const updateSearchParams = (searchParams: SearchParams, update: (search: 
 
   update(params);
 
-  return params.toString();
+  return params;
 };
 
-export const toggleSearchParam = (searchParams: SearchParams, name: string): string => {
+export const toggleSearchParam = (searchParams: SearchParams, name: string): URLSearchParams => {
   return updateSearchParams(searchParams, (params) => {
     if (params.get(name) === 'true') {
       params.delete(name);
