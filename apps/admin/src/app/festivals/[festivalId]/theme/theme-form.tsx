@@ -51,6 +51,10 @@ export function ThemeForm({ festival }: { festival: Festival }) {
         <ImageInput name="backgroundImage" src={festival.backgroundImage} />
       </Field>
 
+      <Field label="App icon" error={fieldError('icon')} hint="Used as the PWA icon. Leave empty to keep the current image">
+        <ImageInput name="icon" src={festival.icon} />
+      </Field>
+
       <Field label="Global styles" error={fieldError('globalStyles')} hint="Raw CSS">
         <Textarea
           name="globalStyles"

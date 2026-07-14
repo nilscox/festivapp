@@ -20,6 +20,7 @@ export const festivals = pgTable('festivals', {
   start: timestamp().notNull(),
   end: timestamp().notNull(),
   map: varchar({ length: 255 }),
+  icon: varchar({ length: 255 }),
   primaryColor: varchar({ length: 16 }),
   accentColor: varchar({ length: 16 }),
   backgroundImage: varchar({ length: 255 }),

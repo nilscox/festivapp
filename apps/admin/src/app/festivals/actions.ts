@@ -63,6 +63,7 @@ export async function updateFestival(
         start: z.coerce.date({ error: 'Invalid start date' }).optional(),
         end: z.coerce.date({ error: 'Invalid end date' }).optional(),
         map: z.instanceof(File).optional(),
+        icon: z.instanceof(File).optional(),
         backgroundImage: z.instanceof(File).optional(),
         primaryColor: z.string().nullable().optional(),
         accentColor: z.string().nullable().optional(),
@@ -86,6 +87,10 @@ export async function updateFestival(
 
     if (parsed.map && parsed.map.size > 0) {
       update.map = await saveUploadedImage(parsed.map);
+    }
+
+    if (parsed.icon && parsed.icon.size > 0) {
+      update.icon = await saveUploadedImage(parsed.icon);
     }
 
     if (parsed.backgroundImage && parsed.backgroundImage.size > 0) {
