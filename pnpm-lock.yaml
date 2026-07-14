@@ -114,6 +114,9 @@ importers:
       '@lingui/core':
         specifier: ^6.2.0
         version: 6.2.0
+      '@lingui/format-po':
+        specifier: ^6.5.0
+        version: 6.5.0
       '@lingui/react':
         specifier: ^6.2.0
         version: 6.2.0(react@19.2.4)
@@ -925,6 +928,10 @@ packages:
     resolution: {integrity: sha512-SVZlXH0MJgS6Cu9NFCtJeqT7VzbKp5VDQcd9j51x6lRCzknPJS4CjJ4GWzu0RHoTmtQyoADLzuQTPrzD0ommLA==}
     engines: {node: '>=22.19.0'}
 
+  '@lingui/conf@6.5.0':
+    resolution: {integrity: sha512-zfR4uuzev2mz9ayVB2AwEQlzodDKgMcq/OR3pdHiJFCl80UQRsFA5Oqe67TmxA7SSbTygK+U0nS0qrotmXjyrA==}
+    engines: {node: '>=22.19.0'}
+
   '@lingui/core@6.2.0':
     resolution: {integrity: sha512-iNxDy9+GfwBGi9YVgAt7q0V7hA7kwt5t+akScFWvIyzII0KpMd4oLq0JyPsedsKloWVmL8V0PuvtThM0Ja4SWg==}
     engines: {node: '>=22.19.0'}
@@ -938,8 +945,16 @@ packages:
     resolution: {integrity: sha512-rchqiXGySJagw/sN+fL6Wi9A1hAooSO7B/5qPmHbH2DP5kGnMbE61MwqvhGaJQrWMtnac9AGz1PC4AKBWKVAZw==}
     engines: {node: '>=22.19.0'}
 
+  '@lingui/format-po@6.5.0':
+    resolution: {integrity: sha512-jK2JhYpKuDMG3VP8T0W6X5SL0GYRkeaTOlX3EiRggDWNJqc6wFxJP0vTZScMlyBXHC+v0OUxy+4Ja+9kVJwKsQ==}
+    engines: {node: '>=22.19.0'}
+
   '@lingui/message-utils@6.2.0':
     resolution: {integrity: sha512-oFmD6xYO40kC/7qBdxieEVekoYNI0KWtizCOanrlT6RXYPSwn5hH4Hf6u0mErEf23m/zNGDMO+D6YNQ4z7IxwQ==}
+    engines: {node: '>=22.19.0'}
+
+  '@lingui/message-utils@6.5.0':
+    resolution: {integrity: sha512-qZZijYERMADeWVJbpQGyFxicW3F17CjtR2hnzo0VgT4cICPE27e0zBieQHxuUD/pj4dmyOOldVhWhHs5CN6ABw==}
     engines: {node: '>=22.19.0'}
 
   '@lingui/react@6.2.0':
@@ -3721,6 +3736,13 @@ snapshots:
       lilconfig: 3.1.3
       normalize-path: 3.0.0
 
+  '@lingui/conf@6.5.0':
+    dependencies:
+      jest-validate: 29.7.0
+      jiti: 2.7.0
+      lilconfig: 3.1.3
+      normalize-path: 3.0.0
+
   '@lingui/core@6.2.0':
     dependencies:
       '@lingui/babel-plugin-lingui-macro': 6.2.0
@@ -3734,7 +3756,19 @@ snapshots:
       '@lingui/message-utils': 6.2.0
       pofile-ts: 4.0.3
 
+  '@lingui/format-po@6.5.0':
+    dependencies:
+      '@lingui/conf': 6.5.0
+      '@lingui/message-utils': 6.5.0
+      pofile-ts: 4.0.3
+
   '@lingui/message-utils@6.2.0':
+    dependencies:
+      '@messageformat/date-skeleton': 1.1.0
+      '@messageformat/parser': 5.1.1
+      js-sha256: 0.10.1
+
+  '@lingui/message-utils@6.5.0':
     dependencies:
       '@messageformat/date-skeleton': 1.1.0
       '@messageformat/parser': 5.1.1
