@@ -118,12 +118,14 @@ async function cacheFirst(request) {
 }
 
 async function staleWhileRevalidate(request) {
-  const cache = await caches.open(RUNTIME);
-  const cached = await cache.match(request);
+  // Look across all caches (precache included) — uploads are precached, not in RUNTIME.
+  const cached = await caches.match(request, { ignoreVary: true });
 
   const network = fetch(request)
     .then((res) => {
-      if (res.ok) void cache.put(request, res.clone());
+      if (res.ok) {
+        void caches.open(RUNTIME).then((cache) => cache.put(request, res.clone()));
+      }
       return res;
     })
     .catch(() => cached);
