@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="FestivApp">
+  <rect width="512" height="512" rx="120" fill="#6d28d9" />
+  <path d="M256 132l64 64-64 64-64-64z" fill="#fff" />
+  <rect x="168" y="300" width="176" height="26" rx="13" fill="#fff" fill-opacity="0.92" />
+  <rect x="196" y="348" width="120" height="26" rx="13" fill="#fff" fill-opacity="0.68" />
+</svg>

@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Bricolage Grotesque Variable", "Bricolage Grotesque", system-ui, sans-serif;
+  --font-body: "Inter Variable", Inter, system-ui, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, monospace;
+
+  --color-paper: #fbfaf6;
+  --color-ink: #16151b;
+  --color-muted: #6c6a75;
+  --color-line: #e8e5dd;
+  --color-accent: #6d28d9;
+  --color-ink-soft: color-mix(in srgb, var(--color-ink) 74%, var(--color-paper));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-paper: #131118;
+    --color-ink: #f6f3ec;
+    --color-muted: #9b98a4;
+    --color-line: #272430;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@layer components {
+  .wordmark {
+    position: relative;
+    display: inline-block;
+    align-self: flex-start;
+  }
+
+  .wordmark > span {
+    position: relative;
+    z-index: 1;
+  }
+
+  .wordmark::after {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    left: -0.06em;
+    right: -0.06em;
+    bottom: 0.12em;
+    height: 0.3em;
+    border-radius: 0.06em;
+    background: color-mix(in srgb, var(--color-accent) 62%, transparent);
+    transform: rotate(-1.6deg);
+    transform-origin: left center;
+    animation: swipe 0.55s 0.32s both cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .reveal {
+    animation: rise 0.55s both;
+  }
+
+  .pulse {
+    animation: pulse 2.4s ease-out infinite;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.7rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes swipe {
+  from {
+    transform: rotate(-1.6deg) scaleX(0);
+  }
+
+  to {
+    transform: rotate(-1.6deg) scaleX(1);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 55%, transparent);
+  }
+
+  70% {
+    box-shadow: 0 0 0 0.5rem transparent;
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .pulse {
+    animation: none;
+  }
+
+  .wordmark::after {
+    animation: none;
+    transform: rotate(-1.6deg);
+  }
+}

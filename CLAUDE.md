@@ -51,6 +51,12 @@ Clients (`apps/app`, `apps/admin`, `apps/landing`) are added in later milestones
   reading the code. The doc comments in `packages/contracts` are the exception —
   keep them; they are the API documentation.
 - **Blank lines before and after blocks** (`if`, `for`, …).
+- **kebab-case file names** — `use-clock.ts`, `shell.tsx` (not `useClock.ts` / `Shell.tsx`),
+  even for files exporting a PascalCase React component.
+- **Straight ASCII quotes and apostrophes** in code and UI copy — not curly/smart
+  quotes (no U+2018/U+2019/U+201C/U+201D).
+- **Prefer Tailwind scale tokens; avoid arbitrary values** (`[...]`) unless strictly
+  required — e.g. a responsive `clamp()`, animation delays, `env()`.
 - Formatting and linting are enforced by oxfmt and oxlint — run `pnpm format` and
   `pnpm lint`.
 
