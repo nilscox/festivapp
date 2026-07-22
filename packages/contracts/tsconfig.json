@@ -1,0 +1,4 @@
+{
+  "extends": "@festivapp/config/tsconfig.base.json",
+  "include": ["src"]
+}
