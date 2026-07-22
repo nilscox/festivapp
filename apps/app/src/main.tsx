@@ -7,11 +7,12 @@ import "./styles.css";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { RouterProvider } from "@tanstack/react-router";
 import { del, get, set } from "idb-keyval";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { registerSW } from "virtual:pwa-register";
-import { App } from "./app.tsx";
+import { router } from "./router.tsx";
 
 registerSW({ immediate: true });
 
@@ -43,7 +44,7 @@ if (container === null) {
 createRoot(container).render(
   <StrictMode>
     <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
-      <App />
+      <RouterProvider router={router} />
     </PersistQueryClientProvider>
   </StrictMode>,
 );

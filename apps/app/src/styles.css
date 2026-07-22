@@ -39,32 +39,6 @@ body {
 }
 
 @layer components {
-  .wordmark {
-    position: relative;
-    display: inline-block;
-    align-self: flex-start;
-  }
-
-  .wordmark > span {
-    position: relative;
-    z-index: 1;
-  }
-
-  .wordmark::after {
-    content: "";
-    position: absolute;
-    z-index: 0;
-    left: -0.06em;
-    right: -0.06em;
-    bottom: 0.12em;
-    height: 0.3em;
-    border-radius: 0.06em;
-    background: color-mix(in srgb, var(--color-accent) 62%, transparent);
-    transform: rotate(-1.6deg);
-    transform-origin: left center;
-    animation: swipe 0.55s 0.32s both cubic-bezier(0.2, 0.7, 0.2, 1);
-  }
-
   .reveal {
     animation: rise 0.55s both;
   }
@@ -86,16 +60,6 @@ body {
   }
 }
 
-@keyframes swipe {
-  from {
-    transform: rotate(-1.6deg) scaleX(0);
-  }
-
-  to {
-    transform: rotate(-1.6deg) scaleX(1);
-  }
-}
-
 @keyframes pulse {
   0% {
     box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 55%, transparent);
@@ -114,10 +78,5 @@ body {
   .reveal,
   .pulse {
     animation: none;
-  }
-
-  .wordmark::after {
-    animation: none;
-    transform: rotate(-1.6deg);
   }
 }
