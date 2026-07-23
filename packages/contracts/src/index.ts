@@ -23,30 +23,53 @@ export type TenantConfig = {
 };
 
 /** A place where sessions happen (a stage, tent, room, …). */
-export type Stage = {
+export type Location = {
   id: string;
   name: string;
-  /** Sort order among the tenant's stages. */
+  /** Sort order among the tenant's locations. */
   position: number;
 };
 
-/** A track/type of session (band, DJ set, talk, workshop, …). */
-export type Category = {
+/** The kind of a session; governs which participant role it can carry. */
+export type SessionType = "live" | "dj_set" | "talk" | "workshop" | "other";
+
+/** A link to a participant's presence on an external platform. */
+export type SocialLink = {
+  /** Platform key (e.g. "instagram", "spotify", "website"). */
+  platform: string;
+  url: string;
+};
+
+/** An act on the line-up: a person or a band, a speaker, or a facilitator. */
+export type Participant = {
   id: string;
   name: string;
-  /** Optional CSS color used to tint the category in the UI. */
-  color: string | null;
-  /** Sort order among the tenant's categories. */
-  position: number;
+  description: string | null;
+  imageUrl: string | null;
+  /** Where the act is from. Artist role only; null otherwise. */
+  origin: string | null;
+  /** Record label. Artist role only; null otherwise. */
+  label: string | null;
+  /** Musical styles/genres. Artist role only; empty otherwise. */
+  styles: string[];
+  socialLinks: SocialLink[];
 };
 
 /** A scheduled item in the timetable. */
 export type Session = {
   id: string;
-  stageId: string;
-  categoryId: string | null;
-  title: string;
+  locationId: string;
+  type: SessionType;
+  /**
+   * Display title. Null when the session has none and no fallback applies;
+   * for a single-artist `dj_set`/`live`, the server fills this with the
+   * artist's name.
+   */
+  title: string | null;
+  /** Display description, with the same single-artist fallback as `title`. */
   description: string | null;
+  /** Participants on this session, in presentation order. */
+  participantIds: string[];
   /** Start time as an ISO 8601 string. */
   startsAt: string;
   /** End time as an ISO 8601 string. */
@@ -60,9 +83,7 @@ export type Session = {
  */
 export type BootstrapResponse = {
   tenant: TenantConfig;
-  stages: Stage[];
-  categories: Category[];
+  locations: Location[];
+  participants: Participant[];
   sessions: Session[];
-  /** Opaque version marker for the tenant's data; changes when data changes. */
-  version: string;
 };

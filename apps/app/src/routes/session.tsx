@@ -1,7 +1,47 @@
+import type { Participant } from "@festivapp/contracts";
 import { createRoute, Link } from "@tanstack/react-router";
 import { formatDayLabel, formatTime } from "../lib/datetime.ts";
+import { formatSessionType, participantsHeading, sessionTitle } from "../lib/session.ts";
 import { useBootstrap } from "../use-bootstrap.ts";
 import { rootRoute } from "./root.tsx";
+
+function ParticipantEntry({ participant }: { participant: Participant }) {
+  const meta = [participant.origin, ...participant.styles, participant.label].filter(
+    (value): value is string => Boolean(value),
+  );
+
+  return (
+    <div className="flex flex-col gap-1 border-t border-line py-3.5">
+      <span className="font-display text-lg leading-tight font-semibold">{participant.name}</span>
+
+      {meta.length > 0 ? (
+        <span className="font-mono text-xs text-muted">{meta.join(" · ")}</span>
+      ) : null}
+
+      {participant.description ? (
+        <p className="max-w-prose text-sm leading-normal text-ink-soft">
+          {participant.description}
+        </p>
+      ) : null}
+
+      {participant.socialLinks.length > 0 ? (
+        <span className="flex flex-wrap gap-3 pt-0.5">
+          {participant.socialLinks.map((link) => (
+            <a
+              key={link.url}
+              href={link.url}
+              target="_blank"
+              rel="noreferrer"
+              className="font-mono text-xs tracking-wider text-accent uppercase"
+            >
+              {link.platform}
+            </a>
+          ))}
+        </span>
+      ) : null}
+    </div>
+  );
+}
 
 function SessionDetail() {
   const query = useBootstrap();
@@ -12,7 +52,7 @@ function SessionDetail() {
     return null;
   }
 
-  const { tenant, stages, categories, sessions } = data;
+  const { tenant, locations, participants, sessions } = data;
   const tz = tenant.timezone;
   const session = sessions.find((item) => item.id === sessionId);
 
@@ -27,10 +67,11 @@ function SessionDetail() {
     );
   }
 
-  const stage = stages.find((item) => item.id === session.stageId);
-  const category = session.categoryId
-    ? categories.find((item) => item.id === session.categoryId)
-    : undefined;
+  const location = locations.find((item) => item.id === session.locationId);
+  const participantById = new Map(participants.map((participant) => [participant.id, participant]));
+  const lineup = session.participantIds
+    .map((id) => participantById.get(id))
+    .filter((participant): participant is Participant => participant !== undefined);
 
   return (
     <div className="reveal flex flex-1 flex-col gap-6 py-2">
@@ -45,26 +86,28 @@ function SessionDetail() {
         </span>
 
         <h1 className="font-display text-3xl leading-tight font-extrabold tracking-tight">
-          {session.title}
+          {sessionTitle(session)}
         </h1>
 
         <span className="flex items-center gap-2 font-mono text-sm text-muted">
-          {stage ? <span>{stage.name}</span> : null}
-          {category ? (
-            <span className="inline-flex items-center gap-1">
-              <span
-                className="size-2 rounded-full"
-                style={{ backgroundColor: category.color ?? "currentColor" }}
-                aria-hidden="true"
-              />
-              {category.name}
-            </span>
-          ) : null}
+          {location ? <span>{location.name}</span> : null}
+          <span className="text-accent/70 uppercase">{formatSessionType(session.type)}</span>
         </span>
       </div>
 
       {session.description ? (
         <p className="max-w-prose text-base leading-normal text-ink-soft">{session.description}</p>
+      ) : null}
+
+      {lineup.length > 0 ? (
+        <section className="flex flex-col">
+          <h2 className="pb-1 font-mono text-xs tracking-widest text-accent/70 uppercase">
+            {participantsHeading(session.type, lineup.length)}
+          </h2>
+          {lineup.map((participant) => (
+            <ParticipantEntry key={participant.id} participant={participant} />
+          ))}
+        </section>
       ) : null}
     </div>
   );

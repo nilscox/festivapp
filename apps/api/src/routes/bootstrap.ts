@@ -1,8 +1,12 @@
-import type { BootstrapResponse } from "@festivapp/contracts";
+import type {
+  BootstrapResponse,
+  Participant,
+  Session,
+} from "@festivapp/contracts";
 import { asc, eq } from "drizzle-orm";
 import { Router } from "express";
 import { db } from "../db/client.ts";
-import { categories, sessions, stages } from "../db/schema.ts";
+import * as schema from "../db/schema.ts";
 
 export const bootstrapRouter = Router();
 
@@ -11,33 +15,70 @@ bootstrapRouter.get("/bootstrap", async (req, res) => {
 
   if (!tenant) {
     res.status(404).json({ error: "tenant_not_found" });
-
     return;
   }
 
-  const [stageRows, categoryRows, sessionRows] = await Promise.all([
-    db.select().from(stages).where(eq(stages.tenantId, tenant.id)).orderBy(asc(stages.position)),
-    db
-      .select()
-      .from(categories)
-      .where(eq(categories.tenantId, tenant.id))
-      .orderBy(asc(categories.position)),
-    db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.tenantId, tenant.id))
-      .orderBy(asc(sessions.startsAt)),
-  ]);
+  const [locationRows, participantRows, sessionRows, linkRows] =
+    await Promise.all([
+      db
+        .select()
+        .from(schema.locations)
+        .where(eq(schema.locations.tenantId, tenant.id))
+        .orderBy(asc(schema.locations.position)),
+      db
+        .select()
+        .from(schema.participants)
+        .where(eq(schema.participants.tenantId, tenant.id))
+        .orderBy(asc(schema.participants.name)),
+      db
+        .select()
+        .from(schema.sessions)
+        .where(eq(schema.sessions.tenantId, tenant.id))
+        .orderBy(asc(schema.sessions.startsAt)),
+      db
+        .select()
+        .from(schema.sessionParticipants)
+        .innerJoin(
+          schema.sessions,
+          eq(schema.sessionParticipants.sessionId, schema.sessions.id),
+        )
+        .where(eq(schema.sessions.tenantId, tenant.id))
+        .orderBy(asc(schema.sessionParticipants.position)),
+    ]);
 
-  const updatedTimes = [
-    tenant.updatedAt,
-    ...stageRows.map((row) => row.updatedAt),
-    ...categoryRows.map((row) => row.updatedAt),
-    ...sessionRows.map((row) => row.updatedAt),
-  ];
-  const version = new Date(Math.max(...updatedTimes.map((date) => date.getTime()))).toISOString();
+  const sessionParticipantIds = new Map<string, Set<string>>();
 
-  const body: BootstrapResponse = {
+  for (const { session_participants: link } of linkRows) {
+    if (!sessionParticipantIds.has(link.sessionId)) {
+      sessionParticipantIds.set(link.sessionId, new Set());
+    }
+
+    sessionParticipantIds.get(link.sessionId)?.add(link.participantId);
+  }
+
+  const participants: Participant[] = participantRows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    imageUrl: row.imageUrl,
+    origin: row.origin,
+    label: row.label,
+    styles: row.styles,
+    socialLinks: row.socialLinks,
+  }));
+
+  const sessions: Session[] = sessionRows.map((row) => ({
+    id: row.id,
+    locationId: row.locationId,
+    type: row.type,
+    title: row.title,
+    description: row.description,
+    startsAt: row.startsAt.toISOString(),
+    endsAt: row.endsAt.toISOString(),
+    participantIds: Array.from(sessionParticipantIds.get(row.id) ?? []),
+  }));
+
+  res.json({
     tenant: {
       id: tenant.id,
       name: tenant.name,
@@ -45,24 +86,12 @@ bootstrapRouter.get("/bootstrap", async (req, res) => {
       timezone: tenant.timezone,
       theme: tenant.theme,
     },
-    stages: stageRows.map((row) => ({ id: row.id, name: row.name, position: row.position })),
-    categories: categoryRows.map((row) => ({
+    locations: locationRows.map((row) => ({
       id: row.id,
       name: row.name,
-      color: row.color,
       position: row.position,
     })),
-    sessions: sessionRows.map((row) => ({
-      id: row.id,
-      stageId: row.stageId,
-      categoryId: row.categoryId,
-      title: row.title,
-      description: row.description,
-      startsAt: row.startsAt.toISOString(),
-      endsAt: row.endsAt.toISOString(),
-    })),
-    version,
-  };
-
-  res.json(body);
+    participants,
+    sessions,
+  } satisfies BootstrapResponse);
 });

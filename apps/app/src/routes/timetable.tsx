@@ -1,16 +1,24 @@
+import type { SessionType } from "@festivapp/contracts";
 import { createRoute, Link } from "@tanstack/react-router";
 import { SessionCard } from "../components/session-card.tsx";
 import { dayKey, formatDayLabel } from "../lib/datetime.ts";
+import { formatSessionType } from "../lib/session.ts";
 import { useBootstrap } from "../use-bootstrap.ts";
 import { rootRoute } from "./root.tsx";
 
-type View = "agenda" | "stages";
+type View = "agenda" | "locations";
 
 type TimetableSearch = {
   day?: string;
   view?: View;
-  category?: string;
+  type?: SessionType;
 };
+
+const SESSION_TYPES: SessionType[] = ["dj_set", "live", "talk", "workshop", "other"];
+
+function isSessionType(value: unknown): value is SessionType {
+  return typeof value === "string" && (SESSION_TYPES as string[]).includes(value);
+}
 
 function pill(active: boolean): string {
   const base = "rounded-full border px-3 py-1 font-mono text-xs";
@@ -26,12 +34,11 @@ function Timetable() {
     return null;
   }
 
-  const { tenant, stages, categories, sessions } = data;
+  const { tenant, locations, sessions } = data;
   const tz = tenant.timezone;
   const view = search.view ?? "agenda";
 
-  const stageById = new Map(stages.map((stage) => [stage.id, stage]));
-  const categoryById = new Map(categories.map((category) => [category.id, category]));
+  const locationById = new Map(locations.map((location) => [location.id, location]));
 
   const dayIsoByKey = new Map<string, string>();
   for (const session of sessions) {
@@ -51,14 +58,18 @@ function Timetable() {
 
   const selectedDay = search.day && days.includes(search.day) ? search.day : firstDay;
 
+  const typesPresent = SESSION_TYPES.filter((type) =>
+    sessions.some((session) => session.type === type),
+  );
+
   const visible = sessions.filter(
     (session) =>
       dayKey(session.startsAt, tz) === selectedDay &&
-      (search.category === undefined || session.categoryId === search.category),
+      (search.type === undefined || session.type === search.type),
   );
 
-  const stagesWithSessions = stages.filter((stage) =>
-    visible.some((session) => session.stageId === stage.id),
+  const locationsWithSessions = locations.filter((location) =>
+    visible.some((session) => session.locationId === location.id),
   );
 
   return (
@@ -68,7 +79,7 @@ function Timetable() {
           <Link
             key={day}
             to="/"
-            search={{ day, view, category: search.category }}
+            search={{ day, view, type: search.type }}
             className={`-mb-px border-b-2 pb-2 font-mono text-xs tracking-wider uppercase ${
               day === selectedDay ? "border-accent text-ink" : "border-transparent text-muted"
             }`}
@@ -80,11 +91,11 @@ function Timetable() {
 
       <div className="flex flex-col gap-3">
         <div className="flex gap-2 uppercase">
-          {(["agenda", "stages"] as const).map((option) => (
+          {(["agenda", "locations"] as const).map((option) => (
             <Link
               key={option}
               to="/"
-              search={{ day: selectedDay, view: option, category: search.category }}
+              search={{ day: selectedDay, view: option, type: search.type }}
               className={pill(option === view)}
             >
               {option}
@@ -95,19 +106,19 @@ function Timetable() {
         <div className="flex flex-wrap gap-2">
           <Link
             to="/"
-            search={{ day: selectedDay, view, category: undefined }}
-            className={pill(search.category === undefined)}
+            search={{ day: selectedDay, view, type: undefined }}
+            className={pill(search.type === undefined)}
           >
             All
           </Link>
-          {categories.map((category) => (
+          {typesPresent.map((type) => (
             <Link
-              key={category.id}
+              key={type}
               to="/"
-              search={{ day: selectedDay, view, category: category.id }}
-              className={pill(search.category === category.id)}
+              search={{ day: selectedDay, view, type }}
+              className={pill(search.type === type)}
             >
-              {category.name}
+              {formatSessionType(type)}
             </Link>
           ))}
         </div>
@@ -115,21 +126,20 @@ function Timetable() {
 
       {visible.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted">Nothing scheduled here yet.</p>
-      ) : view === "stages" ? (
+      ) : view === "locations" ? (
         <div className="flex flex-col gap-6">
-          {stagesWithSessions.map((stage) => (
-            <section key={stage.id} className="flex flex-col">
+          {locationsWithSessions.map((location) => (
+            <section key={location.id} className="flex flex-col">
               <h2 className="pb-1 font-mono text-xs tracking-widest text-accent/70 uppercase">
-                {stage.name}
+                {location.name}
               </h2>
               {visible
-                .filter((session) => session.stageId === stage.id)
+                .filter((session) => session.locationId === location.id)
                 .map((session) => (
                   <SessionCard
                     key={session.id}
                     session={session}
-                    stageName={stage.name}
-                    category={session.categoryId ? categoryById.get(session.categoryId) : undefined}
+                    locationName={location.name}
                     timeZone={tz}
                   />
                 ))}
@@ -142,8 +152,7 @@ function Timetable() {
             <SessionCard
               key={session.id}
               session={session}
-              stageName={stageById.get(session.stageId)?.name ?? ""}
-              category={session.categoryId ? categoryById.get(session.categoryId) : undefined}
+              locationName={locationById.get(session.locationId)?.name ?? ""}
               timeZone={tz}
             />
           ))}
@@ -158,8 +167,8 @@ export const timetableRoute = createRoute({
   path: "/",
   validateSearch: (search: Record<string, unknown>): TimetableSearch => ({
     day: typeof search.day === "string" ? search.day : undefined,
-    view: search.view === "stages" || search.view === "agenda" ? search.view : undefined,
-    category: typeof search.category === "string" ? search.category : undefined,
+    view: search.view === "locations" || search.view === "agenda" ? search.view : undefined,
+    type: isSessionType(search.type) ? search.type : undefined,
   }),
   component: Timetable,
 });

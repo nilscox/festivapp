@@ -1,205 +1,107 @@
+import fs from "node:fs";
+import z from "zod";
 import { db } from "./src/db/client.ts";
-import { categories, sessions, stages, tenants } from "./src/db/schema.ts";
+import * as schema from "./src/db/schema.ts";
 
-// Wall-clock times below are Europe/Paris (CEST, +02:00 in July).
-function at(day: 24 | 25, time: string): Date {
-  return new Date(`2026-07-${day}T${time}:00+02:00`);
+const input = process.argv[2];
+
+if (!input) {
+  throw new Error("Usage: seed.ts <input.json>");
 }
 
-await db.delete(tenants);
+const dataSchema = z.object({
+  tenant: z.object({
+    name: z.string(),
+    domain: z.string(),
+    timezone: z.string(),
+    theme: z.object({
+      primaryColor: z.string(),
+      logoUrl: z.string().nullable(),
+    }),
+  }),
+  participants: z.array(
+    z.object({
+      name: z.string(),
+      image: z.string().optional(),
+      styles: z.array(z.string()).optional(),
+      label: z.string().optional(),
+      origin: z.string().optional(),
+      description: z.string().optional(),
+      socialLinks: z
+        .array(z.object({ platform: z.string(), url: z.string() }))
+        .optional(),
+    }),
+  ),
+  sessions: z.array(
+    z.object({
+      title: z.string().optional(),
+      type: z.enum(["live", "dj_set", "talk", "workshop", "other"]),
+      location: z.string(),
+      start: z.iso.datetime(),
+      end: z.iso.datetime(),
+      description: z.string().optional(),
+      participants: z.array(z.string()).min(1),
+    }),
+  ),
+});
 
-const [tenant] = await db
-  .insert(tenants)
-  .values({
-    name: "Coolfest",
-    domain: "coolfest.localhost",
-    timezone: "Europe/Paris",
-    theme: { primaryColor: "#6d28d9", logoUrl: null },
-  })
+const data = dataSchema.parse(JSON.parse(String(await fs.readFileSync(input))));
+
+const [tenantRow] = await db
+  .insert(schema.tenants)
+  .values(data.tenant)
   .returning();
 
-if (!tenant) {
-  throw new Error("failed to insert tenant");
-}
+const tenantId = tenantRow!.id;
 
-const stageRows = await db
-  .insert(stages)
-  .values([
-    { tenantId: tenant.id, name: "Main Stage", position: 0 },
-    { tenantId: tenant.id, name: "The Barn", position: 1 },
-    { tenantId: tenant.id, name: "Sunset Grove", position: 2 },
-    { tenantId: tenant.id, name: "Talks Tent", position: 3 },
-  ])
+const locationRows = await db
+  .insert(schema.locations)
+  .values(
+    Array.from(new Set(data.sessions.map((session) => session.location))).map(
+      (location) => ({
+        tenantId,
+        name: location,
+      }),
+    ),
+  )
   .returning();
 
-const categoryRows = await db
-  .insert(categories)
-  .values([
-    { tenantId: tenant.id, name: "Live", color: "#ef4444", position: 0 },
-    { tenantId: tenant.id, name: "DJ Set", color: "#6d28d9", position: 1 },
-    { tenantId: tenant.id, name: "Talk", color: "#0ea5e9", position: 2 },
-    { tenantId: tenant.id, name: "Workshop", color: "#22c55e", position: 3 },
-  ])
+const locations = new Map(locationRows.map((row) => [row.name, row.id]));
+
+const participantRows = await db
+  .insert(schema.participants)
+  .values(
+    data.participants.map((participant) => ({
+      tenantId,
+      ...participant,
+    })),
+  )
   .returning();
 
-function pickStage(name: string): string {
-  const id = stageRows.find((row) => row.name === name)?.id;
+const participants = new Map(participantRows.map((row) => [row.name, row.id]));
 
-  if (id === undefined) {
-    throw new Error(`unknown stage: ${name}`);
-  }
+const sessionRows = await db
+  .insert(schema.sessions)
+  .values(
+    data.sessions.map((session) => ({
+      tenantId,
+      locationId: locations.get(session.location)!,
+      type: session.type,
+      title: session.title,
+      startsAt: new Date(session.start),
+      endsAt: new Date(session.end),
+      description: session.description,
+    })),
+  )
+  .returning();
 
-  return id;
-}
+const sessions = new Map(sessionRows.map((row, index) => [index, row.id]));
 
-function pickCategory(name: string): string {
-  const id = categoryRows.find((row) => row.name === name)?.id;
-
-  if (id === undefined) {
-    throw new Error(`unknown category: ${name}`);
-  }
-
-  return id;
-}
-
-await db.insert(sessions).values([
-  {
-    tenantId: tenant.id,
-    stageId: pickStage("Talks Tent"),
-    categoryId: pickCategory("Talk"),
-    title: "The Future of Festivals",
-    description: "A panel on how live events are reinventing themselves for the next decade.",
-    startsAt: at(24, "16:00"),
-    endsAt: at(24, "16:45"),
-  },
-  {
-    tenantId: tenant.id,
-    stageId: pickStage("Sunset Grove"),
-    categoryId: pickCategory("Live"),
-    title: "Acoustic Sunrise",
-    description: null,
-    startsAt: at(24, "17:00"),
-    endsAt: at(24, "18:00"),
-  },
-  {
-    tenantId: tenant.id,
-    stageId: pickStage("Talks Tent"),
-    categoryId: pickCategory("Workshop"),
-    title: "Screen-printing Workshop",
-    description: "Bring a shirt and print your own festival poster. Materials provided.",
-    startsAt: at(24, "17:30"),
-    endsAt: at(24, "19:00"),
-  },
-  {
-    tenantId: tenant.id,
-    stageId: pickStage("Main Stage"),
-    categoryId: pickCategory("Live"),
-    title: "Neon Tigers",
-    description: null,
-    startsAt: at(24, "18:00"),
-    endsAt: at(24, "19:00"),
-  },
-  {
-    tenantId: tenant.id,
-    stageId: pickStage("The Barn"),
-    categoryId: pickCategory("Live"),
-    title: "The Wooden Spoons",
-    description: null,
-    startsAt: at(24, "18:30"),
-    endsAt: at(24, "19:30"),
-  },
-  {
-    tenantId: tenant.id,
-    stageId: pickStage("Sunset Grove"),
-    categoryId: pickCategory("DJ Set"),
-    title: "Golden Hour",
-    description: null,
-    startsAt: at(24, "19:00"),
-    endsAt: at(24, "20:30"),
-  },
-  {
-    tenantId: tenant.id,
-    stageId: pickStage("Main Stage"),
-    categoryId: pickCategory("Live"),
-    title: "Aurora Wave",
-    description: "Dream-pop headliners closing out the first evening on the Main Stage.",
-    startsAt: at(24, "19:30"),
-    endsAt: at(24, "21:00"),
-  },
-  {
-    tenantId: tenant.id,
-    stageId: pickStage("The Barn"),
-    categoryId: pickCategory("DJ Set"),
-    title: "Deep Roots",
-    description: null,
-    startsAt: at(24, "20:00"),
-    endsAt: at(24, "21:30"),
-  },
-  {
-    tenantId: tenant.id,
-    stageId: pickStage("Main Stage"),
-    categoryId: pickCategory("DJ Set"),
-    title: "Midnight Pulse",
-    description: null,
-    startsAt: at(24, "21:30"),
-    endsAt: at(24, "23:00"),
-  },
-  {
-    tenantId: tenant.id,
-    stageId: pickStage("Talks Tent"),
-    categoryId: pickCategory("Talk"),
-    title: "Sustainable Sound",
-    description: "How festivals are cutting their footprint without cutting the party.",
-    startsAt: at(25, "15:00"),
-    endsAt: at(25, "15:45"),
-  },
-  {
-    tenantId: tenant.id,
-    stageId: pickStage("Talks Tent"),
-    categoryId: pickCategory("Workshop"),
-    title: "Modular Synth Workshop",
-    description: "Patch your first modular synth and leave with a track of your own.",
-    startsAt: at(25, "16:30"),
-    endsAt: at(25, "18:00"),
-  },
-  {
-    tenantId: tenant.id,
-    stageId: pickStage("Main Stage"),
-    categoryId: pickCategory("Live"),
-    title: "Solar Flare",
-    description: null,
-    startsAt: at(25, "17:00"),
-    endsAt: at(25, "18:00"),
-  },
-  {
-    tenantId: tenant.id,
-    stageId: pickStage("The Barn"),
-    categoryId: pickCategory("Live"),
-    title: "Brass Republic",
-    description: null,
-    startsAt: at(25, "18:00"),
-    endsAt: at(25, "19:00"),
-  },
-  {
-    tenantId: tenant.id,
-    stageId: pickStage("Main Stage"),
-    categoryId: pickCategory("Live"),
-    title: "Velvet Static",
-    description: "Saturday headliners. Do not miss the light show.",
-    startsAt: at(25, "19:00"),
-    endsAt: at(25, "20:30"),
-  },
-  {
-    tenantId: tenant.id,
-    stageId: pickStage("Main Stage"),
-    categoryId: pickCategory("DJ Set"),
-    title: "DJ Halcyon",
-    description: "The closing set. See you on the dancefloor.",
-    startsAt: at(25, "21:00"),
-    endsAt: at(25, "23:30"),
-  },
-]);
-
-console.log("[seed] done: Coolfest with 4 stages, 4 categories, 15 sessions");
-
-process.exit(0);
+await db.insert(schema.sessionParticipants).values(
+  data.sessions.flatMap((session, index) =>
+    session.participants.map((participant) => ({
+      sessionId: sessions.get(index)!,
+      participantId: participants.get(participant)!,
+    })),
+  ),
+);
