@@ -1,6 +1,6 @@
-import type { SocialLink, TenantTheme } from "@festivapp/contracts";
-import { defineRelations } from "drizzle-orm";
-import * as p from "drizzle-orm/pg-core";
+import type { SocialLink, TenantTheme } from '@festivapp/contracts';
+import { defineRelations } from 'drizzle-orm';
+import * as p from 'drizzle-orm/pg-core';
 
 export type Tenant = typeof tenants.$inferSelect;
 export type Location = typeof locations.$inferSelect;
@@ -8,15 +8,9 @@ export type Participant = typeof participants.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type SessionParticipant = typeof sessionParticipants.$inferSelect;
 
-export const sessionType = p.pgEnum("session_type", [
-  "dj_set",
-  "live",
-  "talk",
-  "workshop",
-  "other",
-]);
+export const sessionType = p.pgEnum('session_type', ['dj_set', 'live', 'talk', 'workshop', 'other']);
 
-export const tenants = p.pgTable("tenants", {
+export const tenants = p.pgTable('tenants', {
   id: p.uuid().primaryKey().defaultRandom(),
   name: p.text().notNull(),
   domain: p.text().notNull().unique(),
@@ -26,24 +20,24 @@ export const tenants = p.pgTable("tenants", {
   updatedAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
-export const locations = p.pgTable("locations", {
+export const locations = p.pgTable('locations', {
   id: p.uuid().primaryKey().defaultRandom(),
   tenantId: p
     .uuid()
     .notNull()
-    .references(() => tenants.id, { onDelete: "cascade" }),
+    .references(() => tenants.id, { onDelete: 'cascade' }),
   name: p.text().notNull(),
   position: p.integer().notNull().default(0),
   createdAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
-export const participants = p.pgTable("participants", {
+export const participants = p.pgTable('participants', {
   id: p.uuid().primaryKey().defaultRandom(),
   tenantId: p
     .uuid()
     .notNull()
-    .references(() => tenants.id, { onDelete: "cascade" }),
+    .references(() => tenants.id, { onDelete: 'cascade' }),
   name: p.text().notNull(),
   description: p.text(),
   imageUrl: p.text(),
@@ -55,16 +49,16 @@ export const participants = p.pgTable("participants", {
   updatedAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
-export const sessions = p.pgTable("sessions", {
+export const sessions = p.pgTable('sessions', {
   id: p.uuid().primaryKey().defaultRandom(),
   tenantId: p
     .uuid()
     .notNull()
-    .references(() => tenants.id, { onDelete: "cascade" }),
+    .references(() => tenants.id, { onDelete: 'cascade' }),
   locationId: p
     .uuid()
     .notNull()
-    .references(() => locations.id, { onDelete: "cascade" }),
+    .references(() => locations.id, { onDelete: 'cascade' }),
   type: sessionType().notNull(),
   title: p.text(),
   description: p.text(),
@@ -75,23 +69,21 @@ export const sessions = p.pgTable("sessions", {
 });
 
 export const sessionParticipants = p.pgTable(
-  "session_participants",
+  'session_participants',
   {
     sessionId: p
       .uuid()
       .notNull()
-      .references(() => sessions.id, { onDelete: "cascade" }),
+      .references(() => sessions.id, { onDelete: 'cascade' }),
     participantId: p
       .uuid()
       .notNull()
-      .references(() => participants.id, { onDelete: "cascade" }),
+      .references(() => participants.id, { onDelete: 'cascade' }),
     position: p.integer().notNull().default(0),
   },
   (table) => [
     p.primaryKey({ columns: [table.sessionId, table.participantId] }),
-    p
-      .unique("session_participant_position")
-      .on(table.sessionId, table.participantId, table.position),
+    p.unique('session_participant_position').on(table.sessionId, table.participantId, table.position),
   ],
 );
 

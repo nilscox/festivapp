@@ -1,4 +1,0 @@
-{
-  "extends": ["../../packages/config/oxfmtrc.json"],
-  "ignorePatterns": ["drizzle/**"]
-}

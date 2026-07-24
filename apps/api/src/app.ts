@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+
 import { errorHandler } from "./middleware/error.ts";
 import { resolveTenant } from "./middleware/tenant.ts";
 import { bootstrapRouter } from "./routes/bootstrap.ts";

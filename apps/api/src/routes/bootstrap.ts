@@ -1,50 +1,43 @@
-import type {
-  BootstrapResponse,
-  Participant,
-  Session,
-} from "@festivapp/contracts";
-import { asc, eq } from "drizzle-orm";
-import { Router } from "express";
-import { db } from "../db/client.ts";
-import * as schema from "../db/schema.ts";
+import type { BootstrapResponse, Participant, Session } from '@festivapp/contracts';
+import { asc, eq } from 'drizzle-orm';
+import { Router } from 'express';
+
+import { db } from '../db/client.ts';
+import * as schema from '../db/schema.ts';
 
 export const bootstrapRouter = Router();
 
-bootstrapRouter.get("/bootstrap", async (req, res) => {
+bootstrapRouter.get('/bootstrap', async (req, res) => {
   const tenant = req.tenant;
 
   if (!tenant) {
-    res.status(404).json({ error: "tenant_not_found" });
+    res.status(404).json({ error: 'tenant_not_found' });
     return;
   }
 
-  const [locationRows, participantRows, sessionRows, linkRows] =
-    await Promise.all([
-      db
-        .select()
-        .from(schema.locations)
-        .where(eq(schema.locations.tenantId, tenant.id))
-        .orderBy(asc(schema.locations.position)),
-      db
-        .select()
-        .from(schema.participants)
-        .where(eq(schema.participants.tenantId, tenant.id))
-        .orderBy(asc(schema.participants.name)),
-      db
-        .select()
-        .from(schema.sessions)
-        .where(eq(schema.sessions.tenantId, tenant.id))
-        .orderBy(asc(schema.sessions.startsAt)),
-      db
-        .select()
-        .from(schema.sessionParticipants)
-        .innerJoin(
-          schema.sessions,
-          eq(schema.sessionParticipants.sessionId, schema.sessions.id),
-        )
-        .where(eq(schema.sessions.tenantId, tenant.id))
-        .orderBy(asc(schema.sessionParticipants.position)),
-    ]);
+  const [locationRows, participantRows, sessionRows, linkRows] = await Promise.all([
+    db
+      .select()
+      .from(schema.locations)
+      .where(eq(schema.locations.tenantId, tenant.id))
+      .orderBy(asc(schema.locations.position)),
+    db
+      .select()
+      .from(schema.participants)
+      .where(eq(schema.participants.tenantId, tenant.id))
+      .orderBy(asc(schema.participants.name)),
+    db
+      .select()
+      .from(schema.sessions)
+      .where(eq(schema.sessions.tenantId, tenant.id))
+      .orderBy(asc(schema.sessions.startsAt)),
+    db
+      .select()
+      .from(schema.sessionParticipants)
+      .innerJoin(schema.sessions, eq(schema.sessionParticipants.sessionId, schema.sessions.id))
+      .where(eq(schema.sessions.tenantId, tenant.id))
+      .orderBy(asc(schema.sessionParticipants.position)),
+  ]);
 
   const sessionParticipantIds = new Map<string, Set<string>>();
 

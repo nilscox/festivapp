@@ -1,5 +1,5 @@
-import { createApp } from "./app.ts";
-import { config } from "./config.ts";
+import { createApp } from './app.ts';
+import { config } from './config.ts';
 
 const app = createApp();
 

@@ -1,12 +1,13 @@
-import fs from "node:fs";
-import z from "zod";
-import { db } from "./src/db/client.ts";
-import * as schema from "./src/db/schema.ts";
+import fs from 'node:fs';
+import z from 'zod';
+
+import { db } from './src/db/client.ts';
+import * as schema from './src/db/schema.ts';
 
 const input = process.argv[2];
 
 if (!input) {
-  throw new Error("Usage: seed.ts <input.json>");
+  throw new Error('Usage: seed.ts <input.json>');
 }
 
 const dataSchema = z.object({
@@ -22,20 +23,18 @@ const dataSchema = z.object({
   participants: z.array(
     z.object({
       name: z.string(),
-      image: z.string().optional(),
+      imageUrl: z.string().optional(),
       styles: z.array(z.string()).optional(),
       label: z.string().optional(),
       origin: z.string().optional(),
       description: z.string().optional(),
-      socialLinks: z
-        .array(z.object({ platform: z.string(), url: z.string() }))
-        .optional(),
+      socialLinks: z.array(z.object({ platform: z.string(), url: z.string() })).optional(),
     }),
   ),
   sessions: z.array(
     z.object({
       title: z.string().optional(),
-      type: z.enum(["live", "dj_set", "talk", "workshop", "other"]),
+      type: z.enum(['live', 'dj_set', 'talk', 'workshop', 'other']),
       location: z.string(),
       start: z.iso.datetime(),
       end: z.iso.datetime(),
@@ -47,22 +46,17 @@ const dataSchema = z.object({
 
 const data = dataSchema.parse(JSON.parse(String(await fs.readFileSync(input))));
 
-const [tenantRow] = await db
-  .insert(schema.tenants)
-  .values(data.tenant)
-  .returning();
+const [tenantRow] = await db.insert(schema.tenants).values(data.tenant).returning();
 
 const tenantId = tenantRow!.id;
 
 const locationRows = await db
   .insert(schema.locations)
   .values(
-    Array.from(new Set(data.sessions.map((session) => session.location))).map(
-      (location) => ({
-        tenantId,
-        name: location,
-      }),
-    ),
+    Array.from(new Set(data.sessions.map((session) => session.location))).map((location) => ({
+      tenantId,
+      name: location,
+    })),
   )
   .returning();
 

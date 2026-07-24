@@ -1,7 +1,7 @@
 function requireEnv(name: string): string {
   const value = process.env[name];
 
-  if (value === undefined || value === "") {
+  if (value === undefined || value === '') {
     throw new Error(`Missing required environment variable: ${name}`);
   }
 
@@ -9,7 +9,7 @@ function requireEnv(name: string): string {
 }
 
 export const config = {
-  host: requireEnv("HOST"),
-  port: Number(requireEnv("PORT")),
-  databaseUrl: requireEnv("DATABASE_URL"),
+  host: requireEnv('HOST'),
+  port: Number(requireEnv('PORT')),
+  databaseUrl: requireEnv('DATABASE_URL'),
 };

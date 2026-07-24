@@ -2,9 +2,10 @@
   "name": "@festivapp/config",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "exports": {
     "./tsconfig.base.json": "./tsconfig.base.json",
-    "./oxlintrc.json": "./oxlintrc.json",
-    "./oxfmtrc.json": "./oxfmtrc.json"
+    "./oxlint.config.ts": "./oxlint.config.ts",
+    "./oxfmt.config.ts": "./oxfmt.config.ts"
   }
 }

@@ -1,6 +1,0 @@
-{
-  "extends": ["../../packages/config/oxlintrc.json"],
-  "rules": {
-    "no-async-endpoint-handlers": "off"
-  }
-}
