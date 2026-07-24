@@ -1,4 +1,7 @@
 {
   "extends": "@festivapp/config/tsconfig.base.json",
-  "include": ["src", "test", "*.ts"]
+  "include": ["src", "test", "*.ts"],
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo"
+  }
 }
