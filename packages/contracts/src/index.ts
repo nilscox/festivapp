@@ -31,7 +31,7 @@ export type Location = {
 };
 
 /** The kind of a session; governs which participant role it can carry. */
-export type SessionType = "live" | "dj_set" | "talk" | "workshop" | "other";
+export type SessionType = 'live' | 'dj_set' | 'talk' | 'workshop' | 'other';
 
 /** A link to a participant's presence on an external platform. */
 export type SocialLink = {

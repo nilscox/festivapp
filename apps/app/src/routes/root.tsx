@@ -1,16 +1,14 @@
-import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { applyTenant } from "../theme.ts";
-import { useBootstrap } from "../use-bootstrap.ts";
-import { useClock } from "../use-clock.ts";
+import { QueryErrorResetBoundary } from '@tanstack/react-query';
+import { Outlet } from '@tanstack/react-router';
+import { useEffect } from 'react';
+import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 
-function formatClock(date: Date): string {
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
-}
+import { TabBar } from '../components/tab-bar.tsx';
+import { applyTenant } from '../theme.ts';
+import { useBootstrapQuery } from '../use-bootstrap.ts';
 
-function RootLayout() {
-  const query = useBootstrap();
-  const now = useClock();
+export function RootLayout() {
+  const query = useBootstrapQuery();
   const tenant = query.data?.tenant;
 
   useEffect(() => {
@@ -19,31 +17,42 @@ function RootLayout() {
     }
   }, [tenant]);
 
-  const offline = query.isError || query.fetchStatus === "paused";
-
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-120 flex-col px-5.5 pb-[env(safe-area-inset-bottom)]">
-      <header className="flex items-center justify-between py-4.5">
-        <Link to="/" className="font-display text-lg font-extrabold tracking-tight">
-          {tenant ? tenant.name : "Festival"}
-        </Link>
+    <div className="col border-line bg-app mx-auto h-dvh w-full max-w-160 overflow-hidden sm:border-x">
+      {query.isSuccess ? (
+        <>
+          <main className="col min-h-0 flex-1">
+            <QueryErrorResetBoundary>
+              {({ reset }) => (
+                <ErrorBoundary onReset={reset} fallbackRender={Fallback}>
+                  <Outlet />
+                </ErrorBoundary>
+              )}
+            </QueryErrorResetBoundary>
+          </main>
 
-        <span className="inline-flex items-center gap-2 font-mono text-sm text-muted tabular-nums">
-          {offline ? <span className="text-accent/70">offline</span> : null}
-          <span className="pulse size-2 rounded-full bg-accent" aria-hidden="true" />
-          {formatClock(now)}
-        </span>
-      </header>
-
-      {query.data ? (
-        <Outlet />
+          <TabBar />
+        </>
       ) : (
-        <p className="m-auto max-w-80 p-8 text-center text-sm leading-normal text-muted">
-          {offline ? "Can't reach this festival. Check your connection and try again." : "Loading…"}
+        <p className="text-muted m-auto max-w-80 p-8 text-center text-sm leading-normal">
+          {query.isPending && <>Loading...</>}
+          {query.isError && <>Error: {query.error.message}</>}
         </p>
       )}
     </div>
   );
 }
 
-export const rootRoute = createRootRoute({ component: RootLayout });
+function Fallback({ error, resetErrorBoundary }: FallbackProps) {
+  return (
+    <div className="col h-full items-center justify-center gap-4">
+      <div className="text-xl">There was an error!</div>
+
+      {error instanceof Error && <div className="text-muted font-mono text-sm">{error.message}</div>}
+
+      <button type="button" onClick={resetErrorBoundary} className="bg-chip text-accent rounded-full px-4 py-2">
+        Try again
+      </button>
+    </div>
+  );
+}

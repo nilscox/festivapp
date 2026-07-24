@@ -1,24 +1,35 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
-  --font-display: "Bricolage Grotesque Variable", "Bricolage Grotesque", system-ui, sans-serif;
-  --font-body: "Inter Variable", Inter, system-ui, sans-serif;
-  --font-mono: "Space Mono", ui-monospace, monospace;
+  --font-display: 'Space Grotesk Variable', system-ui, sans-serif;
+  --font-body: 'Space Grotesk Variable', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
-  --color-paper: #fbfaf6;
-  --color-ink: #16151b;
-  --color-muted: #6c6a75;
-  --color-line: #e8e5dd;
-  --color-accent: #6d28d9;
-  --color-ink-soft: color-mix(in srgb, var(--color-ink) 74%, var(--color-paper));
+  --text-xxs: 0.625rem;
+  --text-xxs--line-height: 1;
+
+  --color-bg: #ececee;
+  --color-app: #ffffff;
+  --color-surface: #ffffff;
+  --color-chip: #f4f4f5;
+  --color-ink: #18181b;
+  --color-muted: #71717a;
+  --color-faint: #a1a1aa;
+  --color-line: #e4e4e7;
+  --color-accent: #ffffff;
+  --color-ink-soft: color-mix(in srgb, var(--color-ink) 74%, var(--color-app));
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-paper: #131118;
-    --color-ink: #f6f3ec;
-    --color-muted: #9b98a4;
-    --color-line: #272430;
+    --color-bg: #000000;
+    --color-app: #0c0c0e;
+    --color-surface: #141416;
+    --color-chip: #1c1c1f;
+    --color-ink: #fafafa;
+    --color-muted: #a1a1aa;
+    --color-faint: #6b6b73;
+    --color-line: #262629;
   }
 }
 
@@ -29,29 +40,48 @@ body,
 }
 
 body {
-  display: flex;
-  justify-content: center;
-  background: var(--color-paper);
+  background: var(--color-bg);
   color: var(--color-ink);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-@layer components {
-  .reveal {
-    animation: rise 0.55s both;
+@layer utilities {
+  .row {
+    display: flex;
+    flex-direction: row;
   }
 
-  .pulse {
-    animation: pulse 2.4s ease-out infinite;
+  .col {
+    display: flex;
+    flex-direction: column;
   }
 }
 
-@keyframes rise {
+@layer components {
+  .reveal {
+    animation: reveal 220ms both;
+  }
+
+  /* Fine hatch for compact artwork placeholders; coarse for the detail hero. */
+  .hatch {
+    background-image: repeating-linear-gradient(135deg, var(--color-chip) 0 7px, var(--color-surface) 7px 14px);
+  }
+
+  .hatch-lg {
+    background-image: repeating-linear-gradient(135deg, var(--color-chip) 0 14px, var(--color-surface) 14px 28px);
+  }
+
+  .ping {
+    animation: ping 1.9s ease-out infinite;
+  }
+}
+
+@keyframes reveal {
   from {
     opacity: 0;
-    transform: translateY(0.7rem);
+    transform: scale(0.99);
   }
 
   to {
@@ -60,23 +90,9 @@ body {
   }
 }
 
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 55%, transparent);
-  }
-
-  70% {
-    box-shadow: 0 0 0 0.5rem transparent;
-  }
-
-  100% {
-    box-shadow: 0 0 0 0 transparent;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .reveal,
-  .pulse {
+  .ping {
     animation: none;
   }
 }

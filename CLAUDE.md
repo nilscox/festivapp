@@ -32,8 +32,9 @@ Clients (`apps/app`, `apps/admin`, `apps/landing`) are added in later milestones
   - `packages/contracts` is **type-only**; import from it with `import type`.
 - The base tsconfig lives in `@festivapp/config/tsconfig.base.json`; each package
   extends it. oxlint and oxfmt work the same way: `packages/config` holds the base
-  `oxlintrc.json`/`oxfmtrc.json`, and each app/package has its own `.oxlintrc.json`
-  and `.oxfmtrc.json` extending it (root `oxlint`/`oxfmt` discover them per file).
+  `oxlint.config.ts`/`oxfmt.config.ts`, and each app/package has its own
+  `oxlint.config.ts` and `oxfmt.config.ts` that `extends`/spread the base via
+  `defineConfig` (root `oxlint`/`oxfmt` discover them per file).
 
 ## Conventions
 
@@ -57,6 +58,9 @@ Clients (`apps/app`, `apps/admin`, `apps/landing`) are added in later milestones
   quotes (no U+2018/U+2019/U+201C/U+201D).
 - **Prefer Tailwind scale tokens; avoid arbitrary values** (`[...]`) unless strictly
   required — e.g. a responsive `clamp()`, animation delays, `env()`.
+- **Top-down file order** — the main/exported component comes first, then the
+  local sub-components and helpers it uses below it. Constants and type
+  declarations stay at the top.
 - Formatting and linting are enforced by oxfmt and oxlint — run `pnpm format` and
   `pnpm lint`.
 

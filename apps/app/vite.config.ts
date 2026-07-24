@@ -1,28 +1,29 @@
-import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
-import { VitePWA } from "vite-plugin-pwa";
-
-const apiTarget = "http://127.0.0.1:3000";
+import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
+import svgr from 'vite-plugin-svgr';
+const apiTarget = 'http://127.0.0.1:3000';
 
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    svgr(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: 'autoUpdate',
       devOptions: { enabled: true },
       manifest: false,
     }),
   ],
   server: {
-    allowedHosts: [".localhost"],
+    allowedHosts: ['.localhost'],
     proxy: {
-      "/api": {
+      '/api': {
         target: apiTarget,
-        rewrite: (path) => path.replace(/^\/api/, ""),
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
-      "/manifest.webmanifest": {
+      '/manifest.webmanifest': {
         target: apiTarget,
       },
     },

@@ -1,33 +1,73 @@
-import type { Session } from "@festivapp/contracts";
-import { Link } from "@tanstack/react-router";
-import { formatTime } from "../lib/datetime.ts";
-import { formatSessionType, sessionTitle } from "../lib/session.ts";
+import type { Session } from '@festivapp/contracts';
+import { Link } from '@tanstack/react-router';
+import { isWithinInterval } from 'date-fns';
+import { Radio } from 'lucide-react';
 
-type SessionCardProps = {
+import { formatTime } from '../lib/datetime.ts';
+import { formatSessionType, sessionImageUrl, sessionListMeta, sessionTitle } from '../lib/session.ts';
+import { useSessionLocation, useSessionParticipants, useTenant } from '../use-bootstrap.ts';
+import { Chip } from './chip.tsx';
+
+export function SessionCard({
+  session,
+  now,
+  showLiveIcon = true,
+}: {
   session: Session;
-  locationName: string;
-  timeZone: string;
-};
+  now: Date;
+  showLiveIcon?: boolean;
+}) {
+  const location = useSessionLocation(session.id);
+  const participants = useSessionParticipants(session.id);
 
-export function SessionCard({ session, locationName, timeZone }: SessionCardProps) {
+  const isLive = isWithinInterval(now, { start: session.startsAt, end: session.endsAt });
+
   return (
-    <Link
-      to="/session/$sessionId"
-      params={{ sessionId: session.id }}
-      className="flex flex-col gap-1 border-t border-line py-3.5"
-    >
-      <span className="font-mono text-xs text-muted tabular-nums">
-        {formatTime(session.startsAt, timeZone)}–{formatTime(session.endsAt, timeZone)}
-      </span>
+    <Link to="/session/$sessionId" params={{ sessionId: session.id }} className="row items-start gap-4 py-3">
+      <Thumbnail session={session} />
 
-      <span className="font-display text-lg leading-tight font-semibold">
-        {sessionTitle(session)}
-      </span>
+      <div className="min-w-0 flex-1">
+        <div className="row items-center gap-2">
+          {isLive && showLiveIcon && <Radio className="text-accent size-4" />}
 
-      <span className="flex items-center gap-2 font-mono text-xs text-muted">
-        <span>{locationName}</span>
-        <span className="text-accent/70 uppercase">{formatSessionType(session.type)}</span>
-      </span>
+          <div className="font-display line-clamp-2 leading-tight font-semibold">
+            {sessionTitle(session, participants)}
+          </div>
+
+          <Chip size="small">{formatSessionType(session.type)}</Chip>
+        </div>
+
+        <div className="text-muted mt-0.5 text-sm">{location.name}</div>
+
+        <div className="text-muted mt-0.5 text-sm">{sessionListMeta(session, participants)}</div>
+      </div>
     </Link>
   );
+}
+
+function Thumbnail({ session }: { session: Session }) {
+  const { timezone } = useTenant()!;
+  const participants = useSessionParticipants(session.id);
+
+  const start = formatTime(session.startsAt, timezone);
+  const end = formatTime(session.endsAt, timezone);
+  const imageUrl = sessionImageUrl(session, participants);
+
+  const times = (
+    <div className="col absolute inset-x-0 bottom-0 rounded-lg bg-linear-to-t from-black/80 via-black/50 via-60% to-transparent px-2 pt-2 pb-0.5 font-mono leading-tight tabular-nums">
+      <span className="text-xs font-semibold text-white text-shadow-sm">{start}</span>
+      <span className="text-xs text-white text-shadow-sm">{end}</span>
+    </div>
+  );
+
+  if (imageUrl) {
+    return (
+      <div className="relative size-20 shrink-0 overflow-hidden rounded-lg">
+        <img src={imageUrl} alt="" className="size-full object-cover" />
+        {times}
+      </div>
+    );
+  }
+
+  return <div className="hatch border-line relative size-20 shrink-0 rounded-lg border">{times}</div>;
 }

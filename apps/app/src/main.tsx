@@ -1,20 +1,59 @@
-import "@fontsource-variable/bricolage-grotesque";
-import "@fontsource-variable/inter";
-import "@fontsource/space-mono/400.css";
-import "@fontsource/space-mono/700.css";
-import "./styles.css";
+import '@fontsource-variable/space-grotesk';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import '@fontsource/ibm-plex-mono/600.css';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import { QueryClient } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { createRootRoute, createRoute, createRouter, RouterProvider } from '@tanstack/react-router';
+import { del, get, set } from 'idb-keyval';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { registerSW } from 'virtual:pwa-register';
 
-import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { QueryClient } from "@tanstack/react-query";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { RouterProvider } from "@tanstack/react-router";
-import { del, get, set } from "idb-keyval";
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { registerSW } from "virtual:pwa-register";
-import { router } from "./router.tsx";
+import { InfoPage } from './routes/info.tsx';
+import { MapPage } from './routes/map.tsx';
+import { Now } from './routes/now.tsx';
+import { RootLayout } from './routes/root.tsx';
+import { SessionDetail } from './routes/session.tsx';
+import { Timetable } from './routes/timetable.tsx';
+import './styles.css';
 
 registerSW({ immediate: true });
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router;
+  }
+}
+
+const rootRoute = createRootRoute({ component: RootLayout });
+
+const routeTree = rootRoute.addChildren([
+  createRoute({ getParentRoute: () => rootRoute, path: '/', component: Now }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/timetable',
+    component: Timetable,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/session/$sessionId',
+    component: SessionDetail,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/map',
+    component: MapPage,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/info',
+    component: InfoPage,
+  }),
+]);
+
+const router = createRouter({ routeTree });
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,7 +66,7 @@ const queryClient = new QueryClient({
 });
 
 const persister = createAsyncStoragePersister({
-  key: "festivapp:query",
+  key: 'festivapp:query',
   storage: {
     getItem: async (key) => (await get<string>(key)) ?? null,
     setItem: (key, value) => set(key, value),
@@ -35,16 +74,18 @@ const persister = createAsyncStoragePersister({
   },
 });
 
-const container = document.getElementById("root");
+const container = document.getElementById('root')!;
 
-if (container === null) {
-  throw new Error("missing #root element");
+function App() {
+  return (
+    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
+      <RouterProvider router={router} />
+    </PersistQueryClientProvider>
+  );
 }
 
 createRoot(container).render(
   <StrictMode>
-    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
-      <RouterProvider router={router} />
-    </PersistQueryClientProvider>
+    <App />
   </StrictMode>,
 );

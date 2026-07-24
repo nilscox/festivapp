@@ -46,56 +46,60 @@ const dataSchema = z.object({
 
 const data = dataSchema.parse(JSON.parse(String(await fs.readFileSync(input))));
 
-const [tenantRow] = await db.insert(schema.tenants).values(data.tenant).returning();
+await db.transaction(async (tx) => {
+  const [tenantRow] = await tx.insert(schema.tenants).values(data.tenant).returning();
 
-const tenantId = tenantRow!.id;
+  const tenantId = tenantRow!.id;
 
-const locationRows = await db
-  .insert(schema.locations)
-  .values(
-    Array.from(new Set(data.sessions.map((session) => session.location))).map((location) => ({
-      tenantId,
-      name: location,
-    })),
-  )
-  .returning();
+  const locationRows = await tx
+    .insert(schema.locations)
+    .values(
+      Array.from(new Set(data.sessions.map((session) => session.location))).map((location) => ({
+        tenantId,
+        name: location,
+      })),
+    )
+    .returning();
 
-const locations = new Map(locationRows.map((row) => [row.name, row.id]));
+  const locations = new Map(locationRows.map((row) => [row.name, row.id]));
 
-const participantRows = await db
-  .insert(schema.participants)
-  .values(
-    data.participants.map((participant) => ({
-      tenantId,
-      ...participant,
-    })),
-  )
-  .returning();
+  const participantRows = await tx
+    .insert(schema.participants)
+    .values(
+      data.participants.map((participant) => ({
+        tenantId,
+        ...participant,
+      })),
+    )
+    .returning();
 
-const participants = new Map(participantRows.map((row) => [row.name, row.id]));
+  const participants = new Map(participantRows.map((row) => [row.name, row.id]));
 
-const sessionRows = await db
-  .insert(schema.sessions)
-  .values(
-    data.sessions.map((session) => ({
-      tenantId,
-      locationId: locations.get(session.location)!,
-      type: session.type,
-      title: session.title,
-      startsAt: new Date(session.start),
-      endsAt: new Date(session.end),
-      description: session.description,
-    })),
-  )
-  .returning();
+  const sessionRows = await tx
+    .insert(schema.sessions)
+    .values(
+      data.sessions.map((session) => ({
+        tenantId,
+        locationId: locations.get(session.location)!,
+        type: session.type,
+        title: session.title,
+        startsAt: new Date(session.start),
+        endsAt: new Date(session.end),
+        description: session.description,
+      })),
+    )
+    .returning();
 
-const sessions = new Map(sessionRows.map((row, index) => [index, row.id]));
+  const sessions = new Map(sessionRows.map((row, index) => [index, row.id]));
 
-await db.insert(schema.sessionParticipants).values(
-  data.sessions.flatMap((session, index) =>
-    session.participants.map((participant) => ({
-      sessionId: sessions.get(index)!,
-      participantId: participants.get(participant)!,
-    })),
-  ),
-);
+  await tx.insert(schema.sessionParticipants).values(
+    data.sessions.flatMap((session, index) =>
+      session.participants.map((participant) => ({
+        sessionId: sessions.get(index)!,
+        participantId: participants.get(participant)!,
+      })),
+    ),
+  );
+});
+
+await db.$client.end();
