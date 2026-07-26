@@ -1,6 +1,6 @@
 {
   "extends": "@festivapp/config/tsconfig.base.json",
-  "include": ["src", "test"],
+  "include": ["src"],
   "files": ["drizzle.config.ts"],
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo"

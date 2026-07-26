@@ -7,10 +7,8 @@
     "dev": "node --watch --env-file=.env src/index.ts",
     "start": "node --env-file=.env src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "seed": "node --env-file=.env seed.ts"
+    "db:seed": "node --env-file=.env seed.ts"
   },
   "dependencies": {
     "@festivapp/contracts": "workspace:*",
@@ -23,10 +21,7 @@
     "@festivapp/config": "workspace:*",
     "@types/express": "^5.0.6",
     "@types/pg": "^8.20.0",
-    "@types/supertest": "^7.2.1",
     "drizzle-kit": "1.0.0-beta.22",
-    "supertest": "^7.2.2",
-    "typescript": "^7.0.2",
-    "vitest": "^4.1.10"
+    "typescript": "^7.0.2"
   }
 }

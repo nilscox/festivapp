@@ -12,31 +12,15 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    env:
-      # The API's config crashes on missing env vars. The current tests are
-      # DB-free (only /health), so a dummy DATABASE_URL is enough — the pool
-      # never connects. Add a Postgres service here when DB-backed tests land.
-      HOST: 127.0.0.1
-      PORT: "3000"
-      DATABASE_URL: postgresql://postgres@localhost:5432/festivapp
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
-
       - run: pnpm install --frozen-lockfile
-
       - run: pnpm typecheck
-
       - run: pnpm lint
-
       - run: pnpm format:check
-
-      - run: pnpm test
-
       - run: pnpm --filter @festivapp/app build

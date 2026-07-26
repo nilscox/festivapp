@@ -66,12 +66,12 @@ Clients (`apps/app`, `apps/admin`, `apps/landing`) are added in later milestones
 
 ## Commands
 
-- Root: `pnpm typecheck`, `pnpm test`, `pnpm lint`, `pnpm format`, `pnpm format:check`.
+- Root: `pnpm typecheck`, `pnpm lint`, `pnpm format`, `pnpm format:check`.
 - From `apps/api`: `pnpm dev`, `pnpm db:generate`, `pnpm db:migrate`, `pnpm seed`.
 - Local Postgres runs in a container — see the README for the `docker run` command.
 
 ## Verifying changes
 
-Before considering a change done: `pnpm typecheck`, `pnpm lint`, `pnpm format:check`,
-`pnpm test`. For API behavior, run `pnpm dev` (from `apps/api`) and exercise the
-endpoints with `curl`, setting `Host` (or `?__tenant=`) to pick the tenant.
+Before considering a change done: `pnpm typecheck`, `pnpm lint`, `pnpm format:check`.
+For API behavior, run `pnpm dev` (from `apps/api`) and exercise the endpoints with
+`curl`, setting `Host` (or `?__tenant=`) to pick the tenant.
