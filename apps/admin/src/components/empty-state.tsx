@@ -10,7 +10,7 @@ export function EmptyState({
   cta?: React.ReactNode;
 }) {
   return (
-    <section className="reveal border-line-strong col items-center gap-6 rounded-lg border border-dashed px-8 py-16 text-center">
+    <section className="reveal border-line-strong col items-center gap-6 rounded-lg border border-dashed px-6 py-12 text-center md:px-8 md:py-16">
       {Icon && (
         <div className="bg-subtle text-faint flex size-14 items-center justify-center rounded-lg">
           <Icon className="size-8" />

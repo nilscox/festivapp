@@ -150,7 +150,7 @@ export const routeTree = rootRoute.addChildren([
 
 function PendingComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center p-6">
+    <div className="flex min-h-dvh items-center justify-center p-6">
       <Spinner className="size-6" />
     </div>
   );

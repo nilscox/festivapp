@@ -12,7 +12,7 @@ const VARIANTS: Record<Variant, string> = {
 };
 
 const SIZES: Record<Size, string> = {
-  md: clsx('h-10 gap-2 px-4 text-sm'),
+  md: clsx('h-9 gap-2 px-4 text-sm'),
   sm: clsx('h-8 gap-1.5 px-3 text-sm'),
 };
 

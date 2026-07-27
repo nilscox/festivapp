@@ -60,13 +60,13 @@ export function Locations() {
 function Header({ tenant, showCreate }: { tenant: TenantSummary; showCreate: boolean }) {
   return (
     <PageHeader
-      eyebrow={<>{tenant.name} &bull; Manage</>}
+      eyebrow={tenant.name}
       title="Locations"
       end={
         showCreate && (
-          <LinkButton from="/festivals/$tenantId/locations" search={{ create: true }}>
+          <LinkButton from="/festivals/$tenantId/locations" search={{ create: true }} className="mt-auto">
             <Plus className="size-4" />
-            Add location
+            <span className="max-md:hidden">Add location</span>
           </LinkButton>
         )
       }
@@ -92,7 +92,7 @@ function LocationsList({ tenant, locations }: { tenant: TenantSummary; locations
 
       <Table>
         <TableHeader>
-          <TableHeaderCell className="w-10 text-center">#</TableHeaderCell>
+          <TableHeaderCell className="w-6 text-center md:w-10">#</TableHeaderCell>
           <TableHeaderCell className="flex-1">Name</TableHeaderCell>
           <TableHeaderCell>Actions</TableHeaderCell>
         </TableHeader>
@@ -127,10 +127,12 @@ function LocationsList({ tenant, locations }: { tenant: TenantSummary; locations
 
 function LocationItem({ location, onDelete }: { location: Location; onDelete: () => void }) {
   return (
-    <div className="hover:bg-subtle row items-center gap-4 px-4 py-3">
-      <span className="text-accent w-10 text-center font-mono text-sm font-semibold">{location.position}</span>
-      <span className="flex-1 font-medium">{location.name}</span>
-      <div className="row items-center gap-1">
+    <div className="hover:bg-subtle row items-center gap-3 p-3 md:gap-4 md:px-4">
+      <span className="text-accent w-6 shrink-0 text-center font-mono text-sm font-semibold md:w-10">
+        {location.position}
+      </span>
+      <span className="min-w-0 flex-1 truncate font-medium">{location.name}</span>
+      <div className="row shrink-0 items-center gap-1">
         <LinkButton variant="secondary" size="sm" from="/festivals/$tenantId/locations" search={{ edit: location.id }}>
           <Pencil className="size-3" />
           Edit

@@ -5,7 +5,7 @@ export function Table({ children }: { children: React.ReactNode }) {
 }
 
 export function TableHeader({ children }: { children: React.ReactNode }) {
-  return <div className="bg-subtle row items-center gap-4 border-b px-4 py-3">{children}</div>;
+  return <div className="bg-subtle row items-center gap-3 border-b p-3 md:gap-4 md:px-4">{children}</div>;
 }
 
 export function TableHeaderCell({ children, className }: { children: React.ReactNode; className?: string }) {

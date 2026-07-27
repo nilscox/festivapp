@@ -16,7 +16,7 @@ export function Login() {
   const errors = useMemo(() => parseValidationError(error), [error]);
 
   return (
-    <div className="reveal col min-h-screen items-center justify-center p-10">
+    <div className="reveal col min-h-dvh items-center justify-center p-4 md:p-10">
       <div className="w-full max-w-90">
         <div className="mb-6">
           <h2 className="text-2xl font-bold tracking-tight">Sign in</h2>

@@ -38,6 +38,12 @@
     height: 100%;
   }
 
+  @variant max-md {
+    html {
+      font-size: 87.5%;
+    }
+  }
+
   body {
     background: var(--color-page);
     color: var(--color-ink);
@@ -65,16 +71,14 @@
   }
 }
 
-@layer utilities {
-  .row {
-    display: flex;
-    flex-direction: row;
-  }
+@utility row {
+  display: flex;
+  flex-direction: row;
+}
 
-  .col {
-    display: flex;
-    flex-direction: column;
-  }
+@utility col {
+  display: flex;
+  flex-direction: column;
 }
 
 @layer components {

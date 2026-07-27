@@ -20,8 +20,8 @@ export function Drawer({ open, onOpenChange, eyebrow, title, children }: DrawerP
         <Dialog.Backdrop className="base-ui-fade bg-ink/40 fixed inset-0 transition-opacity" />
         <Dialog.Popup
           className={clsx(
-            'base-ui-fade col bg-surface fixed inset-y-0 right-0 flex w-full max-w-md shadow-2xl',
-            'transition-all duration-300 data-ending-style:translate-x-1/4 data-starting-style:translate-x-1/4',
+            'base-ui-fade col bg-surface fixed inset-y-0 right-0 flex w-full shadow-2xl md:max-w-lg',
+            'md:transition-all md:duration-300 md:data-ending-style:translate-x-1/4 md:data-starting-style:translate-x-1/4',
           )}
         >
           <Header eyebrow={eyebrow} title={title} />

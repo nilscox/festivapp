@@ -1,10 +1,15 @@
+import { Menu } from 'lucide-react';
+import { createContext, use } from 'react';
+
+import { defined } from '../utils.ts';
+import { IconButton } from './button.tsx';
 import { Eyebrow } from './eyebrow.tsx';
 
 export function Page({ header, children }: { header?: React.ReactNode; children?: React.ReactNode }) {
   return (
     <>
       {header}
-      <div className="col mx-auto w-full max-w-7xl flex-1 overflow-y-auto px-8 py-6">{children}</div>
+      <div className="col mx-auto w-full max-w-7xl flex-1 overflow-y-auto px-4 py-6 md:px-8">{children}</div>
     </>
   );
 }
@@ -18,15 +23,26 @@ export function PageHeader({
   title?: React.ReactNode;
   end?: React.ReactNode;
 }) {
+  const open = defined(use(OpenDrawerContext));
+
   return (
     <header className="border-b">
-      <div className="row mx-auto w-full max-w-7xl items-end justify-between px-8 py-4">
-        <div>
-          <Eyebrow>{eyebrow}</Eyebrow>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight">{title}</h1>
+      <div className="row mx-auto w-full max-w-7xl items-center gap-3 px-4 py-3 md:px-8 md:py-4">
+        <IconButton icon={Menu} variant="ghost" aria-label="Open menu" onClick={open} className="shrink-0 md:hidden" />
+
+        <div className="min-w-0 flex-1">
+          <Eyebrow className="block truncate">{eyebrow}</Eyebrow>
+          <h1 className="mt-1 truncate text-xl font-bold tracking-tight max-md:leading-none md:text-2xl">{title}</h1>
         </div>
-        {end}
+
+        <div className="row self-stretch">{end}</div>
       </div>
     </header>
   );
+}
+
+const OpenDrawerContext = createContext<(() => void) | null>(null);
+
+export function OpenDrawerProvider({ open, children }: { open: () => void; children: React.ReactNode }) {
+  return <OpenDrawerContext value={open}>{children}</OpenDrawerContext>;
 }

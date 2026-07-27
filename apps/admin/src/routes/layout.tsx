@@ -1,11 +1,15 @@
+import { Dialog } from '@base-ui/react/dialog';
 import { Select } from '@base-ui/react/select';
 import type { Organizer, TenantSummary } from '@festivapp/contracts';
 import { Link, Outlet, useNavigate, useRouteContext } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { CalendarDays, ChevronDown, LogOut, Map, MapPin, Palette, Settings, Users } from 'lucide-react';
+import { useState } from 'react';
 
 import { Button } from '../components/button.tsx';
 import { Eyebrow } from '../components/eyebrow.tsx';
+import { OpenDrawerProvider } from '../components/page-header.tsx';
+import { useMediaQuery } from '../hooks/use-media-query.ts';
 import { useLogout } from '../lib/auth.ts';
 
 const navigation: Array<{
@@ -22,40 +26,77 @@ const navigation: Array<{
 ];
 
 export function Layout() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
   return (
-    <div className="flex h-dvh">
-      <Sidebar />
-      <main className="bg-surface col flex-1 overflow-hidden">
-        <Outlet />
-      </main>
-    </div>
+    <OpenDrawerProvider open={() => setDrawerOpen(true)}>
+      <div className="h-dvh md:pl-64">
+        <Sidebar open={drawerOpen} onOpenChange={setDrawerOpen} />
+
+        <main className="bg-surface col h-full overflow-hidden">
+          <Outlet />
+        </main>
+      </div>
+    </OpenDrawerProvider>
   );
 }
 
-function Sidebar() {
+function Sidebar({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const isDesktop = useMediaQuery('(width >= 48rem)');
   const { me, tenant } = useRouteContext({ from: '/festivals/$tenantId' });
   const { organizer, tenants } = me;
 
+  const close = () => onOpenChange(false);
+
   return (
-    <aside className="bg-subtle col w-64 gap-4 overflow-hidden border-r py-4">
-      <section className="px-3">
-        <Eyebrow>Festival</Eyebrow>
-        <FestivalSwitcher tenants={tenants} active={tenant} />
-      </section>
+    <Dialog.Root
+      open={isDesktop || open}
+      onOpenChange={onOpenChange}
+      modal={!isDesktop}
+      disablePointerDismissal={isDesktop}
+    >
+      <Dialog.Portal>
+        {!isDesktop && <Dialog.Backdrop className="base-ui-fade bg-ink/40 fixed inset-0" />}
 
-      <section className="flex-1 overflow-y-auto px-3">
-        <Eyebrow>Manage</Eyebrow>
-        <Navigation tenantId={tenant.id} />
-      </section>
+        <Dialog.Popup
+          aria-label="Navigation"
+          render={<aside />}
+          initialFocus={!isDesktop}
+          finalFocus={!isDesktop}
+          className={clsx(
+            'bg-subtle col fixed inset-y-0 left-0 w-72 gap-4 overflow-hidden border-r py-4 md:w-64',
+            !isDesktop &&
+              'base-ui-fade shadow-2xl transition-all duration-200 data-ending-style:-translate-x-full data-starting-style:-translate-x-full',
+          )}
+        >
+          <section className="px-3">
+            <Eyebrow>Festival</Eyebrow>
+            <FestivalSwitcher tenants={tenants} active={tenant} onNavigate={close} />
+          </section>
 
-      <section className="border-t px-3">
-        <Organizer organizer={organizer} />
-      </section>
-    </aside>
+          <section className="flex-1 overflow-y-auto px-3">
+            <Eyebrow>Manage</Eyebrow>
+            <Navigation tenantId={tenant.id} onNavigate={close} />
+          </section>
+
+          <section className="border-t px-3">
+            <Organizer organizer={organizer} />
+          </section>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
-function FestivalSwitcher({ tenants, active }: { tenants: TenantSummary[]; active: TenantSummary }) {
+function FestivalSwitcher({
+  tenants,
+  active,
+  onNavigate,
+}: {
+  tenants: TenantSummary[];
+  active: TenantSummary;
+  onNavigate: () => void;
+}) {
   const navigate = useNavigate();
 
   return (
@@ -64,6 +105,7 @@ function FestivalSwitcher({ tenants, active }: { tenants: TenantSummary[]; activ
       onValueChange={(id) => {
         if (id !== null) {
           void navigate({ to: '/festivals/$tenantId', params: { tenantId: id } });
+          onNavigate();
         }
       }}
     >
@@ -114,7 +156,7 @@ function FestivalMark({ name }: { name: string }) {
   );
 }
 
-function Navigation({ tenantId }: { tenantId: string }) {
+function Navigation({ tenantId, onNavigate }: { tenantId: string; onNavigate: () => void }) {
   return (
     <nav>
       {navigation.map((item) => (
@@ -122,6 +164,7 @@ function Navigation({ tenantId }: { tenantId: string }) {
           key={item.label}
           to={`/festivals/$tenantId${item.href}`}
           params={{ tenantId }}
+          onClick={onNavigate}
           activeOptions={{ includeSearch: false }}
           activeProps={{ 'aria-current': 'page', className: clsx('bg-accent/10 text-accent') }}
           inactiveProps={{ className: clsx('text-faint hover:bg-faint/5') }}
