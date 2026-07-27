@@ -1,242 +1,232 @@
-import { Form } from '@base-ui-components/react/form';
-import type { Location } from '@festivapp/contracts';
-import { useParams } from '@tanstack/react-router';
+import { Form } from '@base-ui/react/form';
+import type { Location, TenantSummary } from '@festivapp/contracts';
+import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import { MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import { Button } from '../components/button.tsx';
+import { Button, IconButton, LinkButton } from '../components/button.tsx';
 import { ConfirmDialog } from '../components/confirm-dialog.tsx';
 import { Drawer } from '../components/drawer.tsx';
-import { Eyebrow } from '../components/eyebrow.tsx';
-import { SelectField } from '../components/select-field.tsx';
-import { TextField } from '../components/text-field.tsx';
-import { useMe } from '../lib/auth.ts';
+import { EmptyState } from '../components/empty-state.tsx';
+import { Field } from '../components/field.tsx';
+import { Input } from '../components/input.tsx';
+import { Page, PageHeader } from '../components/page-header.tsx';
+import { Select } from '../components/select.tsx';
+import { Spinner } from '../components/spinner.tsx';
+import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
+import { parseValidationError } from '../lib/errors.ts';
 import { useCreateLocation, useDeleteLocation, useLocations, useUpdateLocation } from '../lib/locations.ts';
+import { assert } from '../utils.ts';
 
-type DrawerState = { mode: 'new' } | { mode: 'edit'; location: Location };
+const from = '/festivals/$tenantId/locations';
 
 export function Locations() {
-  const { tenantId } = useParams({ strict: false });
-  const me = useMe();
+  const { tenant } = useRouteContext({ from });
 
-  const locationsQuery = useLocations(tenantId!);
-  const create = useCreateLocation(tenantId!);
-  const update = useUpdateLocation(tenantId!);
-  const remove = useDeleteLocation(tenantId!);
-
-  const [drawer, setDrawer] = useState<DrawerState | null>(null);
-  const [confirmTarget, setConfirmTarget] = useState<Location | null>(null);
-
-  const list = locationsQuery.data ?? [];
-  const festivalName = me.data?.tenants.find((tenant) => tenant.id === tenantId)?.name;
+  const { isPending, isError, isSuccess, data, error } = useLocations(tenant.id);
+  const locations = data ?? [];
 
   return (
-    <>
-      <div className="border-line flex items-center justify-between border-b px-8 py-5">
-        <div>
-          <Eyebrow>{festivalName ? `${festivalName} · Manage` : 'Manage'}</Eyebrow>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight">Locations</h1>
-        </div>
-        {list.length > 0 && (
-          <Button onClick={() => setDrawer({ mode: 'new' })}>
-            <Plus className="size-4" />
-            Add location
-          </Button>
-        )}
-      </div>
+    <Page header={<Header tenant={tenant} showCreate={locations.length > 0} />}>
+      {isPending && <Spinner className="mx-auto my-8 size-6" />}
 
-      <div className="flex-1 overflow-y-auto px-8 py-6">
-        {locationsQuery.isPending ? (
-          <LocationsSkeleton />
-        ) : list.length === 0 ? (
-          <EmptyState onAdd={() => setDrawer({ mode: 'new' })} />
-        ) : (
-          <div className="reveal">
-            <p className="text-muted mb-3 font-mono text-xs tracking-wide">
-              {list.length} location{list.length === 1 ? '' : 's'} · shown to attendees in this order
-            </p>
-            <div className="border-line overflow-hidden rounded-2xl border">
-              <div className="border-line bg-subtle flex items-center gap-4 border-b px-5 py-3">
-                <HeaderCell className="w-10 text-center">#</HeaderCell>
-                <HeaderCell className="flex-1">Name</HeaderCell>
-                <HeaderCell>Actions</HeaderCell>
-              </div>
-              {list.map((location, index) => (
-                <div
-                  key={location.id}
-                  className="border-line/60 hover:bg-subtle flex items-center gap-4 border-b px-5 py-3.5 last:border-b-0"
-                >
-                  <span className="text-accent w-10 text-center font-mono text-sm font-semibold">{index + 1}</span>
-                  <span className="text-form flex-1 font-medium">{location.name}</span>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setDrawer({ mode: 'edit', location })}
-                      className="hover:border-accent hover:text-accent"
-                    >
-                      <Pencil className="size-3.5" />
-                      Edit
-                    </Button>
-                    <button
-                      aria-label={`Delete ${location.name}`}
-                      onClick={() => setConfirmTarget(location)}
-                      className="text-faint hover:bg-danger-soft hover:text-danger flex size-8 cursor-pointer items-center justify-center rounded-lg"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      {isError && <>Error: {error.message}</>}
 
-      {drawer && (
-        <LocationDrawer
-          state={drawer}
-          count={list.length}
-          pending={create.isPending || update.isPending}
-          onClose={() => setDrawer(null)}
-          onSubmit={(input) => {
-            if (drawer.mode === 'new') {
-              create.mutate(input, { onSuccess: () => setDrawer(null) });
-            } else {
-              update.mutate({ id: drawer.location.id, input }, { onSuccess: () => setDrawer(null) });
-            }
-          }}
-        />
+      {isSuccess && (
+        <>
+          {locations.length === 0 ? (
+            <EmptyState
+              icon={MapPin}
+              title="No locations yet"
+              description="Locations are the stages, rooms and places where sessions happen. Add your first one to start building the schedule."
+              cta={
+                <LinkButton from={`/festivals/$tenantId/locations`} search={{ create: true }}>
+                  <Plus className="size-4" />
+                  Add location
+                </LinkButton>
+              }
+            />
+          ) : (
+            <LocationsList tenant={tenant} locations={locations} />
+          )}
+
+          <LocationDrawer tenant={tenant} locations={locations} />
+        </>
       )}
-
-      <ConfirmDialog
-        open={confirmTarget !== null}
-        onOpenChange={(open) => !open && setConfirmTarget(null)}
-        title={`Delete "${confirmTarget?.name}"?`}
-        description={`This removes the location from ${festivalName ?? 'this festival'}. Sessions assigned to it will need a new location. This can't be undone.`}
-        confirmLabel="Delete"
-        pending={remove.isPending}
-        onConfirm={() => {
-          if (confirmTarget) {
-            remove.mutate(confirmTarget.id, { onSuccess: () => setConfirmTarget(null) });
-          }
-        }}
-      />
-    </>
+    </Page>
   );
 }
 
-function LocationDrawer({
-  state,
-  count,
-  pending,
-  onClose,
-  onSubmit,
-}: {
-  state: DrawerState;
-  count: number;
-  pending: boolean;
-  onClose: () => void;
-  onSubmit: (input: { name: string; position: number }) => void;
-}) {
-  const isNew = state.mode === 'new';
-  const maxPosition = isNew ? count + 1 : count;
-  const initialPosition = isNew ? count + 1 : Math.min(Math.max(1, state.location.position), maxPosition);
+function Header({ tenant, showCreate }: { tenant: TenantSummary; showCreate: boolean }) {
+  return (
+    <PageHeader
+      eyebrow={<>{tenant.name} &bull; Manage</>}
+      title="Locations"
+      end={
+        showCreate && (
+          <LinkButton from="/festivals/$tenantId/locations" search={{ create: true }}>
+            <Plus className="size-4" />
+            Add location
+          </LinkButton>
+        )
+      }
+    />
+  );
+}
 
-  const [position, setPosition] = useState(initialPosition);
+function LocationsList({ tenant, locations }: { tenant: TenantSummary; locations: Location[] }) {
+  const deleteMutation = useDeleteLocation(tenant.id);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<Location | null>(null);
 
-  const positionOptions = Array.from({ length: Math.max(1, maxPosition) }, (_, index) => {
-    const value = index + 1;
-    const suffix = value === 1 ? ' (first)' : value === maxPosition ? ' (last)' : '';
-
-    return { value, label: `Position ${value}${suffix}` };
-  });
-
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const name = String(new FormData(event.currentTarget).get('name') ?? '').trim();
-
-    console.warn('SUBMIT-FIRED name=[' + name + '] position=' + position);
-
-    if (!name) {
-      return;
-    }
-
-    onSubmit({ name, position });
-  }
+  const onDelete = (location: Location) => {
+    setConfirmDeleteOpen(true);
+    setConfirmDeleteTarget(location);
+  };
 
   return (
-    <Drawer
-      open
-      onOpenChange={(open) => !open && onClose()}
-      eyebrow={isNew ? 'New location' : 'Edit location'}
-      title={isNew ? 'New location' : 'Edit location'}
-    >
-      <Form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-        <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-6">
-          <TextField
-            label="Name"
-            name="name"
-            required
-            defaultValue={isNew ? undefined : state.location.name}
-            placeholder="e.g. Main Stage"
-            errors={[{ match: 'valueMissing', message: 'A location name is required.' }]}
-          />
-          <SelectField label="Position in list" value={position} onValueChange={setPosition} items={positionOptions} />
-          <p className="text-faint -mt-3 text-xs">Attendees see locations in this order.</p>
-        </div>
-        <div className="border-line flex gap-2.5 border-t p-5">
-          <Button variant="secondary" className="flex-1" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" className="flex-1" disabled={pending}>
-            {isNew ? 'Add location' : 'Save changes'}
-          </Button>
-        </div>
-      </Form>
+    <div className="reveal">
+      <p className="text-muted mb-3 font-mono text-xs tracking-wide">
+        {locations.length} location{locations.length === 1 ? '' : 's'} &bull; shown to attendees in this order
+      </p>
+
+      <Table>
+        <TableHeader>
+          <TableHeaderCell className="w-10 text-center">#</TableHeaderCell>
+          <TableHeaderCell className="flex-1">Name</TableHeaderCell>
+          <TableHeaderCell>Actions</TableHeaderCell>
+        </TableHeader>
+
+        {locations.map((location) => (
+          <LocationItem key={location.id} location={location} onDelete={() => onDelete(location)} />
+        ))}
+      </Table>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={(open) => !open && setConfirmDeleteOpen(false)}
+        onOpenChangeComplete={(open) => !open && setConfirmDeleteTarget(null)}
+        title={`Delete "${confirmDeleteTarget?.name}"?`}
+        description={`This removes the location from ${tenant.name}. Sessions assigned to it will need a new location. This can't be undone.`}
+        confirmLabel="Delete"
+        pending={deleteMutation.isPending}
+        onConfirm={() => {
+          assert(confirmDeleteTarget);
+
+          deleteMutation.mutate(confirmDeleteTarget.id, {
+            onSuccess: () => {
+              setConfirmDeleteTarget(null);
+              setConfirmDeleteOpen(false);
+            },
+          });
+        }}
+      />
+    </div>
+  );
+}
+
+function LocationItem({ location, onDelete }: { location: Location; onDelete: () => void }) {
+  return (
+    <div className="hover:bg-subtle row items-center gap-4 px-4 py-3">
+      <span className="text-accent w-10 text-center font-mono text-sm font-semibold">{location.position}</span>
+      <span className="flex-1 font-medium">{location.name}</span>
+      <div className="row items-center gap-1">
+        <LinkButton variant="secondary" size="sm" from="/festivals/$tenantId/locations" search={{ edit: location.id }}>
+          <Pencil className="size-3" />
+          Edit
+        </LinkButton>
+        <IconButton
+          icon={Trash2}
+          variant="ghost"
+          aria-label={`Delete ${location.name}`}
+          onClick={onDelete}
+          className="hover:text-danger"
+        />
+      </div>
+    </div>
+  );
+}
+
+function LocationDrawer({ tenant, locations }: { tenant: TenantSummary; locations: Location[] }) {
+  const { create, edit: editId } = useSearch({ from });
+  const open = create !== undefined || editId !== undefined;
+
+  const navigate = useNavigate({ from });
+  const onClose = () => navigate({ search: {} });
+
+  return (
+    <Drawer open={open} onOpenChange={(open) => !open && onClose()} title={create ? 'New location' : 'Edit location'}>
+      <LocationForm
+        tenant={tenant}
+        locations={locations}
+        defaultValue={editId ? locations.find((location) => location.id === editId) : undefined}
+        onClose={onClose}
+      />
     </Drawer>
   );
 }
 
-function EmptyState({ onAdd }: { onAdd: () => void }) {
-  return (
-    <div className="reveal border-line-strong flex flex-col items-center rounded-2xl border border-dashed px-10 py-18 text-center">
-      <div className="bg-well text-faint mb-4 flex size-15 items-center justify-center rounded-2xl">
-        <MapPin className="size-7" />
-      </div>
-      <h2 className="text-xl font-bold">No locations yet</h2>
-      <p className="text-muted mt-2 max-w-95 text-sm text-pretty">
-        Locations are the stages, tents and rooms where sessions happen. Add your first one to start building the
-        schedule.
-      </p>
-      <Button className="mt-6" onClick={onAdd}>
-        <Plus className="size-4" />
-        Add location
-      </Button>
-    </div>
+function LocationForm({
+  tenant,
+  locations,
+  defaultValue,
+  onClose,
+}: {
+  tenant: TenantSummary;
+  locations: Location[];
+  defaultValue?: Location;
+  onClose: () => void;
+}) {
+  const positionOptions = Array.from(
+    { length: Math.max(1, defaultValue ? locations.length : locations.length + 1) },
+    (_, index) => ({ value: index + 1, label: String(index + 1) }),
   );
-}
 
-function LocationsSkeleton() {
+  const createMutation = useCreateLocation(tenant.id);
+  const updateMutation = useUpdateLocation(tenant.id);
+
+  const pending = createMutation.isPending || updateMutation.isPending;
+
+  const errors = useMemo(() => {
+    return parseValidationError(createMutation.error ?? updateMutation.error);
+  }, [createMutation.error, updateMutation.error]);
+
+  const handleSubmit = (values: { name: string; position: number }) => {
+    values.position = Number(values.position);
+
+    if (!defaultValue) {
+      createMutation.mutate(values, { onSuccess: onClose });
+    } else {
+      updateMutation.mutate({ id: defaultValue.id, ...values }, { onSuccess: onClose });
+    }
+  };
+
   return (
-    <div className="border-line overflow-hidden rounded-2xl border">
-      <div className="border-line bg-subtle flex items-center gap-4 border-b px-5 py-3">
-        <HeaderCell className="w-10 text-center">#</HeaderCell>
-        <HeaderCell className="flex-1">Name</HeaderCell>
+    <Form onFormSubmit={handleSubmit} className="col flex-1">
+      <div className="col flex-1 gap-6 overflow-y-auto p-4">
+        <Field
+          name="name"
+          label="Name"
+          errors={[{ match: 'valueMissing', message: 'A location name is required.' }]}
+          error={errors?.name?.errors[0]}
+        >
+          <Input required defaultValue={defaultValue?.name} placeholder="e.g. Main Stage" />
+        </Field>
+
+        <Field name="position" label="Position" error={errors?.position?.errors[0]}>
+          <Select defaultValue={defaultValue?.position ?? locations.length + 1} items={positionOptions} />
+        </Field>
       </div>
-      {['60%', '45%', '72%', '38%', '55%'].map((width, index) => (
-        <div key={index} className="border-line/60 flex items-center gap-4 border-b px-5 py-4.5 last:border-b-0">
-          <div className="skel bg-well size-6 rounded-md" />
-          <div className="skel bg-well h-3.5 rounded" style={{ width }} />
-        </div>
-      ))}
-    </div>
-  );
-}
 
-function HeaderCell({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <span className={`text-xxs text-faint font-mono tracking-widest uppercase ${className ?? ''}`}>{children}</span>
+      <div className="row gap-4 border-t p-4">
+        <Button variant="secondary" className="flex-1" onClick={onClose}>
+          Cancel
+        </Button>
+
+        <Button type="submit" className="flex-1" disabled={pending}>
+          {!defaultValue ? 'Add location' : 'Save changes'}
+        </Button>
+      </div>
+    </Form>
   );
 }

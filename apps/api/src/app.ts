@@ -1,29 +1,29 @@
-import express, { type Express } from 'express';
+import express, { type Express, type Request, type Response } from 'express';
 
-import { errorHandler } from './middleware/error.ts';
-import { resolveTenant } from './middleware/tenant.ts';
+import { errorHandler, zodErrorHandler } from './middleware/error.ts';
 import { adminRouter } from './routes/admin/index.ts';
-import { bootstrapRouter } from './routes/bootstrap.ts';
-import { manifestRouter } from './routes/manifest.ts';
+import { tenantRouter } from './routes/app/index.ts';
 
 export function createApp(): Express {
   const app = express();
 
   app.use(express.json());
 
-  app.get('/health', (_req, res) => {
-    res.json({ status: 'ok' });
-  });
-
-  // Backoffice: tenant comes from the authenticated organizer + URL, never the Host.
+  app.get('/health', health);
   app.use('/admin', adminRouter);
+  app.use(tenantRouter);
 
-  // Public attendee API: tenant resolved from the Host.
-  app.use(resolveTenant);
-  app.use(bootstrapRouter);
-  app.use(manifestRouter);
-
+  app.use(zodErrorHandler);
   app.use(errorHandler);
+  app.use(notFound);
 
   return app;
+}
+
+function health(_req: Request, res: Response) {
+  res.json({ status: 'ok' });
+}
+
+function notFound(_req: Request, res: Response) {
+  res.status(404).json({ error: 'not_found' });
 }

@@ -7,7 +7,7 @@ const apiTarget = 'http://127.0.0.1:3000';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    port: 5180,
+    port: 8001,
     allowedHosts: ['.localhost'],
     proxy: {
       '/api': {

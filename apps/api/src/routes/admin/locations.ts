@@ -1,10 +1,11 @@
-import type { Location } from '@festivapp/contracts';
-import { and, asc, eq } from 'drizzle-orm';
+import type { Location as LocationDto } from '@festivapp/contracts';
+import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 
 import { db } from '../../db/client.ts';
-import { locations, type Location as LocationRow } from '../../db/schema.ts';
+import { locations, type Location } from '../../db/schema.ts';
+import { assert } from '../../utils.ts';
 
 export const locationsRouter = Router({ mergeParams: true });
 
@@ -15,80 +16,70 @@ const createSchema = z.object({
 
 const updateSchema = createSchema.partial();
 
-function toLocationDto(row: LocationRow): Location {
+function toLocationDto(row: Location): LocationDto {
   return { id: row.id, name: row.name, position: row.position };
 }
 
 locationsRouter.get('/', async (req, res) => {
-  const rows = await db
-    .select()
-    .from(locations)
-    .where(eq(locations.tenantId, req.tenant!.id))
-    .orderBy(asc(locations.position), asc(locations.name));
+  assert(req.tenant);
 
-  res.json(rows.map(toLocationDto) satisfies Location[]);
+  const locations = await db.query.locations.findMany({
+    where: { tenantId: req.tenant.id },
+    orderBy: { position: 'asc' },
+  });
+
+  res.json(locations.map(toLocationDto));
 });
 
 locationsRouter.post('/', async (req, res) => {
-  const parsed = createSchema.safeParse(req.body);
+  assert(req.tenant);
 
-  if (!parsed.success) {
-    res.status(400).json({ error: 'invalid_body' });
-
-    return;
-  }
+  const { name, position } = createSchema.parse(req.body);
 
   const [row] = await db
     .insert(locations)
-    .values({ tenantId: req.tenant!.id, name: parsed.data.name, position: parsed.data.position })
+    .values({
+      tenantId: req.tenant.id,
+      name,
+      position,
+    })
     .returning();
 
-  res.status(201).json(toLocationDto(row!) satisfies Location);
+  res.status(201).json(toLocationDto(row!));
 });
 
 locationsRouter.patch('/:id', async (req, res) => {
-  const id = req.params.id;
-  const parsed = updateSchema.safeParse(req.body);
+  assert(req.tenant);
 
-  if (typeof id !== 'string' || !parsed.success) {
-    res.status(400).json({ error: 'invalid_body' });
-
-    return;
-  }
+  const { name, position } = updateSchema.parse(req.body);
 
   const [row] = await db
     .update(locations)
-    .set({ ...parsed.data, updatedAt: new Date() })
-    .where(and(eq(locations.id, id), eq(locations.tenantId, req.tenant!.id)))
+    .set({
+      name,
+      position,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(locations.id, req.params.id), eq(locations.tenantId, req.tenant.id)))
     .returning();
 
   if (!row) {
-    res.status(404).json({ error: 'not_found' });
-
-    return;
+    return res.status(404).json({ error: 'not_found' });
   }
 
-  res.json(toLocationDto(row) satisfies Location);
+  res.json(toLocationDto(row));
 });
 
 locationsRouter.delete('/:id', async (req, res) => {
-  const id = req.params.id;
-
-  if (typeof id !== 'string') {
-    res.status(404).json({ error: 'not_found' });
-
-    return;
-  }
+  assert(req.tenant);
 
   const [row] = await db
     .delete(locations)
-    .where(and(eq(locations.id, id), eq(locations.tenantId, req.tenant!.id)))
+    .where(and(eq(locations.id, req.params.id), eq(locations.tenantId, req.tenant!.id)))
     .returning();
 
   if (!row) {
-    res.status(404).json({ error: 'not_found' });
-
-    return;
+    return res.status(404).json({ error: 'not_found' });
   }
 
   res.status(204).end();

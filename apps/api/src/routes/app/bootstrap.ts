@@ -2,18 +2,15 @@ import type { BootstrapResponse, Participant, Session } from '@festivapp/contrac
 import { asc, eq } from 'drizzle-orm';
 import { Router } from 'express';
 
-import { db } from '../db/client.ts';
-import * as schema from '../db/schema.ts';
+import { db } from '../../db/client.ts';
+import * as schema from '../../db/schema.ts';
+import { assert } from '../../utils.ts';
 
 export const bootstrapRouter = Router();
 
 bootstrapRouter.get('/bootstrap', async (req, res) => {
   const tenant = req.tenant;
-
-  if (!tenant) {
-    res.status(404).json({ error: 'tenant_not_found' });
-    return;
-  }
+  assert(tenant);
 
   const [locationRows, participantRows, sessionRows, linkRows] = await Promise.all([
     db

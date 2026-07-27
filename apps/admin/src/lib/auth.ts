@@ -1,24 +1,31 @@
 import type { LoginRequest, MeResponse } from '@festivapp/contracts';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
 
 import { api } from './api.ts';
 
-export function useMe() {
-  return useQuery({
+export function getMeOptions() {
+  return queryOptions({
     queryKey: ['me'],
-    queryFn: () => api.get<MeResponse>('/admin/auth/me'),
-    retry: false,
-    staleTime: 30_000,
+    queryFn: () => {
+      return api.get<MeResponse>('/admin/auth/me');
+    },
   });
+}
+
+export function useMe() {
+  return useQuery(getMeOptions());
 }
 
 export function useLogin() {
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   return useMutation({
     mutationFn: (body: LoginRequest) => api.post<MeResponse>('/admin/auth/login', body),
     onSuccess: (data) => {
       queryClient.setQueryData(['me'], data);
+      void router.invalidate();
     },
   });
 }

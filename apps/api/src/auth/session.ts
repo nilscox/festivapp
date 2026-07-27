@@ -1,3 +1,4 @@
+import { add } from 'date-fns';
 import { eq } from 'drizzle-orm';
 import type { CookieOptions, Request } from 'express';
 import { randomBytes } from 'node:crypto';
@@ -5,14 +6,9 @@ import { randomBytes } from 'node:crypto';
 import { db } from '../db/client.ts';
 import { authSessions } from '../db/schema.ts';
 
-export const SESSION_COOKIE = 'festivapp_admin_session';
-
-const SESSION_TTL_MS = 90 * 24 * 60 * 60 * 1000;
-const isProd = process.env.NODE_ENV === 'production';
-
 export async function createSession(organizerId: string): Promise<{ token: string; expiresAt: Date }> {
   const token = randomBytes(32).toString('base64url');
-  const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+  const expiresAt = new Date(add(Date.now(), { months: 3 }));
 
   await db.insert(authSessions).values({ token, organizerId, expiresAt });
 
@@ -37,7 +33,7 @@ export function readSessionToken(req: Request): string | undefined {
       continue;
     }
 
-    if (part.slice(0, splitAt).trim() === SESSION_COOKIE) {
+    if (part.slice(0, splitAt).trim() === 'token') {
       return decodeURIComponent(part.slice(splitAt + 1).trim());
     }
   }
@@ -45,10 +41,12 @@ export function readSessionToken(req: Request): string | undefined {
   return undefined;
 }
 
-export function sessionCookieOptions(expiresAt: Date): CookieOptions {
-  return { httpOnly: true, sameSite: 'lax', path: '/', secure: isProd, expires: expiresAt };
+const secure = process.env.NODE_ENV === 'production';
+
+export function sessionCookieOptions(expires: Date): CookieOptions {
+  return { httpOnly: true, sameSite: 'lax', path: '/', secure, expires };
 }
 
 export function clearCookieOptions(): CookieOptions {
-  return { httpOnly: true, sameSite: 'lax', path: '/', secure: isProd };
+  return { httpOnly: true, sameSite: 'lax', path: '/', secure };
 }

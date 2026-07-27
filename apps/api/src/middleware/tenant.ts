@@ -1,8 +1,7 @@
-import { eq } from 'drizzle-orm';
 import type { RequestHandler } from 'express';
 
 import { db } from '../db/client.ts';
-import { type Tenant, tenants } from '../db/schema.ts';
+import { type Tenant } from '../db/schema.ts';
 
 declare global {
   namespace Express {
@@ -12,19 +11,16 @@ declare global {
   }
 }
 
-export const resolveTenant: RequestHandler = async (req, res, next) => {
-  const override =
+export const requireTenant: RequestHandler = async (req, res, next) => {
+  const domain =
     (typeof req.query.__tenant === 'string' ? req.query.__tenant : undefined) ??
     req.get('x-tenant-domain') ??
-    undefined;
-  const host = override ?? req.hostname;
+    req.hostname;
 
-  const [tenant] = await db.select().from(tenants).where(eq(tenants.domain, host)).limit(1);
+  const tenant = await db.query.tenants.findFirst({ where: { domain } });
 
   if (!tenant) {
-    res.status(404).json({ error: 'tenant_not_found', host });
-
-    return;
+    return res.status(404).json({ error: 'tenant_not_found', domain });
   }
 
   req.tenant = tenant;

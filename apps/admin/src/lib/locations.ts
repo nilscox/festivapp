@@ -1,24 +1,25 @@
 import type { Location, LocationInput } from '@festivapp/contracts';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api } from './api.ts';
 
-const basePath = (tenantId: string) => `/admin/tenants/${tenantId}/locations`;
-const listKey = (tenantId: string) => ['locations', tenantId] as const;
+export function listLocationsOptions(tenantId: string) {
+  return queryOptions({
+    queryKey: ['locations', tenantId],
+    queryFn: () => api.get<Location[]>(`/admin/tenants/${tenantId}/locations`),
+  });
+}
 
 export function useLocations(tenantId: string) {
-  return useQuery({
-    queryKey: listKey(tenantId),
-    queryFn: () => api.get<Location[]>(basePath(tenantId)),
-  });
+  return useQuery(listLocationsOptions(tenantId));
 }
 
 export function useCreateLocation(tenantId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: LocationInput) => api.post<Location>(basePath(tenantId), input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: listKey(tenantId) }),
+    mutationFn: (input: LocationInput) => api.post<Location>(`/admin/tenants/${tenantId}/locations`, input),
+    onSuccess: () => queryClient.invalidateQueries(listLocationsOptions(tenantId)),
   });
 }
 
@@ -26,9 +27,9 @@ export function useUpdateLocation(tenantId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: LocationInput }) =>
-      api.patch<Location>(`${basePath(tenantId)}/${id}`, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: listKey(tenantId) }),
+    mutationFn: ({ id, ...input }: { id: string } & LocationInput) =>
+      api.patch<Location>(`${`/admin/tenants/${tenantId}/locations`}/${id}`, input),
+    onSuccess: () => queryClient.invalidateQueries(listLocationsOptions(tenantId)),
   });
 }
 
@@ -36,7 +37,7 @@ export function useDeleteLocation(tenantId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => api.del<void>(`${basePath(tenantId)}/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: listKey(tenantId) }),
+    mutationFn: (id: string) => api.delete<void>(`${`/admin/tenants/${tenantId}/locations`}/${id}`),
+    onSuccess: () => queryClient.invalidateQueries(listLocationsOptions(tenantId)),
   });
 }

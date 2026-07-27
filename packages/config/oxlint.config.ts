@@ -8,6 +8,7 @@ export default defineConfig({
     suspicious: 'warn',
   },
   rules: {
+    'no-shadow': ['off'],
     'no-underscore-dangle': ['warn', { allow: ['__tenant'] }],
   },
 });

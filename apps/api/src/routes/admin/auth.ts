@@ -1,5 +1,4 @@
-import type { MeResponse } from '@festivapp/contracts';
-import { eq } from 'drizzle-orm';
+import type { MeResponse, Organizer as OrganizerDto, TenantSummary as TenantDto } from '@festivapp/contracts';
 import { Router } from 'express';
 import { z } from 'zod';
 
@@ -9,56 +8,63 @@ import {
   createSession,
   destroySession,
   readSessionToken,
-  SESSION_COOKIE,
   sessionCookieOptions,
 } from '../../auth/session.ts';
 import { db } from '../../db/client.ts';
-import { organizers } from '../../db/schema.ts';
+import { type Organizer, type Tenant } from '../../db/schema.ts';
 import { requireOrganizer } from '../../middleware/admin-auth.ts';
-import { listOrganizerTenants, toOrganizerDto } from './tenants.ts';
 
 export const authRouter = Router();
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.email().trim().toLowerCase(),
   password: z.string().min(1),
 });
 
+async function listOrganizerTenants(organizerId: string) {
+  return db.query.tenants.findMany({
+    where: { organizers: { id: organizerId } },
+    orderBy: { name: 'asc' },
+  });
+}
+
+function toOrganizerDto(organizer: Organizer): OrganizerDto {
+  return { id: organizer.id, email: organizer.email, name: organizer.name };
+}
+
+function toTenantDto(tenant: Tenant): TenantDto {
+  return { id: tenant.id, name: tenant.name, domain: tenant.domain };
+}
+
 authRouter.post('/login', async (req, res) => {
-  const parsed = loginSchema.safeParse(req.body);
+  const { email, password } = loginSchema.parse(req.body);
 
-  if (!parsed.success) {
-    res.status(400).json({ error: 'invalid_body' });
+  const organizer = await db.query.organizers.findFirst({
+    where: { email },
+  });
 
-    return;
-  }
-
-  const email = parsed.data.email.trim().toLowerCase();
-
-  const [organizer] = await db.select().from(organizers).where(eq(organizers.email, email)).limit(1);
-
-  if (!organizer || !verifyPassword(parsed.data.password, organizer.passwordHash)) {
-    res.status(401).json({ error: 'invalid_credentials' });
-
-    return;
+  if (!organizer || !verifyPassword(password, organizer.passwordHash)) {
+    return res.status(401).json({ error: 'invalid_credentials' });
   }
 
   const { token, expiresAt } = await createSession(organizer.id);
+  const tenants = await listOrganizerTenants(organizer.id);
 
-  res.cookie(SESSION_COOKIE, token, sessionCookieOptions(expiresAt));
+  res.cookie('token', token, sessionCookieOptions(expiresAt));
 
   res.json({
     organizer: toOrganizerDto(organizer),
-    tenants: await listOrganizerTenants(organizer.id),
+    tenants: tenants.map(toTenantDto),
   } satisfies MeResponse);
 });
 
 authRouter.get('/me', requireOrganizer, async (req, res) => {
   const organizer = req.organizer!;
+  const tenants = await listOrganizerTenants(organizer.id);
 
   res.json({
     organizer: toOrganizerDto(organizer),
-    tenants: await listOrganizerTenants(organizer.id),
+    tenants: tenants.map(toTenantDto),
   } satisfies MeResponse);
 });
 
@@ -69,6 +75,6 @@ authRouter.post('/logout', requireOrganizer, async (req, res) => {
     await destroySession(token);
   }
 
-  res.clearCookie(SESSION_COOKIE, clearCookieOptions());
+  res.clearCookie('token', clearCookieOptions());
   res.status(204).end();
 });

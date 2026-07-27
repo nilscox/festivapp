@@ -5,10 +5,9 @@ import { authRouter } from './auth.ts';
 import { locationsRouter } from './locations.ts';
 
 export const adminRouter = Router();
+const tenantRouter = Router();
 
 adminRouter.use('/auth', authRouter);
-adminRouter.use('/tenants/:tenantId/locations', requireOrganizer, requireTenantMembership, locationsRouter);
+adminRouter.use('/tenants/:tenantId', requireOrganizer, requireTenantMembership, tenantRouter);
 
-adminRouter.use((_req, res) => {
-  res.status(404).json({ error: 'not_found' });
-});
+tenantRouter.use('/locations', locationsRouter);

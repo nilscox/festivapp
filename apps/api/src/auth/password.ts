@@ -1,23 +1,16 @@
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 
-const KEY_LENGTH = 64;
-
 export function hashPassword(plain: string): string {
-  const salt = randomBytes(16);
-  const derived = scryptSync(plain, salt, KEY_LENGTH);
+  const salt = randomBytes(16).toString('hex');
+  const derived = scryptSync(plain, salt, 64);
 
-  return `scrypt$${salt.toString('base64')}$${derived.toString('base64')}`;
+  return `${derived.toString('hex')}.${salt}`;
 }
 
 export function verifyPassword(plain: string, stored: string): boolean {
-  const [scheme, saltB64, hashB64] = stored.split('$');
-
-  if (scheme !== 'scrypt' || saltB64 === undefined || hashB64 === undefined) {
-    return false;
-  }
-
-  const expected = Buffer.from(hashB64, 'base64');
-  const derived = scryptSync(plain, Buffer.from(saltB64, 'base64'), expected.length);
+  const [hashed, salt] = stored.split('.') as [string, string];
+  const expected = Buffer.from(hashed, 'hex');
+  const derived = scryptSync(plain, salt, 64);
 
   return expected.length === derived.length && timingSafeEqual(expected, derived);
 }

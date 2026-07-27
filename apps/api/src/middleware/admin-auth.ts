@@ -3,13 +3,12 @@ import type { RequestHandler } from 'express';
 
 import { readSessionToken } from '../auth/session.ts';
 import { db } from '../db/client.ts';
-import { type AuthSession, authSessions, type Organizer, organizers, organizerTenants, tenants } from '../db/schema.ts';
+import { authSessions, type Organizer, organizers, organizerTenants, tenants } from '../db/schema.ts';
 
 declare global {
   namespace Express {
     interface Request {
       organizer?: Organizer;
-      authSession?: AuthSession;
     }
   }
 }
@@ -18,44 +17,34 @@ export const requireOrganizer: RequestHandler = async (req, res, next) => {
   const token = readSessionToken(req);
 
   if (token === undefined) {
-    res.status(401).json({ error: 'unauthenticated' });
-
-    return;
+    return res.status(401).json({ error: 'unauthenticated' });
   }
 
   const [row] = await db
-    .select({ session: authSessions, organizer: organizers })
+    .select({ organizer: organizers })
     .from(authSessions)
     .innerJoin(organizers, eq(authSessions.organizerId, organizers.id))
     .where(and(eq(authSessions.token, token), gt(authSessions.expiresAt, new Date())))
     .limit(1);
 
   if (!row) {
-    res.status(401).json({ error: 'unauthenticated' });
-
-    return;
+    return res.status(401).json({ error: 'unauthenticated' });
   }
 
   req.organizer = row.organizer;
-  req.authSession = row.session;
   next();
 };
 
 export const requireTenantMembership: RequestHandler = async (req, res, next) => {
   const organizer = req.organizer;
-
-  if (!organizer) {
-    res.status(401).json({ error: 'unauthenticated' });
-
-    return;
-  }
-
   const tenantId = req.params.tenantId;
 
-  if (typeof tenantId !== 'string') {
-    res.status(400).json({ error: 'invalid_tenant' });
+  if (!organizer) {
+    return res.status(401).json({ error: 'unauthenticated' });
+  }
 
-    return;
+  if (typeof tenantId !== 'string') {
+    return res.status(400).json({ error: 'invalid_tenant_id' });
   }
 
   const [row] = await db
@@ -66,9 +55,7 @@ export const requireTenantMembership: RequestHandler = async (req, res, next) =>
     .limit(1);
 
   if (!row) {
-    res.status(403).json({ error: 'forbidden' });
-
-    return;
+    return res.status(403).json({ error: 'forbidden' });
   }
 
   req.tenant = row.tenant;

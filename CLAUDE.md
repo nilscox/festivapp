@@ -15,12 +15,12 @@ the device; the attendee SPA must work fully offline after first load.
 ```
 apps/
   api/         Express 5 + Drizzle + Postgres API
+  app/         Attendee PWA (Vite + React, offline-first)
+  admin/       Organizer backoffice (Vite + React)
 packages/
   contracts/   Shared, type-only request/response types (@festivapp/contracts)
   config/      Shared base tsconfig + oxlint/oxfmt configs (@festivapp/config)
 ```
-
-Clients (`apps/app`, `apps/admin`, `apps/landing`) are added in later milestones.
 
 ## Runtime & TypeScript
 
@@ -30,21 +30,110 @@ Clients (`apps/app`, `apps/admin`, `apps/landing`) are added in later milestones
   - `erasableSyntaxOnly` is on: no enums, no runtime `namespace`, no parameter
     properties — nothing that emits JS from types.
   - `packages/contracts` is **type-only**; import from it with `import type`.
-- The base tsconfig lives in `@festivapp/config/tsconfig.base.json`; each package
-  extends it. oxlint and oxfmt work the same way: `packages/config` holds the base
-  `oxlint.config.ts`/`oxfmt.config.ts`, and each app/package has its own
-  `oxlint.config.ts` and `oxfmt.config.ts` that `extends`/spread the base via
-  `defineConfig` (root `oxlint`/`oxfmt` discover them per file).
-
-## Conventions
-
+- Tooling config is layered: `packages/config` holds the base
+  `tsconfig.base.json` / `oxlint.config.ts` / `oxfmt.config.ts`, and each
+  app/package extends (or spreads) it in its own config file.
+- **Narrow invariants with `assert(value, error?)`** (each app's `src/utils.ts`),
+  not `!` — e.g. `assert(req.tenant)` then `req.tenant.id`.
 - **Environment variables have no defaults.** Read them through `requireEnv` (see
-  `apps/api/src/env.ts`); a missing required variable must crash the process at
+  `apps/api/src/config.ts`); a missing required variable must crash the process at
   startup. Each app has its own `.env` (git-ignored), never a shared root one.
-- **The seed is committed** (`apps/api/seed.ts`) and is the canonical dev seed; run
-  it with `pnpm seed` from `apps/api`.
-- **Migrations are committed** (`apps/api/drizzle/`) and are excluded from
-  formatting.
+
+## API conventions
+
+- **Read with the Drizzle relational query API** — prefer
+  `db.query.<table>.findMany/findFirst({ where, orderBy })` over hand-written
+  `select().from().innerJoin()`; declare cross-table `relations` (`defineRelations`
+  in `db/schema.ts`) so `where` can traverse them (e.g. `where: { organizers: { id } }`).
+  Writes stay explicit: `db.insert/update/delete(...).returning()`.
+- **Always map rows to a contract DTO at the response boundary.** Relational reads
+  return **full rows**, so never hand a raw row (or a spread of one) to `res.json`
+  — it leaks columns the contract doesn't declare. Write one small `to<Name>Dto(row)`
+  per resource; colocate it in the route file when only one caller uses it.
+- **DTO vs row naming** — alias the contract type as `<Name>Dto` and keep the
+  Drizzle row type as the plain `<Name>` (`import { locations, type Location }` +
+  `import type { Location as LocationDto }`).
+- **Validate with `schema.parse(req.body)`**, never `safeParse` + a hand-rolled 400. Put normalisation in the schema (zod v4 top-level formats + transforms, e.g.
+  `z.email().trim().toLowerCase()`). A thrown `ZodError` becomes
+  `400 z.treeifyError(err)` via the shared `zodErrorHandler` (mounted before
+  `errorHandler`) — this relies on Express 5 forwarding rejected async handlers.
+  Other failures respond `{ error: '<snake_code>' }`.
+- **Guard clauses are one-liners:** `return res.status(x).json(...)` (Express 5
+  ignores the return value) — no separate `return;`.
+- **Compose routers by mounting shared middleware on a parent segment.**
+  `/admin/tenants/:tenantId` carries `requireOrganizer, requireTenantMembership`
+  once, then nests resource routers (`tenantRouter.use('/locations', locationsRouter)`).
+  Group routers by audience under `routes/{app,admin}/` with an assembling
+  `index.ts`. Admin routes take the tenant from the URL/session, **never** the
+  `Host`; only the public attendee routes run `resolveTenant`.
+- **Date math via date-fns** — `add(Date.now(), { months: 3 })`, not raw
+  millisecond arithmetic.
+- **The seed and the migrations are committed** (`apps/api/seed.ts`,
+  `apps/api/drizzle/`); the seed is the canonical dev dataset, and `drizzle/` is
+  excluded from formatting.
+
+## Backoffice conventions (`apps/admin`)
+
+- **The router owns navigation state and gating** (TanStack Router, code-based).
+  Do auth/data gating in route `beforeLoad`/`loader`, never in `useEffect`:
+  `createRootRouteWithContext<{ queryClient }>`, prefetch with
+  `queryClient.ensureQueryData(...)`, branch with `throw redirect(...)`, and thread
+  shared data (`me`, `tenant`) through route **context**, read via
+  `useRouteContext({ from })`.
+- **Transient UI state lives in the URL, not `useState`.** Model drawers/dialogs and
+  the selected record as validated search params
+  (`validateSearch: z.object({ create: z.literal(true).optional(), edit: z.uuid().optional() })`),
+  open with `<LinkButton search={{ … }}>`, close with `navigate({ search: {} })`.
+- **Share `queryOptions` factories.** Define `getMeOptions()` / `listLocationsOptions(id)`
+  in `lib/` and reuse the same factory in route loaders (`ensureQueryData`) and
+  components (`useQuery`); mutations invalidate by that factory's key.
+- **One `ApiError`, guarded by `ApiError.is(err, status?)`.** `lib/api.ts` throws it
+  (carrying `status`, raw `body`, parsed `error` code). Cross-cutting handling is
+  central in `main.tsx`: a `QueryCache` + mutation `onError` toasts 5xx
+  (`react-hot-toast`) and `retry` skips 4xx. Field-level 400s come from the API's
+  zod tree via `parseValidationError` (`lib/errors.ts`) and render in `<Field error=…>`.
+- **Forms use Base UI `<Form onFormSubmit>`** — it yields typed values; don't read
+  `FormData` or control inputs by hand. Keep inputs uncontrolled (`defaultValue`) and
+  wrap every control (`Input`, `Select`) in `<Field name=…>` so it registers with the
+  form and surfaces validity (`errors` for native matches, `error` for the server message).
+- **Compose small primitives**, exported component first with sub-components below:
+  `Field`, `Input`, `Select`, `Table`/`TableHeader`, `Page`/`PageHeader`,
+  `EmptyState`, `Spinner`, `Drawer`, `ConfirmDialog`,
+  `Button`/`LinkButton`/`IconButton`. Use `createLink` to make a styled anchor
+  router-aware.
+- **Keep the first-paint bundle small.** Lazy-load heavy route components with
+  `lazyRouteComponent(() => import('./x.tsx'), 'X')` (route definitions, loaders and
+  `validateSearch` stay eager so they can still prefetch) — this defers Base UI's
+  dialogs/select + floating-ui off the login path. Use **`zod/mini`**
+  (`import * as z from 'zod/mini'`; `z.optional(z.string())` rather than
+  `z.string().optional()`), not full `zod` — same Standard-Schema behavior at a
+  fraction of the size.
+
+## Attendee app conventions (`apps/app`)
+
+Deliberately simpler than the backoffice — no auth, no forms, no router context.
+
+- **All data comes from one `/bootstrap` query** (`use-bootstrap.ts`), shaped once
+  in `select` (sorting, id → entity maps) and read through `useTenant()` /
+  `useSession(id)` style hooks. Add derived reads there rather than re-deriving in
+  components.
+- **Offline-first:** the query client is wrapped in `PersistQueryClientProvider`
+  backed by `idb-keyval`, and `vite-plugin-pwa` precaches the shell. Anything that
+  breaks a cold, offline start is a bug.
+- **Theming is per-tenant at runtime** — `applyTenant` sets CSS variables from the
+  bootstrap payload; don't hardcode brand colors.
+
+## Styling
+
+- **Prefer Tailwind scale tokens; avoid arbitrary values** (`[...]`) unless strictly
+  required — e.g. a responsive `clamp()`, animation delays, `env()`.
+- Use the `.row`/`.col` flex utilities, and the custom text scale tokens
+  (`text-xxs`, plus `text-label`/`text-form` in admin) defined in each app's
+  `@theme` block.
+- In admin, a global `* { border-color: … }` means `border` needs no color; animate
+  Base UI popups with the shared `.base-ui-fade` helper +
+  `data-starting-style`/`data-ending-style`.
+- Wrap static class lists in `clsx(...)` so oxfmt sorts them.
 
 ## Code style
 
@@ -56,22 +145,19 @@ Clients (`apps/app`, `apps/admin`, `apps/landing`) are added in later milestones
   even for files exporting a PascalCase React component.
 - **Straight ASCII quotes and apostrophes** in code and UI copy — not curly/smart
   quotes (no U+2018/U+2019/U+201C/U+201D).
-- **Prefer Tailwind scale tokens; avoid arbitrary values** (`[...]`) unless strictly
-  required — e.g. a responsive `clamp()`, animation delays, `env()`.
 - **Top-down file order** — the main/exported component comes first, then the
   local sub-components and helpers it uses below it. Constants and type
   declarations stay at the top.
-- Formatting and linting are enforced by oxfmt and oxlint — run `pnpm format` and
-  `pnpm lint`.
 
 ## Commands
 
-- Root: `pnpm typecheck`, `pnpm lint`, `pnpm format`, `pnpm format:check`.
-- From `apps/api`: `pnpm dev`, `pnpm db:generate`, `pnpm db:migrate`, `pnpm seed`.
+- Root: `pnpm typecheck`, `pnpm lint`, `pnpm format`, `pnpm format:check` —
+  **all four must pass before a change is done.**
+- `apps/api`: `pnpm dev`, `pnpm db:migrate`, `pnpm db:seed`, `pnpm cli`
+  (e.g. `pnpm cli organizer create <email> <password> <domain…>` to get a
+  backoffice login). Generate a migration with `pnpm drizzle-kit generate`.
+- `apps/app` / `apps/admin`: `pnpm dev`, `pnpm build`, `pnpm preview`.
 - Local Postgres runs in a container — see the README for the `docker run` command.
 
-## Verifying changes
-
-Before considering a change done: `pnpm typecheck`, `pnpm lint`, `pnpm format:check`.
-For API behavior, run `pnpm dev` (from `apps/api`) and exercise the endpoints with
-`curl`, setting `Host` (or `?__tenant=`) to pick the tenant.
+To verify API behavior, run `pnpm dev` from `apps/api` and exercise the endpoints
+with `curl`, setting `Host` (or `?__tenant=`) to pick the tenant.

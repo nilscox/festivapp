@@ -3,5 +3,7 @@ import { defineConfig } from 'oxfmt';
 
 export default defineConfig({
   ...baseConfig,
-  sortTailwindcss: true,
+  sortTailwindcss: {
+    functions: ['clsx'],
+  },
 });

@@ -1,15 +1,12 @@
 import { Router } from 'express';
 
+import { assert } from '../../utils.ts';
+
 export const manifestRouter = Router();
 
 manifestRouter.get('/manifest.webmanifest', (req, res) => {
   const tenant = req.tenant;
-
-  if (!tenant) {
-    res.status(404).json({ error: 'tenant_not_found' });
-
-    return;
-  }
+  assert(tenant);
 
   res.type('application/manifest+json');
   res.json({

@@ -126,6 +126,9 @@ export const authSessions = p.pgTable('auth_sessions', {
 
 export const relations = defineRelations(
   {
+    organizers,
+    organizerTenants,
+    authSessions,
     tenants,
     locations,
     participants,
@@ -133,6 +136,18 @@ export const relations = defineRelations(
     sessionParticipants,
   },
   (r) => ({
+    organizers: {
+      tenants: r.many.tenants({
+        from: r.organizers.id.through(r.organizerTenants.organizerId),
+        to: r.tenants.id.through(r.organizerTenants.tenantId),
+      }),
+    },
+    tenants: {
+      organizers: r.many.organizers({
+        from: r.tenants.id.through(r.organizerTenants.tenantId),
+        to: r.organizers.id.through(r.organizerTenants.organizerId),
+      }),
+    },
     sessions: {
       location: r.one.locations({
         from: r.sessions.locationId,
