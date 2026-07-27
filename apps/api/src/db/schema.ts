@@ -7,6 +7,9 @@ export type Location = typeof locations.$inferSelect;
 export type Participant = typeof participants.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type SessionParticipant = typeof sessionParticipants.$inferSelect;
+export type Organizer = typeof organizers.$inferSelect;
+export type OrganizerTenant = typeof organizerTenants.$inferSelect;
+export type AuthSession = typeof authSessions.$inferSelect;
 
 export const sessionType = p.pgEnum('session_type', ['dj_set', 'live', 'talk', 'workshop', 'other']);
 
@@ -86,6 +89,40 @@ export const sessionParticipants = p.pgTable(
     p.unique('session_participant_position').on(table.sessionId, table.participantId, table.position),
   ],
 );
+
+export const organizers = p.pgTable('organizers', {
+  id: p.uuid().primaryKey().defaultRandom(),
+  email: p.text().notNull().unique(),
+  passwordHash: p.text().notNull(),
+  name: p.text(),
+  createdAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
+export const organizerTenants = p.pgTable(
+  'organizer_tenants',
+  {
+    organizerId: p
+      .uuid()
+      .notNull()
+      .references(() => organizers.id, { onDelete: 'cascade' }),
+    tenantId: p
+      .uuid()
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+  },
+  (table) => [p.primaryKey({ columns: [table.organizerId, table.tenantId] })],
+);
+
+export const authSessions = p.pgTable('auth_sessions', {
+  token: p.text().primaryKey(),
+  organizerId: p
+    .uuid()
+    .notNull()
+    .references(() => organizers.id, { onDelete: 'cascade' }),
+  createdAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
+  expiresAt: p.timestamp({ withTimezone: true }).notNull(),
+});
 
 export const relations = defineRelations(
   {

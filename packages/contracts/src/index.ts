@@ -87,3 +87,38 @@ export type BootstrapResponse = {
   participants: Participant[];
   sessions: Session[];
 };
+
+/* Organizer backoffice (`/admin/*`) contracts. */
+
+/** An authenticated backoffice user. Accounts are global, spanning festivals. */
+export type Organizer = {
+  id: string;
+  email: string;
+  /** Display name, or null when unset (the UI falls back to the email). */
+  name: string | null;
+};
+
+/** A festival the signed-in organizer may manage, for the sidebar switcher. */
+export type TenantSummary = {
+  id: string;
+  name: string;
+  domain: string;
+};
+
+/** Body of `POST /admin/auth/login`. */
+export type LoginRequest = {
+  email: string;
+  password: string;
+};
+
+/** Payload of `GET /admin/auth/me` and the response to a successful login. */
+export type MeResponse = {
+  organizer: Organizer;
+  tenants: TenantSummary[];
+};
+
+/** Body of `POST`/`PATCH` on `/admin/tenants/:tenantId/locations`. */
+export type LocationInput = {
+  name: string;
+  position: number;
+};

@@ -8,10 +8,12 @@
     "start": "node --env-file=.env src/index.ts",
     "typecheck": "tsc --noEmit",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "node --env-file=.env seed.ts"
+    "db:seed": "node --env-file=.env seed.ts",
+    "cli": "node --env-file=.env src/cli.ts"
   },
   "dependencies": {
     "@festivapp/contracts": "workspace:*",
+    "commander": "^15.0.0",
     "drizzle-orm": "1.0.0-beta.22",
     "express": "^5.2.1",
     "pg": "^8.22.0",

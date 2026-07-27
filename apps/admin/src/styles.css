@@ -1,0 +1,98 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-display: 'Space Grotesk Variable', system-ui, sans-serif;
+  --font-body: 'Space Grotesk Variable', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --text-xxs: 0.625rem;
+  --text-xxs--line-height: 1.1;
+  --text-label: 0.8125rem;
+  --text-label--line-height: 1.2;
+  --text-form: 0.9375rem;
+  --text-form--line-height: 1.4;
+
+  --color-page: #e7e7ea;
+  --color-surface: #ffffff;
+  --color-subtle: #fafafa;
+  --color-well: #f4f4f5;
+
+  --color-line: #e4e4e7;
+  --color-line-strong: #d8d8dc;
+
+  --color-ink: #18181b;
+  --color-muted: #71717a;
+  --color-muted-strong: #52525b;
+  --color-faint: #a1a1aa;
+  --color-faint-strong: #c4c4cc;
+
+  --color-accent: #6d28d9;
+  --color-accent-soft: #ede9fe;
+
+  --color-danger: #dc2626;
+  --color-danger-ink: #b91c1c;
+  --color-danger-soft: #fef2f2;
+  --color-danger-line: #fecaca;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 5px;
+}
+
+@layer components {
+  .reveal {
+    animation: reveal 300ms ease both;
+  }
+
+  .skel {
+    animation: skel 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes skel {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

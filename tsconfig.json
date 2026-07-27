@@ -1,4 +1,9 @@
 {
   "files": [],
-  "references": [{ "path": "apps/api" }, { "path": "apps/app" }, { "path": "packages/contracts" }]
+  "references": [
+    { "path": "apps/api" },
+    { "path": "apps/app" },
+    { "path": "apps/admin" },
+    { "path": "packages/contracts" }
+  ]
 }
