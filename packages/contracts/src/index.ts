@@ -5,11 +5,62 @@
  * so it can be imported with `import type` and never ships any JavaScript.
  */
 
+/**
+ * A tenant's visual identity. Colors are the only two the organizer picks: the
+ * rest of the palette (surfaces, text, borders) is derived from them, and the
+ * backoffice rejects a pair that doesn't contrast enough.
+ */
 export type TenantTheme = {
-  /** Primary brand color, as a CSS color string. */
-  primaryColor: string;
-  /** Absolute or app-relative URL to the tenant's logo, or null when unset. */
-  logoUrl: string | null;
+  /**
+   * Base background, as a CSS color string. Surfaces and the page behind them
+   * are shaded from it, it doubles as the browser/status bar `theme-color`, and
+   * its luminance decides whether text comes out dark or light.
+   */
+  backgroundColor: string;
+  /** Brand color, used for headings, icons and highlights. */
+  accentColor: string;
+  fonts: TenantFonts;
+  logo: TenantLogo;
+  /** Image layered over `backgroundColor`, or null when unset. */
+  backgroundImage: TenantBackgroundImage | null;
+  /** Identity of the installed app, independent of the festival's full name. */
+  pwa: TenantPwa;
+  /**
+   * Stylesheet appended after the app's own styles, or null when unset. Applies
+   * only to the attendee app. Since attendees may load it offline, it should not
+   * `@import` or reference anything the app hasn't cached.
+   */
+  customCss: string | null;
+};
+
+/** CSS font stacks, used as-is (e.g. "'Space Grotesk', system-ui, sans-serif"). */
+export type TenantFonts = {
+  /** Headings and other display type. */
+  display: string;
+  /** Body copy. */
+  body: string;
+  /** Labels, chips and times. */
+  mono: string;
+};
+
+export type TenantLogo = {
+  /** Wide wordmark shown in the app's header, or null when unset. */
+  wordmarkUrl: string | null;
+  /** Square mark used as the install icon and favicon, or null when unset. */
+  iconUrl: string | null;
+};
+
+export type TenantBackgroundImage = {
+  url: string;
+  /** How strongly the image shows through, from 0 to 1. */
+  opacity: number;
+};
+
+export type TenantPwa = {
+  /** Name of the installed app; falls back to the tenant's name when unset. */
+  name: string | null;
+  /** Short name shown under the home-screen icon (~12 characters). */
+  shortName: string | null;
 };
 
 export type TenantConfig = {

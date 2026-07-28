@@ -8,7 +8,7 @@ import { useState } from 'react';
 
 import { Button } from '../components/button.tsx';
 import { Eyebrow } from '../components/eyebrow.tsx';
-import { OpenDrawerProvider } from '../components/page-header.tsx';
+import { OpenDrawerProvider } from '../components/page.tsx';
 import { useMediaQuery } from '../hooks/use-media-query.ts';
 import { useLogout } from '../lib/auth.ts';
 

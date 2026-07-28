@@ -56,9 +56,17 @@ function findLocationNow(locationId: string, sessions: Session[], now: Date) {
 }
 
 function Header({ tenant }: { tenant: TenantConfig }) {
+  const { wordmarkUrl } = tenant.theme.logo;
+
   return (
     <PageHeader
-      title={tenant.name}
+      title={
+        wordmarkUrl !== null ? (
+          <img src={wordmarkUrl} alt={tenant.name} className="h-8 max-w-full self-start object-contain object-left" />
+        ) : (
+          tenant.name
+        )
+      }
       subtitle={
         <div className="row text-faint items-center gap-2 font-mono text-xs uppercase">
           <span className="bg-accent size-1.5 rounded-full" />

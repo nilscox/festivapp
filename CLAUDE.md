@@ -121,7 +121,12 @@ Deliberately simpler than the backoffice — no auth, no forms, no router contex
   backed by `idb-keyval`, and `vite-plugin-pwa` precaches the shell. Anything that
   breaks a cold, offline start is a bug.
 - **Theming is per-tenant at runtime** — `applyTenant` sets CSS variables from the
-  bootstrap payload; don't hardcode brand colors.
+  bootstrap payload; don't hardcode brand colors. The organizer picks two colors
+  (`backgroundColor`, `accentColor`, hex only); everything else is derived there
+  with `color-mix`, over an ink picked from the background's luminance. There is
+  no dark mode — a dark tenant is just a dark `backgroundColor`. A tenant's
+  `customCss` goes into a `<style>` via `textContent` (never `innerHTML`, which
+  would let the CSS close the tag and inject markup).
 
 ## Styling
 

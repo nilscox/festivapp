@@ -9,7 +9,9 @@ export function Page({ header, children }: { header?: React.ReactNode; children?
   return (
     <>
       {header}
-      <div className="col mx-auto w-full max-w-7xl flex-1 overflow-y-auto px-4 py-6 md:px-8">{children}</div>
+      <div className="col flex-1 overflow-y-scroll">
+        <div className="col mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-8">{children}</div>
+      </div>
     </>
   );
 }
@@ -26,7 +28,7 @@ export function PageHeader({
   const open = defined(use(OpenDrawerContext));
 
   return (
-    <header className="border-b">
+    <header className="bg-surface sticky top-0 shrink-0 border-b pe-3.75 max-md:shadow-sm">
       <div className="row mx-auto w-full max-w-7xl items-center gap-3 px-4 py-3 md:px-8 md:py-4">
         <IconButton icon={Menu} variant="ghost" aria-label="Open menu" onClick={open} className="shrink-0 md:hidden" />
 

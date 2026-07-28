@@ -3,6 +3,7 @@ import z from 'zod';
 
 import { db } from './src/db/client.ts';
 import * as schema from './src/db/schema.ts';
+import { defaultTheme, themeSchema } from './src/theme.ts';
 
 const input = process.argv[2];
 
@@ -15,10 +16,7 @@ const dataSchema = z.object({
     name: z.string(),
     domain: z.string(),
     timezone: z.string(),
-    theme: z.object({
-      primaryColor: z.string(),
-      logoUrl: z.string().nullable(),
-    }),
+    theme: themeSchema.partial().optional(),
   }),
   participants: z.array(
     z.object({
@@ -47,7 +45,10 @@ const dataSchema = z.object({
 const data = dataSchema.parse(JSON.parse(String(await fs.readFileSync(input))));
 
 await db.transaction(async (tx) => {
-  const [tenantRow] = await tx.insert(schema.tenants).values(data.tenant).returning();
+  const [tenantRow] = await tx
+    .insert(schema.tenants)
+    .values({ ...data.tenant, theme: { ...defaultTheme, ...data.tenant.theme } })
+    .returning();
 
   const tenantId = tenantRow!.id;
 

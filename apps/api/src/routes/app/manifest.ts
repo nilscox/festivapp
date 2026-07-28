@@ -8,22 +8,21 @@ manifestRouter.get('/manifest.webmanifest', (req, res) => {
   const tenant = req.tenant;
   assert(tenant);
 
+  const { pwa, logo, backgroundColor } = tenant.theme;
+
   res.type('application/manifest+json');
   res.json({
-    name: tenant.name,
-    short_name: tenant.name,
+    name: pwa.name ?? tenant.name,
+    short_name: pwa.shortName ?? pwa.name ?? tenant.name,
     start_url: '/',
     scope: '/',
     display: 'standalone',
-    background_color: '#131118',
-    theme_color: tenant.theme.primaryColor,
+    background_color: backgroundColor,
+    theme_color: backgroundColor,
     icons: [
-      {
-        src: '/icon.svg',
-        sizes: 'any',
-        type: 'image/svg+xml',
-        purpose: 'any',
-      },
+      logo.iconUrl
+        ? { src: logo.iconUrl, sizes: 'any', purpose: 'any' }
+        : { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
     ],
   });
 });

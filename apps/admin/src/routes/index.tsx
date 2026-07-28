@@ -12,11 +12,13 @@ import { Spinner } from '../components/spinner.tsx';
 import { ApiError } from '../lib/api.ts';
 import { getMeOptions } from '../lib/auth.ts';
 import { listLocationsOptions } from '../lib/locations.ts';
+import { getThemeOptions } from '../lib/theme.ts';
 import { assert } from '../utils.ts';
 
 const Layout = lazyRouteComponent(() => import('./layout.tsx'), 'Layout');
 const Locations = lazyRouteComponent(() => import('./locations.tsx'), 'Locations');
 const Login = lazyRouteComponent(() => import('./login.tsx'), 'Login');
+const Theme = lazyRouteComponent(() => import('./theme.tsx'), 'Theme');
 
 const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   pendingMs: 200,
@@ -125,7 +127,10 @@ const mapRoute = createRoute({
 const themeRoute = createRoute({
   getParentRoute: () => festivalRoute,
   path: 'theme',
-  component: () => null,
+  component: Theme,
+  loader: async ({ context: { queryClient, tenant } }) => {
+    await queryClient.ensureQueryData(getThemeOptions(tenant.id));
+  },
 });
 
 const settingsRoute = createRoute({

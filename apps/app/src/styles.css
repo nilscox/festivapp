@@ -16,21 +16,13 @@
   --color-muted: #71717a;
   --color-faint: #a1a1aa;
   --color-line: #e4e4e7;
-  --color-accent: #ffffff;
+  --color-accent: #18181b;
   --color-ink-soft: color-mix(in srgb, var(--color-ink) 74%, var(--color-app));
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #000000;
-    --color-app: #0c0c0e;
-    --color-surface: #141416;
-    --color-chip: #1c1c1f;
-    --color-ink: #fafafa;
-    --color-muted: #a1a1aa;
-    --color-faint: #6b6b73;
-    --color-line: #262629;
-  }
+:root {
+  --background-image: none;
+  --background-scrim: var(--color-app);
 }
 
 html,
@@ -60,11 +52,17 @@ body {
 }
 
 @layer components {
+  .app-background {
+    background-image: linear-gradient(var(--background-scrim), var(--background-scrim)), var(--background-image);
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed;
+  }
+
   .reveal {
     animation: reveal 220ms both;
   }
 
-  /* Fine hatch for compact artwork placeholders; coarse for the detail hero. */
   .hatch {
     background-image: repeating-linear-gradient(135deg, var(--color-chip) 0 7px, var(--color-surface) 7px 14px);
   }

@@ -7,12 +7,14 @@ type FieldError = { match: keyof ValidityState; message: React.ReactNode };
 export function Field({
   name,
   label,
+  hint,
   errors,
   error,
   children,
 }: {
   name?: string;
   label?: React.ReactNode;
+  hint?: React.ReactNode;
   errors?: FieldError[];
   error?: React.ReactNode;
   children: React.ReactNode;
@@ -23,6 +25,8 @@ export function Field({
 
       {children}
 
+      {hint && <div className="text-muted mt-1 text-xs">{hint}</div>}
+
       {error && <div className="text-danger-ink mt-1 text-xs">{error}</div>}
 
       {errors?.map((error) => (
@@ -30,6 +34,8 @@ export function Field({
           {error.message}
         </Error>
       ))}
+
+      {(!errors || errors.length === 0) && <Error className="text-danger-ink mt-1 text-xs" />}
     </Root>
   );
 }

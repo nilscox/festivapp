@@ -18,7 +18,7 @@ export function RootLayout() {
   }, [tenant]);
 
   return (
-    <div className="col border-line bg-app mx-auto h-dvh w-full max-w-160 overflow-hidden sm:border-x">
+    <div className="col border-line bg-app app-background mx-auto h-dvh w-full max-w-160 overflow-hidden sm:border-x">
       {query.isSuccess ? (
         <>
           <main className="col min-h-0 flex-1">

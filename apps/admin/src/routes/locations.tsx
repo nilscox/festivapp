@@ -10,7 +10,7 @@ import { Drawer } from '../components/drawer.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
 import { Field } from '../components/field.tsx';
 import { Input } from '../components/input.tsx';
-import { Page, PageHeader } from '../components/page-header.tsx';
+import { Page, PageHeader } from '../components/page.tsx';
 import { Select } from '../components/select.tsx';
 import { Spinner } from '../components/spinner.tsx';
 import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';

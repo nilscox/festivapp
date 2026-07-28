@@ -58,7 +58,7 @@ const router = createRouter({ routeTree });
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60_000,
+      staleTime: import.meta.env.PROD ? 60_000 : 0,
       gcTime: Number.POSITIVE_INFINITY,
       retry: 1,
     },
