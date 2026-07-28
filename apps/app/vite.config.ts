@@ -29,6 +29,8 @@ export default defineConfig({
       devOptions: { enabled: true },
       manifest: false,
       workbox: {
+        // the default patterns miss woff2, so the fonts were absent offline
+        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
         runtimeCaching: [
           {
             urlPattern: ({ sameOrigin, url }) => sameOrigin && url.pathname.startsWith('/files/'),

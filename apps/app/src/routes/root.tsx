@@ -3,6 +3,7 @@ import { Outlet } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 
+import { warmTenantCache } from '../cache.ts';
 import { TabBar } from '../components/tab-bar.tsx';
 import { applyTenant } from '../theme.ts';
 import { useBootstrapQuery } from '../use-bootstrap.ts';
@@ -14,12 +15,13 @@ export function RootLayout() {
   useEffect(() => {
     if (tenant) {
       applyTenant(tenant);
+      void warmTenantCache(tenant);
     }
   }, [tenant]);
 
   return (
     <div className="col border-line bg-app app-background mx-auto h-dvh w-full max-w-160 overflow-hidden sm:border-x">
-      {query.isSuccess ? (
+      {query.data ? (
         <>
           <main className="col min-h-0 flex-1">
             <QueryErrorResetBoundary>
