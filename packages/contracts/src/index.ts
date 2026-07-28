@@ -173,3 +173,26 @@ export type LocationInput = {
   name: string;
   position: number;
 };
+
+/**
+ * An asset the organizer uploaded for a tenant — a logo, a background image,
+ * later an artist picture. Uploads go to `POST /admin/tenants/:tenantId/files`
+ * with the raw bytes as the request body and the file's media type as
+ * `Content-Type`; the optional `?name=` query keeps the original file name.
+ */
+export type UploadedFile = {
+  id: string;
+  /** Name the file was uploaded under, or null when the client sent none. */
+  name: string | null;
+  /** Media type the file is stored and served with. */
+  contentType: string;
+  /** Size in bytes. */
+  size: number;
+  /**
+   * Path the file is served from. Always same-origin and immutable, so it can
+   * be stored in a theme and cached offline by the attendee app.
+   */
+  url: string;
+  /** Upload time as an ISO 8601 string. */
+  createdAt: string;
+};

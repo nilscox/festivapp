@@ -1,8 +1,9 @@
 import express, { type Express, type Request, type Response } from 'express';
 
-import { errorHandler, zodErrorHandler } from './middleware/error.ts';
+import { errorHandler, payloadErrorHandler, zodErrorHandler } from './middleware/error.ts';
 import { adminRouter } from './routes/admin/index.ts';
 import { tenantRouter } from './routes/app/index.ts';
+import { filesRouter } from './routes/files.ts';
 
 export function createApp(): Express {
   const app = express();
@@ -10,9 +11,11 @@ export function createApp(): Express {
   app.use(express.json());
 
   app.get('/health', health);
+  app.use('/files', filesRouter);
   app.use('/admin', adminRouter);
   app.use(tenantRouter);
 
+  app.use(payloadErrorHandler);
   app.use(zodErrorHandler);
   app.use(errorHandler);
   app.use(notFound);

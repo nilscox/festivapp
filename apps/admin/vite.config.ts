@@ -14,6 +14,9 @@ export default defineConfig({
         target: apiTarget,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      '/files': {
+        target: apiTarget,
+      },
     },
   },
 });

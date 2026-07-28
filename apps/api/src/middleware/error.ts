@@ -1,6 +1,14 @@
 import type { ErrorRequestHandler } from 'express';
 import z from 'zod';
 
+export const payloadErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+  if (err instanceof Error && 'type' in err && err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'file_too_large' });
+  }
+
+  throw err;
+};
+
 export const zodErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof z.ZodError) {
     return res.status(400).json(z.treeifyError(err));

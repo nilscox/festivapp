@@ -3,6 +3,7 @@ import { defineRelations } from 'drizzle-orm';
 import * as p from 'drizzle-orm/pg-core';
 
 export type Tenant = typeof tenants.$inferSelect;
+export type File = typeof files.$inferSelect;
 export type Location = typeof locations.$inferSelect;
 export type Participant = typeof participants.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
@@ -21,6 +22,19 @@ export const tenants = p.pgTable('tenants', {
   theme: p.jsonb().$type<TenantTheme>().notNull(),
   createdAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
+export const files = p.pgTable('files', {
+  id: p.uuid().primaryKey().defaultRandom(),
+  tenantId: p
+    .uuid()
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  storageKey: p.text().notNull().unique(),
+  name: p.text(),
+  contentType: p.text().notNull(),
+  size: p.integer().notNull(),
+  createdAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 export const locations = p.pgTable('locations', {
@@ -130,6 +144,7 @@ export const relations = defineRelations(
     organizerTenants,
     authSessions,
     tenants,
+    files,
     locations,
     participants,
     sessions,

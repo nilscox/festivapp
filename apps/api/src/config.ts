@@ -12,4 +12,6 @@ export const config = {
   host: requireEnv('HOST'),
   port: Number(requireEnv('PORT')),
   databaseUrl: requireEnv('DATABASE_URL'),
+  storageDir: requireEnv('STORAGE_DIR'),
+  uploadMaxBytes: Number(requireEnv('UPLOAD_MAX_BYTES')),
 };
