@@ -41,6 +41,17 @@ const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   },
 });
 
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/login',
+  component: Login,
+  beforeLoad: ({ context: { me } }) => {
+    if (me) {
+      throw redirect({ to: '/', replace: true });
+    }
+  },
+});
+
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
@@ -62,23 +73,14 @@ const indexRoute = createRoute({
   },
 });
 
-const loginRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/login',
-  component: Login,
-  beforeLoad: ({ context: { me } }) => {
-    if (me) {
-      throw redirect({ to: '/', replace: true });
-    }
-  },
-});
-
 const festivalRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/festivals/$tenantId',
   component: Layout,
   beforeLoad: ({ params, context: { me } }) => {
-    assert(me);
+    if (!me) {
+      throw redirect({ to: '/login', replace: true });
+    }
 
     const tenant = me.tenants.find((tenant) => tenant.id === params.tenantId);
     assert(tenant, new Error(`Can't find tenant "${params.tenantId}"`));
