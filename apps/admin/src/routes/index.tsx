@@ -11,10 +11,12 @@ import * as z from 'zod/mini';
 import { Spinner } from '../components/spinner.tsx';
 import { ApiError } from '../lib/api.ts';
 import { getMeOptions } from '../lib/auth.ts';
+import { listFilesOptions } from '../lib/files.ts';
 import { listLocationsOptions } from '../lib/locations.ts';
 import { getThemeOptions } from '../lib/theme.ts';
 import { assert } from '../utils.ts';
 
+const Files = lazyRouteComponent(() => import('./files.tsx'), 'Files');
 const Layout = lazyRouteComponent(() => import('./layout.tsx'), 'Layout');
 const Locations = lazyRouteComponent(() => import('./locations.tsx'), 'Locations');
 const Login = lazyRouteComponent(() => import('./login.tsx'), 'Login');
@@ -124,12 +126,27 @@ const mapRoute = createRoute({
   component: () => null,
 });
 
+const filesRoute = createRoute({
+  getParentRoute: () => festivalRoute,
+  path: 'files',
+  component: Files,
+  loader: async ({ context: { queryClient, tenant } }) => {
+    await Promise.all([
+      queryClient.ensureQueryData(listFilesOptions(tenant.id)),
+      queryClient.ensureQueryData(getThemeOptions(tenant.id)),
+    ]);
+  },
+});
+
 const themeRoute = createRoute({
   getParentRoute: () => festivalRoute,
   path: 'theme',
   component: Theme,
   loader: async ({ context: { queryClient, tenant } }) => {
-    await queryClient.ensureQueryData(getThemeOptions(tenant.id));
+    await Promise.all([
+      queryClient.ensureQueryData(getThemeOptions(tenant.id)),
+      queryClient.ensureQueryData(listFilesOptions(tenant.id)),
+    ]);
   },
 });
 
@@ -148,6 +165,7 @@ export const routeTree = rootRoute.addChildren([
     scheduleRoute,
     locationsRoute,
     mapRoute,
+    filesRoute,
     themeRoute,
     settingsRoute,
   ]),

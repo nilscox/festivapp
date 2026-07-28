@@ -9,12 +9,20 @@ export const api = {
 };
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`/api${path}`, {
+  const headers = new Headers();
+
+  const init: RequestInit = {
     method,
     credentials: 'include',
-    headers: body !== undefined ? { 'content-type': 'application/json' } : undefined,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+    headers,
+  };
+
+  if (body !== undefined) {
+    headers.set('Content-Type', body instanceof File ? body.type : 'application/json');
+    init.body = body instanceof File ? body : JSON.stringify(body);
+  }
+
+  const res = await fetch(`/api${path}`, init);
 
   const resBody: unknown = res.headers.get('Content-Type')?.startsWith('application/json')
     ? await res.json()

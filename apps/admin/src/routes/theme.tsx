@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 
 import { Button } from '../components/button.tsx';
 import { Field } from '../components/field.tsx';
+import { FileInput } from '../components/file-input.tsx';
 import { Input } from '../components/input.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { Range } from '../components/range.tsx';
@@ -25,13 +26,16 @@ type FormValues = {
   display: string;
   body: string;
   mono: string;
-  wordmarkUrl: string;
-  iconUrl: string;
-  backgroundImageUrl: string;
   backgroundImageOpacity: string;
   pwaName: string;
   pwaShortName: string;
   customCss: string;
+};
+
+type Images = {
+  wordmarkUrl: string | null;
+  iconUrl: string | null;
+  backgroundImageUrl: string | null;
 };
 
 export function Theme() {
@@ -59,7 +63,16 @@ function ThemeForm({ tenant, theme }: { tenant: TenantSummary; theme: TenantThem
 
   const [backgroundColor, setBackgroundColor] = useState(theme.backgroundColor);
   const [accentColor, setAccentColor] = useState(theme.accentColor);
-  const [hasBackgroundImage, setHasBackgroundImage] = useState(theme.backgroundImage !== null);
+
+  const [images, setImages] = useState<Images>({
+    wordmarkUrl: theme.logo.wordmarkUrl,
+    iconUrl: theme.logo.iconUrl,
+    backgroundImageUrl: theme.backgroundImage?.url ?? null,
+  });
+
+  const setImage = (key: keyof Images) => (value: string | null) => {
+    setImages((images) => ({ ...images, [key]: value }));
+  };
 
   const contrast = contrastRatio(backgroundColor, accentColor);
 
@@ -68,11 +81,8 @@ function ThemeForm({ tenant, theme }: { tenant: TenantSummary; theme: TenantThem
       return toast.error('Pick an accent color that contrasts more with the background.');
     }
 
-    mutation.mutate(toTheme(values), { onSuccess: () => toast.success('Theme saved') });
+    mutation.mutate(toTheme(values, images), { onSuccess: () => toast.success('Theme saved') });
   };
-
-  const urlPattern = 'https?://\\S+|/\\S*';
-  const urlErrors = [{ match: 'patternMismatch' as const, message: 'Enter a full URL, or a path starting with "/".' }];
 
   return (
     <Form onFormSubmit={handleSubmit} className="reveal col gap-8">
@@ -117,35 +127,36 @@ function ThemeForm({ tenant, theme }: { tenant: TenantSummary; theme: TenantThem
         </div>
       </Section>
 
-      <Section title="Logo" description="Point at images already served on your domain — uploads come later.">
+      <Section title="Logo" description="Pick an image you have uploaded, or upload one on the spot.">
         <div className="col gap-4">
-          <Field
-            name="wordmarkUrl"
-            label="Wordmark"
-            hint="Shown in the app header, in place of the name."
-            errors={urlErrors}
-          >
-            <Input
-              pattern={urlPattern}
-              defaultValue={theme.logo.wordmarkUrl ?? ''}
-              placeholder="/uploads/wordmark.svg"
+          <Field label="Wordmark" hint="Shown in the app header, in place of the name.">
+            <FileInput
+              tenantId={tenant.id}
+              background={theme.backgroundColor}
+              value={images.wordmarkUrl}
+              onValueChange={setImage('wordmarkUrl')}
             />
           </Field>
 
-          <Field name="iconUrl" label="Square icon" hint="Used as the install icon and the favicon." errors={urlErrors}>
-            <Input pattern={urlPattern} defaultValue={theme.logo.iconUrl ?? ''} placeholder="/uploads/icon.png" />
+          <Field label="Square icon" hint="Used as the install icon and the favicon.">
+            <FileInput
+              tenantId={tenant.id}
+              background={theme.backgroundColor}
+              value={images.iconUrl}
+              onValueChange={setImage('iconUrl')}
+            />
           </Field>
         </div>
       </Section>
 
       <Section title="Background image" description="Sits behind the whole app, dimmed into the background color.">
         <div className="col gap-4">
-          <Field name="backgroundImageUrl" label="Image URL" errors={urlErrors}>
-            <Input
-              pattern={urlPattern}
-              defaultValue={theme.backgroundImage?.url ?? ''}
-              placeholder="/uploads/background.jpg"
-              onChange={(event) => setHasBackgroundImage(event.currentTarget.value !== '')}
+          <Field label="Image">
+            <FileInput
+              tenantId={tenant.id}
+              background={theme.backgroundColor}
+              value={images.backgroundImageUrl}
+              onValueChange={setImage('backgroundImageUrl')}
             />
           </Field>
 
@@ -154,7 +165,7 @@ function ThemeForm({ tenant, theme }: { tenant: TenantSummary; theme: TenantThem
               min={0}
               max={1}
               step={0.01}
-              disabled={!hasBackgroundImage}
+              disabled={images.backgroundImageUrl === null}
               defaultValue={theme.backgroundImage?.opacity ?? 0.2}
               className="max-w-sm"
             />
@@ -205,9 +216,7 @@ function ThemeForm({ tenant, theme }: { tenant: TenantSummary; theme: TenantThem
   );
 }
 
-function toTheme(values: FormValues): TenantTheme {
-  const backgroundImageUrl = values.backgroundImageUrl.trim();
-
+function toTheme(values: FormValues, images: Images): TenantTheme {
   return {
     backgroundColor: values.backgroundColor,
     accentColor: values.accentColor,
@@ -217,11 +226,11 @@ function toTheme(values: FormValues): TenantTheme {
       mono: values.mono,
     },
     logo: {
-      wordmarkUrl: values.wordmarkUrl.trim() || null,
-      iconUrl: values.iconUrl.trim() || null,
+      wordmarkUrl: images.wordmarkUrl,
+      iconUrl: images.iconUrl,
     },
-    backgroundImage: backgroundImageUrl
-      ? { url: backgroundImageUrl, opacity: Number(values.backgroundImageOpacity) }
+    backgroundImage: images.backgroundImageUrl
+      ? { url: images.backgroundImageUrl, opacity: Number(values.backgroundImageOpacity) }
       : null,
     customCss: values.customCss.trim() || null,
     pwa: {
