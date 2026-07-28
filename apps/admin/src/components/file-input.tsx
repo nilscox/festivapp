@@ -1,27 +1,26 @@
 import { Field as BaseField } from '@base-ui/react/field';
 import type { UploadedFile } from '@festivapp/contracts';
 import { useQuery } from '@tanstack/react-query';
-import { Image } from 'lucide-react';
 import { useState } from 'react';
 
 import { listFilesOptions } from '../lib/files.ts';
+import { getThemeOptions } from '../lib/theme.ts';
 import { Button } from './button.tsx';
 import { Drawer } from './drawer.tsx';
-import { FileThumbnail } from './file-thumbnail.tsx';
 import { Spinner } from './spinner.tsx';
+import { Thumbnail } from './thumbnail.tsx';
 import { UploadButton } from './upload-button.tsx';
 
 export function FileInput({
   tenantId,
-  background,
   value,
   onValueChange,
 }: {
   tenantId: string;
-  background: string;
   value: string | null;
   onValueChange: (value: string | null) => void;
 }) {
+  const { data: theme } = useQuery(getThemeOptions(tenantId));
   const [open, setOpen] = useState(false);
 
   const { data: selected } = useQuery({
@@ -37,21 +36,14 @@ export function FileInput({
   return (
     <>
       <div className="row items-center gap-3">
-        {value !== null ? (
-          <FileThumbnail url={value} alt="" background={background} className="size-16 shrink-0 rounded-lg border" />
-        ) : (
-          <div className="bg-subtle text-faint flex size-16 shrink-0 items-center justify-center rounded-lg border border-dashed">
-            <Image className="size-5" />
-          </div>
-        )}
+        <Thumbnail url={value} background={theme?.backgroundColor} className="size-16 shrink-0 rounded-lg border" />
 
         <div className="col min-w-0 flex-1 gap-2">
           <span className="text-faint text-xxs min-h-3 truncate font-mono">
-            {value !== null && (selected?.name ?? value)}
+            {selected?.name ?? value ?? 'No file set'}
           </span>
 
           <div className="row gap-2">
-            {/* renders as the field's control so its <label for> resolves */}
             <BaseField.Control render={<Button variant="secondary" size="sm" />} onClick={() => setOpen(true)}>
               {value !== null ? 'Change' : 'Choose a file'}
             </BaseField.Control>
@@ -65,7 +57,13 @@ export function FileInput({
         </div>
       </div>
 
-      <FilePicker tenantId={tenantId} background={background} open={open} onOpenChange={setOpen} onSelect={onSelect} />
+      <FilePicker
+        tenantId={tenantId}
+        background={theme?.backgroundColor}
+        open={open}
+        onOpenChange={setOpen}
+        onSelect={onSelect}
+      />
     </>
   );
 }
@@ -78,7 +76,7 @@ function FilePicker({
   onSelect,
 }: {
   tenantId: string;
-  background: string;
+  background?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (file: UploadedFile) => void;
@@ -102,12 +100,7 @@ function FilePicker({
               onClick={() => onSelect(file)}
               className="hover:border-line-strong col cursor-pointer overflow-hidden rounded-lg border text-start"
             >
-              <FileThumbnail
-                url={file.url}
-                alt={file.name ?? 'Uploaded file'}
-                background={background}
-                className="h-24"
-              />
+              <Thumbnail url={file.url} alt={file.name ?? 'Uploaded file'} background={background} className="h-24" />
               <span className="text-muted truncate border-t p-2 text-xs font-medium">{file.name ?? 'Untitled'}</span>
             </button>
           ))}

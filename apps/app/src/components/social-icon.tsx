@@ -9,19 +9,29 @@ import SoundCloud from '../icons/soundcloud.svg?react';
 import Spotify from '../icons/spotify.svg?react';
 import YouTube from '../icons/youtube.svg?react';
 
-export function SocialIcon({ platform, ...props }: { platform: string } & React.SVGProps<SVGSVGElement>) {
-  const Icon = icons[platform as keyof typeof icons] ?? GlobeIcon;
+export function SocialIcon({ url, ...props }: { url: string } & React.SVGProps<SVGSVGElement>) {
+  const Icon = icons[domain(url) as keyof typeof icons] ?? GlobeIcon;
 
   return <Icon {...props} />;
 }
 
 const icons = {
-  bandcamp: Bandcamp,
-  beatport: Beatport,
-  deezer: Deezer,
-  facebook: Facebook,
-  instagram: Instagram,
-  soundcloud: SoundCloud,
-  youtube: YouTube,
-  spotify: Spotify,
+  'bandcamp.com': Bandcamp,
+  'beatport.com': Beatport,
+  'deezer.com': Deezer,
+  'facebook.com': Facebook,
+  'instagram.com': Instagram,
+  'soundcloud.com': SoundCloud,
+  'youtube.com': YouTube,
+  'youtu.be': YouTube,
+  'spotify.com': Spotify,
 };
+
+// keep the last two labels only, so open.spotify.com and artist.bandcamp.com match
+function domain(url: string) {
+  try {
+    return new URL(url).hostname.split('.').slice(-2).join('.');
+  } catch {
+    return '';
+  }
+}

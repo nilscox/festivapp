@@ -13,6 +13,7 @@ import { ApiError } from '../lib/api.ts';
 import { getMeOptions } from '../lib/auth.ts';
 import { listFilesOptions } from '../lib/files.ts';
 import { listLocationsOptions } from '../lib/locations.ts';
+import { listParticipantsOptions } from '../lib/participants.ts';
 import { getThemeOptions } from '../lib/theme.ts';
 import { assert } from '../utils.ts';
 
@@ -20,6 +21,7 @@ const Files = lazyRouteComponent(() => import('./files.tsx'), 'Files');
 const Layout = lazyRouteComponent(() => import('./layout.tsx'), 'Layout');
 const Locations = lazyRouteComponent(() => import('./locations.tsx'), 'Locations');
 const Login = lazyRouteComponent(() => import('./login.tsx'), 'Login');
+const People = lazyRouteComponent(() => import('./people.tsx'), 'People');
 const Theme = lazyRouteComponent(() => import('./theme.tsx'), 'Theme');
 
 const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -103,7 +105,15 @@ const festivalIndexRoute = createRoute({
 const peopleRoute = createRoute({
   getParentRoute: () => festivalRoute,
   path: 'people',
-  component: () => null,
+  validateSearch: z.object({ create: z.optional(z.literal(true)), edit: z.optional(z.uuid()) }),
+  component: People,
+  loader: async ({ context: { queryClient, tenant } }) => {
+    await Promise.all([
+      queryClient.ensureQueryData(listParticipantsOptions(tenant.id)),
+      queryClient.ensureQueryData(listFilesOptions(tenant.id)),
+      queryClient.ensureQueryData(getThemeOptions(tenant.id)),
+    ]);
+  },
 });
 
 const scheduleRoute = createRoute({

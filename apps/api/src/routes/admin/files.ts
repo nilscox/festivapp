@@ -108,7 +108,13 @@ filesRouter.delete('/:id', async (req, res) => {
     return res.status(404).json({ error: 'not_found' });
   }
 
-  if (isUsedByTheme(req.tenant.theme, fileUrl(file.id))) {
+  const url = fileUrl(file.id);
+
+  const participant = await db.query.participants.findFirst({
+    where: { tenantId: req.tenant.id, imageUrl: url },
+  });
+
+  if (isUsedByTheme(req.tenant.theme, url) || participant) {
     return res.status(409).json({ error: 'file_in_use' });
   }
 

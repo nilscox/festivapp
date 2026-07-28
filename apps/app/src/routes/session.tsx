@@ -1,4 +1,4 @@
-import type { Location, Participant, Session, SocialLink } from '@festivapp/contracts';
+import type { Location, Participant, Session } from '@festivapp/contracts';
 import { Link, useParams } from '@tanstack/react-router';
 import { Calendar, ChevronLeft, Disc3, Map, MapPin } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -195,7 +195,7 @@ function About({ description }: { description: React.ReactNode }) {
   );
 }
 
-function Follow({ links }: { links: SocialLink[] }) {
+function Follow({ links }: { links: string[] }) {
   if (links.length === 0) {
     return null;
   }
@@ -207,21 +207,21 @@ function Follow({ links }: { links: SocialLink[] }) {
   );
 }
 
-function SocialLinks({ links }: { links: SocialLink[] }) {
+function SocialLinks({ links }: { links: string[] }) {
   return (
     <div className="col">
       {links.map((link) => (
         <a
-          key={link.url}
-          href={link.url}
+          key={link}
+          href={link}
           target="_blank"
           rel="noreferrer"
           className="border-line row items-center gap-2 border-t py-2"
         >
           <div className="bg-chip rounded-md p-2">
-            <SocialIcon platform={link.platform} className="fill-accent size-5" />
+            <SocialIcon url={link} className="fill-accent size-5" />
           </div>
-          <span className="text-muted truncate text-sm font-medium">{link.url}</span>
+          <span className="text-muted truncate text-sm font-medium">{link}</span>
         </a>
       ))}
     </div>

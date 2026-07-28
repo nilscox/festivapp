@@ -130,21 +130,11 @@ function ThemeForm({ tenant, theme }: { tenant: TenantSummary; theme: TenantThem
       <Section title="Logo" description="Pick an image you have uploaded, or upload one on the spot.">
         <div className="col gap-4">
           <Field label="Wordmark" hint="Shown in the app header, in place of the name.">
-            <FileInput
-              tenantId={tenant.id}
-              background={theme.backgroundColor}
-              value={images.wordmarkUrl}
-              onValueChange={setImage('wordmarkUrl')}
-            />
+            <FileInput tenantId={tenant.id} value={images.wordmarkUrl} onValueChange={setImage('wordmarkUrl')} />
           </Field>
 
           <Field label="Square icon" hint="Used as the install icon and the favicon.">
-            <FileInput
-              tenantId={tenant.id}
-              background={theme.backgroundColor}
-              value={images.iconUrl}
-              onValueChange={setImage('iconUrl')}
-            />
+            <FileInput tenantId={tenant.id} value={images.iconUrl} onValueChange={setImage('iconUrl')} />
           </Field>
         </div>
       </Section>
@@ -154,7 +144,6 @@ function ThemeForm({ tenant, theme }: { tenant: TenantSummary; theme: TenantThem
           <Field label="Image">
             <FileInput
               tenantId={tenant.id}
-              background={theme.backgroundColor}
               value={images.backgroundImageUrl}
               onValueChange={setImage('backgroundImageUrl')}
             />

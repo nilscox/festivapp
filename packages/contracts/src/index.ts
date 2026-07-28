@@ -84,13 +84,6 @@ export type Location = {
 /** The kind of a session; governs which participant role it can carry. */
 export type SessionType = 'live' | 'dj_set' | 'talk' | 'workshop' | 'other';
 
-/** A link to a participant's presence on an external platform. */
-export type SocialLink = {
-  /** Platform key (e.g. "instagram", "spotify", "website"). */
-  platform: string;
-  url: string;
-};
-
 /** An act on the line-up: a person or a band, a speaker, or a facilitator. */
 export type Participant = {
   id: string;
@@ -103,7 +96,8 @@ export type Participant = {
   label: string | null;
   /** Musical styles/genres. Artist role only; empty otherwise. */
   styles: string[];
-  socialLinks: SocialLink[];
+  /** URLs of the act's presence elsewhere; the platform is derived from the host. */
+  socialLinks: string[];
 };
 
 /** A scheduled item in the timetable. */
@@ -172,6 +166,21 @@ export type MeResponse = {
 export type LocationInput = {
   name: string;
   position: number;
+};
+
+/**
+ * Body of `POST`/`PATCH` on `/admin/tenants/:tenantId/participants`. A `PATCH`
+ * may carry any subset of these keys; the ones it omits keep their value.
+ */
+export type ParticipantInput = {
+  name: string;
+  description: string | null;
+  /** Path of an uploaded file (see `UploadedFile.url`), or null for no image. */
+  imageUrl: string | null;
+  origin: string | null;
+  label: string | null;
+  styles: string[];
+  socialLinks: string[];
 };
 
 /**

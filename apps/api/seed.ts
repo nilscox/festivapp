@@ -26,7 +26,7 @@ const dataSchema = z.object({
       label: z.string().optional(),
       origin: z.string().optional(),
       description: z.string().optional(),
-      socialLinks: z.array(z.object({ platform: z.string(), url: z.string() })).optional(),
+      socialLinks: z.array(z.string()).optional(),
     }),
   ),
   sessions: z.array(

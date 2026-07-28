@@ -9,9 +9,9 @@ import toast from 'react-hot-toast';
 import { IconButton } from '../components/button.tsx';
 import { ConfirmDialog } from '../components/confirm-dialog.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
-import { FileThumbnail } from '../components/file-thumbnail.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { Spinner } from '../components/spinner.tsx';
+import { Thumbnail } from '../components/thumbnail.tsx';
 import { UploadButton } from '../components/upload-button.tsx';
 import { ApiError } from '../lib/api.ts';
 import { deleteFileOptions, listFilesOptions } from '../lib/files.ts';
@@ -78,7 +78,7 @@ function FilesList({
     onSuccess: () => queryClient.invalidateQueries(listFilesOptions(tenant.id)),
     onError: (error) => {
       if (ApiError.is(error, 409)) {
-        toast.error('This file is used by the theme. Change it there first.');
+        toast.error('This file is used, change it first.');
       } else {
         toast.error(error.message);
       }
@@ -129,7 +129,7 @@ function FilesList({
 function FileCard({ file, background, onDelete }: { file: UploadedFile; background?: string; onDelete: () => void }) {
   return (
     <div className="col overflow-hidden rounded-xl border">
-      <FileThumbnail url={file.url} alt={file.name ?? 'Uploaded file'} background={background} className="h-36" />
+      <Thumbnail url={file.url} alt={file.name ?? 'Uploaded file'} background={background} className="h-36" />
 
       <div className="row items-center justify-between gap-4 border-t p-3">
         <div className="col gap-1">

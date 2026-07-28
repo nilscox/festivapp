@@ -1,4 +1,4 @@
-import type { SocialLink, TenantTheme } from '@festivapp/contracts';
+import type { TenantTheme } from '@festivapp/contracts';
 import { defineRelations } from 'drizzle-orm';
 import * as p from 'drizzle-orm/pg-core';
 
@@ -61,7 +61,7 @@ export const participants = p.pgTable('participants', {
   origin: p.text(),
   label: p.text(),
   styles: p.text().array().notNull().default([]),
-  socialLinks: p.jsonb().$type<SocialLink[]>().notNull().default([]),
+  socialLinks: p.jsonb().$type<string[]>().notNull().default([]),
   createdAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
