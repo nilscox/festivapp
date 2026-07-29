@@ -129,7 +129,13 @@ function FilesList({
 function FileCard({ file, background, onDelete }: { file: UploadedFile; background?: string; onDelete: () => void }) {
   return (
     <div className="col overflow-hidden rounded-xl border">
-      <Thumbnail url={file.url} alt={file.name ?? 'Uploaded file'} background={background} className="h-36" />
+      <Thumbnail
+        url={file.url}
+        alt={file.name ?? 'Uploaded file'}
+        fit="cover"
+        background={background}
+        className="h-36"
+      />
 
       <div className="row items-center justify-between gap-4 border-t p-3">
         <div className="col gap-1">

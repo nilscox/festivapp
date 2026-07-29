@@ -4,12 +4,14 @@ import { Image } from 'lucide-react';
 export function Thumbnail({
   url,
   alt = '',
+  fit = 'contain',
   background,
   className,
 }: {
   url?: string | null;
   alt?: string;
   background?: string;
+  fit?: 'contain' | 'cover';
   className?: string;
 }) {
   if (!url) {
@@ -30,7 +32,12 @@ export function Thumbnail({
       style={background !== undefined ? { backgroundColor: background } : undefined}
       className={clsx('bg-subtle flex items-center justify-center overflow-hidden rounded-lg', className)}
     >
-      <img src={url} alt={alt} loading="lazy" className="max-h-full max-w-full object-cover" />
+      <img
+        src={url}
+        alt={alt}
+        loading="lazy"
+        className={clsx({ 'max-h-full max-w-full object-cover': fit === 'cover', 'object-contain': fit === 'contain' })}
+      />
     </div>
   );
 }

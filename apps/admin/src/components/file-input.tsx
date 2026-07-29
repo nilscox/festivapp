@@ -36,7 +36,12 @@ export function FileInput({
   return (
     <>
       <div className="row items-center gap-3">
-        <Thumbnail url={value} background={theme?.backgroundColor} className="size-16 shrink-0 rounded-lg border" />
+        <Thumbnail
+          url={value}
+          fit="cover"
+          background={theme?.backgroundColor}
+          className="size-16 shrink-0 rounded-lg border"
+        />
 
         <div className="col min-w-0 flex-1 gap-2">
           <span className="text-faint text-xxs min-h-3 truncate font-mono">
