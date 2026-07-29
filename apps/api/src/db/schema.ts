@@ -19,6 +19,7 @@ export const tenants = p.pgTable('tenants', {
   name: p.text().notNull(),
   domain: p.text().notNull().unique(),
   timezone: p.text().notNull(),
+  mapUrl: p.text(),
   theme: p.jsonb().$type<TenantTheme>().notNull(),
   createdAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
@@ -44,7 +45,10 @@ export const locations = p.pgTable('locations', {
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
   name: p.text().notNull(),
+  description: p.text(),
   position: p.integer().notNull().default(0),
+  mapX: p.real().notNull().default(50),
+  mapY: p.real().notNull().default(50),
   createdAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
 });

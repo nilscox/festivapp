@@ -12,6 +12,6 @@ export function getTenantOptions(tenantId: string) {
 
 export function updateTenantOptions(tenantId: string) {
   return mutationOptions({
-    mutationFn: (input: TenantInput) => api.put<Tenant>(`/admin/tenants/${tenantId}`, input),
+    mutationFn: (input: Partial<TenantInput>) => api.patch<Tenant>(`/admin/tenants/${tenantId}`, input),
   });
 }

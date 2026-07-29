@@ -11,13 +11,33 @@ export const locationsRouter = Router({ mergeParams: true });
 
 const createSchema = z.object({
   name: z.string().trim().min(1),
+  description: z
+    .string()
+    .trim()
+    .nullish()
+    .transform((value) => value || null),
   position: z.number().int().min(0),
 });
 
-const updateSchema = createSchema.partial();
+const updateSchema = createSchema
+  .extend({
+    mapPin: z
+      .strictObject({
+        x: z.number().min(0).max(100),
+        y: z.number().min(0).max(100),
+      })
+      .optional(),
+  })
+  .partial();
 
 function toLocationDto(row: Location): LocationDto {
-  return { id: row.id, name: row.name, position: row.position };
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    position: row.position,
+    mapPin: { x: row.mapX, y: row.mapY },
+  };
 }
 
 locationsRouter.get('/', async (req, res) => {
@@ -34,14 +54,13 @@ locationsRouter.get('/', async (req, res) => {
 locationsRouter.post('/', async (req, res) => {
   assert(req.tenant);
 
-  const { name, position } = createSchema.parse(req.body);
+  const values = createSchema.parse(req.body);
 
   const [row] = await db
     .insert(locations)
     .values({
       tenantId: req.tenant.id,
-      name,
-      position,
+      ...values,
     })
     .returning();
 
@@ -51,13 +70,14 @@ locationsRouter.post('/', async (req, res) => {
 locationsRouter.patch('/:id', async (req, res) => {
   assert(req.tenant);
 
-  const { name, position } = updateSchema.parse(req.body);
+  const { mapPin, ...values } = updateSchema.parse(req.body);
 
   const [row] = await db
     .update(locations)
     .set({
-      name,
-      position,
+      ...values,
+      mapX: mapPin?.x,
+      mapY: mapPin?.y,
       updatedAt: new Date(),
     })
     .where(and(eq(locations.id, req.params.id), eq(locations.tenantId, req.tenant.id)))

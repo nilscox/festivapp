@@ -14,10 +14,17 @@ import { Page, PageHeader } from '../components/page.tsx';
 import { Select } from '../components/select.tsx';
 import { Spinner } from '../components/spinner.tsx';
 import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
+import { Textarea } from '../components/textarea.tsx';
 import { parseValidationError } from '../lib/errors.ts';
 import { useCreateLocation, useDeleteLocation, useLocations, useUpdateLocation } from '../lib/locations.ts';
 
 const from = '/festivals/$tenantId/locations';
+
+type FormValues = {
+  name: string;
+  description: string;
+  position: number;
+};
 
 export function Locations() {
   const { tenant } = useRouteContext({ from });
@@ -113,7 +120,12 @@ function LocationItem({ location, onDelete }: { location: Location; onDelete: ()
       <span className="text-accent w-6 shrink-0 text-center font-mono text-sm font-semibold md:w-10">
         {location.position}
       </span>
-      <span className="min-w-0 flex-1 truncate font-medium">{location.name}</span>
+
+      <div className="min-w-0 flex-1">
+        <div className="truncate font-medium">{location.name}</div>
+        {location.description && <div className="text-muted max-w-lg truncate text-xs">{location.description}</div>}
+      </div>
+
       <div className="row shrink-0 items-center gap-1">
         <LinkButton variant="secondary" size="sm" from="/festivals/$tenantId/locations" search={{ edit: location.id }}>
           <Pencil className="size-3" />
@@ -175,13 +187,17 @@ function LocationForm({
     return parseValidationError(createMutation.error ?? updateMutation.error);
   }, [createMutation.error, updateMutation.error]);
 
-  const handleSubmit = (values: { name: string; position: number }) => {
-    values.position = Number(values.position);
+  const handleSubmit = (values: FormValues) => {
+    const input = {
+      name: values.name,
+      description: values.description.trim() || null,
+      position: Number(values.position),
+    };
 
     if (!defaultValue) {
-      createMutation.mutate(values, { onSuccess: onClose });
+      createMutation.mutate(input, { onSuccess: onClose });
     } else {
-      updateMutation.mutate({ id: defaultValue.id, ...values }, { onSuccess: onClose });
+      updateMutation.mutate({ id: defaultValue.id, ...input }, { onSuccess: onClose });
     }
   };
 
@@ -199,6 +215,15 @@ function LocationForm({
 
         <Field name="position" label="Position" error={errors?.position?.errors[0]}>
           <Select defaultValue={defaultValue?.position ?? locations.length + 1} items={positionOptions} />
+        </Field>
+
+        <Field
+          name="description"
+          label="Description"
+          hint="Shown to attendees on the map."
+          error={errors?.description?.errors[0]}
+        >
+          <Textarea rows={4} defaultValue={defaultValue?.description ?? ''} />
         </Field>
       </div>
 

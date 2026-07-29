@@ -20,6 +20,7 @@ import { assert } from '../utils.ts';
 
 const Files = lazyRouteComponent(() => import('./files.tsx'), 'Files');
 const Layout = lazyRouteComponent(() => import('./layout.tsx'), 'Layout');
+const FestivalMap = lazyRouteComponent(() => import('./map.tsx'), 'FestivalMap');
 const Locations = lazyRouteComponent(() => import('./locations.tsx'), 'Locations');
 const Login = lazyRouteComponent(() => import('./login.tsx'), 'Login');
 const People = lazyRouteComponent(() => import('./people.tsx'), 'People');
@@ -70,7 +71,7 @@ const indexRoute = createRoute({
     assert(firstTenant, new Error('No tenant'));
 
     throw redirect({
-      to: '/festivals/$tenantId/locations',
+      to: '/festivals/$tenantId/people',
       params: { tenantId: firstTenant.id },
       replace: true,
     });
@@ -141,7 +142,15 @@ const locationsRoute = createRoute({
 const mapRoute = createRoute({
   getParentRoute: () => festivalRoute,
   path: 'map',
-  component: () => null,
+  component: FestivalMap,
+  loader: async ({ context: { queryClient, tenant } }) => {
+    await Promise.all([
+      queryClient.ensureQueryData(getTenantOptions(tenant.id)),
+      queryClient.ensureQueryData(listLocationsOptions(tenant.id)),
+      queryClient.ensureQueryData(listFilesOptions(tenant.id)),
+      queryClient.ensureQueryData(getThemeOptions(tenant.id)),
+    ]);
+  },
 });
 
 const filesRoute = createRoute({

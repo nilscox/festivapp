@@ -1,3 +1,4 @@
+import type { TenantTheme } from '@festivapp/contracts';
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -36,9 +37,21 @@ const dataSchema = z.strictObject({
     name: z.string(),
     domain: z.string(),
     timezone: z.string(),
+    mapUrl: z.string().nullish(),
     theme: themeInputSchema,
   }),
-  locations: z.array(z.string()).min(1),
+  locations: z.array(
+    z.strictObject({
+      name: z.string().min(1),
+      description: z.string(),
+      mapPin: z
+        .strictObject({
+          x: z.number().min(0).max(100),
+          y: z.number().min(0).max(100),
+        })
+        .optional(),
+    }),
+  ),
   participants: z.array(
     z.strictObject({
       name: z.string(),
@@ -100,17 +113,22 @@ export async function seed(input: string): Promise<void> {
     return `/files/${id}` as T;
   }
 
-  const { theme } = data.tenant;
+  const tenant = data.tenant;
+  const mapUrl = await upload(tenant.mapUrl ?? null);
 
-  const resolvedTheme = {
-    ...theme,
+  const theme: TenantTheme = {
+    backgroundColor: tenant.theme.backgroundColor,
+    accentColor: tenant.theme.accentColor,
+    fonts: tenant.theme.fonts,
     logo: {
-      wordmarkUrl: await upload(theme.logo.wordmarkUrl),
-      iconUrl: await upload(theme.logo.iconUrl),
+      wordmarkUrl: await upload(tenant.theme.logo.wordmarkUrl),
+      iconUrl: await upload(tenant.theme.logo.iconUrl),
     },
-    backgroundImage: theme.backgroundImage
-      ? { ...theme.backgroundImage, url: await upload(theme.backgroundImage.url) }
+    backgroundImage: tenant.theme.backgroundImage
+      ? { url: await upload(tenant.theme.backgroundImage.url), opacity: tenant.theme.backgroundImage.opacity }
       : null,
+    pwa: tenant.theme.pwa,
+    customCss: tenant.theme.customCss,
   };
 
   const participantValues: (typeof schema.participants.$inferInsert)[] = [];
@@ -120,12 +138,21 @@ export async function seed(input: string): Promise<void> {
   }
 
   await db.transaction(async (tx) => {
-    await tx.insert(schema.tenants).values({ ...data.tenant, id: tenantId, theme: resolvedTheme });
+    await tx.insert(schema.tenants).values({ ...tenant, id: tenantId, mapUrl, theme });
     await tx.insert(schema.files).values(fileValues);
 
     const locationRows = await tx
       .insert(schema.locations)
-      .values(data.locations.map((name, position) => ({ tenantId, name, position })))
+      .values(
+        data.locations.map(({ name, description, mapPin }, index): typeof schema.locations.$inferInsert => ({
+          tenantId,
+          name,
+          description,
+          position: index + 1,
+          mapX: mapPin?.x,
+          mapY: mapPin?.y,
+        })),
+      )
       .returning();
 
     const locations = new Map(locationRows.map((row) => [row.name, row.id]));

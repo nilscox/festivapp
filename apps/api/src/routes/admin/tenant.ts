@@ -10,7 +10,13 @@ import { assert } from '../../utils.ts';
 export const tenantRouter = Router({ mergeParams: true });
 
 function toTenantDto(row: Tenant): TenantDto {
-  return { id: row.id, name: row.name, domain: row.domain, timezone: row.timezone };
+  return {
+    id: row.id,
+    name: row.name,
+    domain: row.domain,
+    timezone: row.timezone,
+    mapUrl: row.mapUrl,
+  };
 }
 
 tenantRouter.get('/', (req, res) => {
@@ -22,25 +28,31 @@ tenantRouter.get('/', (req, res) => {
 const timezones = new Set(Intl.supportedValuesOf('timeZone'));
 const hostname = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/;
 
-const schema = z.strictObject({
-  name: z.string().trim().min(1).max(100),
-  domain: z.string().trim().toLowerCase().max(253).regex(hostname, 'must be a host name'),
-  timezone: z.string().refine((value) => timezones.has(value), 'must be an IANA timezone'),
-});
+const schema = z
+  .strictObject({
+    name: z.string().trim().min(1).max(100),
+    domain: z.string().trim().toLowerCase().max(253).regex(hostname, 'must be a host name'),
+    timezone: z.string().refine((value) => timezones.has(value), 'must be an IANA timezone'),
+    mapUrl: z.string().trim().nullable(),
+  })
+  .partial();
 
-tenantRouter.put('/', async (req, res) => {
+tenantRouter.patch('/', async (req, res) => {
   assert(req.tenant);
 
-  const { name, domain, timezone } = schema.parse(req.body);
-  const owner = await db.query.tenants.findFirst({ where: { domain } });
+  const values = schema.parse(req.body);
 
-  if (owner && owner.id !== req.tenant.id) {
-    return res.status(409).json({ error: 'domain_taken' });
+  if (values.domain !== undefined) {
+    const owner = await db.query.tenants.findFirst({ where: { domain: values.domain } });
+
+    if (owner && owner.id !== req.tenant.id) {
+      return res.status(409).json({ error: 'domain_taken' });
+    }
   }
 
   const [row] = await db
     .update(tenants)
-    .set({ name, domain, timezone, updatedAt: new Date() })
+    .set({ ...values, updatedAt: new Date() })
     .where(eq(tenants.id, req.tenant.id))
     .returning();
 

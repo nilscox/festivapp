@@ -114,7 +114,7 @@ filesRouter.delete('/:id', async (req, res) => {
     where: { tenantId: req.tenant.id, imageUrl: url },
   });
 
-  if (isUsedByTheme(req.tenant.theme, url) || participant) {
+  if (req.tenant.mapUrl === url || isUsedByTheme(req.tenant.theme, url) || participant) {
     return res.status(409).json({ error: 'file_in_use' });
   }
 

@@ -70,6 +70,11 @@ export type TenantConfig = {
   domain: string;
   /** IANA timezone the festival runs in (e.g. "Europe/Paris"). */
   timezone: string;
+  /**
+   * Path of the festival map image the locations' pins are placed on (see
+   * `UploadedFile.url`), or null when the festival has no map.
+   */
+  mapUrl: string | null;
   theme: TenantTheme;
 };
 
@@ -77,8 +82,25 @@ export type TenantConfig = {
 export type Location = {
   id: string;
   name: string;
+  /** What attendees find there, or null when unset. */
+  description: string | null;
   /** Sort order among the tenant's locations. */
   position: number;
+  /** Where the location sits on the map. Starts at its centre. */
+  mapPin: MapPin;
+};
+
+/**
+ * A point on the tenant's map image, as percentages of the image's width and
+ * height from its top-left corner. Being relative to the image rather than to
+ * the rendered element, they hold at any size — as long as the map is drawn
+ * whole and undistorted (`object-fit: contain`, never `cover`).
+ */
+export type MapPin = {
+  /** Distance from the left edge, from 0 to 100. */
+  x: number;
+  /** Distance from the top edge, from 0 to 100. */
+  y: number;
 };
 
 /** The kind of a session; governs which participant role it can carry. */
@@ -151,6 +173,8 @@ export type Tenant = {
   domain: string;
   /** IANA timezone the festival runs in (e.g. "Europe/Paris"). */
   timezone: string;
+  /** Path of the festival map image, or null when the festival has no map. */
+  mapUrl: string | null;
 };
 
 export type TenantSummary = Pick<Tenant, 'id' | 'name' | 'domain'>;
@@ -168,7 +192,8 @@ export type MeResponse = {
 };
 
 /**
- * Body of `PUT /admin/tenants/:tenantId`. Changing `domain` moves the
+ * Body of `PATCH /admin/tenants/:tenantId`; it may carry any subset of these
+ * keys, and the ones it omits keep their value. Changing `domain` moves the
  * attendee app: the previous host stops resolving as soon as it is saved, and a
  * host another festival already uses is rejected with `409 domain_taken`.
  */
@@ -176,12 +201,20 @@ export type TenantInput = {
   name: string;
   domain: string;
   timezone: string;
+  /** Path of an uploaded file (see `UploadedFile.url`), or null for no map. */
+  mapUrl: string | null;
 };
 
-/** Body of `POST`/`PATCH` on `/admin/tenants/:tenantId/locations`. */
+/**
+ * Body of `POST`/`PATCH` on `/admin/tenants/:tenantId/locations`. A `PATCH` may
+ * carry any subset of these keys; the ones it omits keep their value.
+ */
 export type LocationInput = {
   name: string;
+  description: string | null;
   position: number;
+  /** Where to place the location on the map; a new one starts at its centre. */
+  mapPin: MapPin;
 };
 
 /**
