@@ -143,7 +143,17 @@ function MetaWhen({ session }: { session: Session }) {
 }
 
 function MetaWhere({ location }: { location: Location }) {
-  return <MetaRow icon={MapPin} label="Where" value={location.name} />;
+  return (
+    <MetaRow
+      icon={MapPin}
+      label="Where"
+      value={
+        <Link to="/map" search={{ location: location.id }}>
+          {location.name}
+        </Link>
+      }
+    />
+  );
 }
 
 function MetaRow({

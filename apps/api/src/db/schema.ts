@@ -13,6 +13,7 @@ export type OrganizerTenant = typeof organizerTenants.$inferSelect;
 export type AuthSession = typeof authSessions.$inferSelect;
 
 export const sessionType = p.pgEnum('session_type', ['dj_set', 'live', 'talk', 'workshop', 'other']);
+export const mapLabelPosition = p.pgEnum('map_label_position', ['top', 'bottom', 'left', 'right']);
 
 export const tenants = p.pgTable('tenants', {
   id: p.uuid().primaryKey().defaultRandom(),
@@ -49,6 +50,7 @@ export const locations = p.pgTable('locations', {
   position: p.integer().notNull().default(0),
   mapX: p.real().notNull().default(50),
   mapY: p.real().notNull().default(50),
+  mapLabelPosition: mapLabelPosition().notNull().default('bottom'),
   createdAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
 });

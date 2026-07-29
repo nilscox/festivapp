@@ -9,7 +9,7 @@ import { assert } from '../../utils.ts';
 
 export const locationsRouter = Router({ mergeParams: true });
 
-const createSchema = z.object({
+const createSchema = z.strictObject({
   name: z.string().trim().min(1),
   description: z
     .string()
@@ -25,6 +25,7 @@ const updateSchema = createSchema
       .strictObject({
         x: z.number().min(0).max(100),
         y: z.number().min(0).max(100),
+        labelPosition: z.enum(['top', 'bottom', 'left', 'right']).optional(),
       })
       .optional(),
   })
@@ -36,7 +37,7 @@ function toLocationDto(row: Location): LocationDto {
     name: row.name,
     description: row.description,
     position: row.position,
-    mapPin: { x: row.mapX, y: row.mapY },
+    mapPin: { x: row.mapX, y: row.mapY, labelPosition: row.mapLabelPosition },
   };
 }
 
@@ -78,6 +79,7 @@ locationsRouter.patch('/:id', async (req, res) => {
       ...values,
       mapX: mapPin?.x,
       mapY: mapPin?.y,
+      mapLabelPosition: mapPin?.labelPosition,
       updatedAt: new Date(),
     })
     .where(and(eq(locations.id, req.params.id), eq(locations.tenantId, req.tenant.id)))

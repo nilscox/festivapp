@@ -82,7 +82,11 @@ bootstrapRouter.get('/bootstrap', async (req, res) => {
       name: row.name,
       description: row.description,
       position: row.position,
-      mapPin: { x: row.mapX, y: row.mapY },
+      mapPin: {
+        x: row.mapX,
+        y: row.mapY,
+        labelPosition: row.mapLabelPosition,
+      },
     })),
     participants,
     sessions,

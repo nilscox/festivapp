@@ -1,17 +1,16 @@
-import type { Location, MapPin, TenantSummary } from '@festivapp/contracts';
+import type { Location, MapPin, MapPinLabelPosition, TenantSummary } from '@festivapp/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouteContext } from '@tanstack/react-router';
 import clsx from 'clsx';
-import { Circle, Map, Upload } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Circle, Map, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 
-import { Button } from '../components/button.tsx';
+import { Button, IconButton } from '../components/button.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
 import { FilePicker } from '../components/file-picker.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { Spinner } from '../components/spinner.tsx';
-import { UploadButton } from '../components/upload-button.tsx';
 import { useLocations, useUpdateLocation } from '../lib/locations.ts';
 import { getTenantOptions, updateTenantOptions } from '../lib/tenant.ts';
 import { getThemeOptions } from '../lib/theme.ts';
@@ -62,9 +61,9 @@ export function FestivalMap() {
               title="No map yet"
               description="Upload a picture of the festival grounds, then drag a pin onto it for each location to show attendees where things are."
               cta={
-                <UploadButton tenantId={tenant.id} onUploaded={([file]) => file && setMapUrl(file.url)}>
-                  Upload a map
-                </UploadButton>
+                <Button onClick={() => setPicking(true)}>
+                  <Upload className="size-4" /> Set a map
+                </Button>
               }
             />
           ) : (
@@ -123,12 +122,26 @@ function Board({ tenantId, mapUrl, locations }: { tenantId: string; mapUrl: stri
   const imageRef = useRef<HTMLImageElement>(null);
   const [pins, setPins] = useState<Record<string, MapPin>>({});
   const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number }>();
+  const [selected, setSelected] = useState<string>();
 
   const mutation = useUpdateLocation(tenantId);
 
   const pinOf = (location: Location) => pins[location.id] ?? location.mapPin;
 
-  const pointerPin = (event: React.PointerEvent): MapPin => {
+  const save = (location: Location, mapPin: MapPin) => {
+    setPins((pins) => ({ ...pins, [location.id]: mapPin }));
+
+    mutation.mutate(
+      { id: location.id, mapPin },
+      {
+        onError: () => {
+          setPins(({ [location.id]: _, ...pins }) => pins);
+        },
+      },
+    );
+  };
+
+  const pointerPin = (event: React.PointerEvent) => {
     assert(imageRef.current);
 
     const rect = imageRef.current.getBoundingClientRect();
@@ -156,7 +169,11 @@ function Board({ tenantId, mapUrl, locations }: { tenantId: string; mapUrl: stri
 
     setPins((pins) => ({
       ...pins,
-      [location.id]: { x: round(pointer.x + dragging.offsetX), y: round(pointer.y + dragging.offsetY) },
+      [location.id]: {
+        ...pinOf(location),
+        x: round(pointer.x + dragging.offsetX),
+        y: round(pointer.y + dragging.offsetY),
+      },
     }));
   };
 
@@ -170,23 +187,18 @@ function Board({ tenantId, mapUrl, locations }: { tenantId: string; mapUrl: stri
     const mapPin = pins[location.id];
 
     if (!mapPin || (mapPin.x === location.mapPin.x && mapPin.y === location.mapPin.y)) {
-      return;
+      return setSelected(selected === location.id ? undefined : location.id);
     }
 
-    mutation.mutate(
-      { id: location.id, mapPin },
-      {
-        onError: () => {
-          setPins(({ [location.id]: _, ...pins }) => pins);
-        },
-      },
-    );
+    save(location, mapPin);
   };
+
+  const selectedLocation = locations.find((location) => location.id === selected);
 
   return (
     <div className="reveal col gap-4">
       <p className="text-muted font-mono text-xs tracking-wide">
-        {locations.length} pin{locations.length === 1 ? '' : 's'} &bull; drag one to move it, it saves as you drop it
+        {locations.length} pin{locations.length === 1 ? '' : 's'} &bull; drag one to move it, click one to label it
       </p>
 
       <div className="row justify-center">
@@ -199,6 +211,7 @@ function Board({ tenantId, mapUrl, locations }: { tenantId: string; mapUrl: stri
               location={location}
               pin={pinOf(location)}
               dragging={dragging?.id === location.id}
+              selected={selected === location.id}
               onPointerDown={(event) => onPointerDown(event, location)}
               onPointerMove={(event) => onPointerMove(event, location)}
               onPointerUp={() => onPointerUp(location)}
@@ -206,14 +219,63 @@ function Board({ tenantId, mapUrl, locations }: { tenantId: string; mapUrl: stri
           ))}
         </div>
       </div>
+
+      {selectedLocation && (
+        <LabelPositionPicker
+          pin={pinOf(selectedLocation)}
+          onChange={(labelPosition) => save(selectedLocation, { ...pinOf(selectedLocation), labelPosition })}
+        />
+      )}
     </div>
   );
 }
+
+const labelPositions = [
+  { value: 'top', icon: ArrowUp },
+  { value: 'bottom', icon: ArrowDown },
+  { value: 'left', icon: ArrowLeft },
+  { value: 'right', icon: ArrowRight },
+] as const;
+
+function LabelPositionPicker({
+  pin,
+  onChange,
+}: {
+  pin: MapPin;
+  onChange: (labelPosition: MapPinLabelPosition) => void;
+}) {
+  return (
+    <div className="row items-center justify-center gap-2">
+      <span className="text-muted text-xs">Label position</span>
+
+      <div className="row gap-1">
+        {labelPositions.map(({ value, icon }) => (
+          <IconButton
+            key={value}
+            icon={icon}
+            variant={pin.labelPosition === value ? 'primary' : 'secondary'}
+            aria-label={`Put the label on the ${value}`}
+            aria-pressed={pin.labelPosition === value}
+            onClick={() => onChange(value)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const labelClassNames: Record<MapPinLabelPosition, string> = {
+  top: clsx('bottom-full left-1/2 mb-0.5 -translate-x-1/2'),
+  bottom: clsx('top-full left-1/2 mt-0.5 -translate-x-1/2'),
+  left: clsx('top-1/2 right-full me-0.5 -translate-y-1/2'),
+  right: clsx('top-1/2 left-full ms-0.5 -translate-y-1/2'),
+};
 
 function Pin({
   location,
   pin,
   dragging,
+  selected,
   onPointerDown,
   onPointerMove,
   onPointerUp,
@@ -221,6 +283,7 @@ function Pin({
   location: Location;
   pin: MapPin;
   dragging: boolean;
+  selected: boolean;
   onPointerDown: (event: React.PointerEvent) => void;
   onPointerMove: (event: React.PointerEvent) => void;
   onPointerUp: () => void;
@@ -228,7 +291,7 @@ function Pin({
   return (
     <div
       style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
-      className={clsx('absolute -translate-x-1/2 -translate-y-1/2', dragging && 'z-10')}
+      className={clsx('absolute -translate-x-1/2 -translate-y-1/2', (dragging || selected) && 'z-10')}
     >
       <button
         type="button"
@@ -239,13 +302,19 @@ function Pin({
         onPointerCancel={onPointerUp}
         className={clsx(
           'block cursor-grab touch-none transition-transform hover:scale-110',
-          dragging && 'scale-110 cursor-grabbing',
+          (dragging || selected) && 'scale-110 cursor-grabbing',
         )}
       >
         <Circle strokeWidth={2} className="fill-accent stroke-surface size-6 drop-shadow-md" />
       </button>
 
-      <span className="bg-surface pointer-events-none absolute top-full left-1/2 mt-0.5 -translate-x-1/2 rounded-md border px-1.5 py-0.5 text-sm font-semibold whitespace-nowrap shadow-lg">
+      <span
+        className={clsx(
+          'bg-surface pointer-events-none absolute rounded-md px-1.5 py-0.5 text-sm font-semibold whitespace-nowrap shadow-lg',
+          labelClassNames[pin.labelPosition],
+          selected && 'text-accent ring-2',
+        )}
+      >
         {location.name}
       </span>
     </div>

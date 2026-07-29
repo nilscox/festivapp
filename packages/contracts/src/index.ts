@@ -91,17 +91,27 @@ export type Location = {
 };
 
 /**
- * A point on the tenant's map image, as percentages of the image's width and
- * height from its top-left corner. Being relative to the image rather than to
- * the rendered element, they hold at any size — as long as the map is drawn
- * whole and undistorted (`object-fit: contain`, never `cover`).
+ * How a location is drawn on the tenant's map image: where it sits, and which
+ * side of that point its name is written on.
+ *
+ * `x`/`y` are percentages of the image's width and height from its top-left
+ * corner. Being relative to the image rather than to the rendered element, they
+ * hold at any size — as long as the map is drawn whole and undistorted
+ * (`object-fit: contain`, never `cover`).
  */
 export type MapPin = {
   /** Distance from the left edge, from 0 to 100. */
   x: number;
   /** Distance from the top edge, from 0 to 100. */
   y: number;
+  /**
+   * Side of the pin the name label sits on. Lets the organizer keep labels off
+   * the map's own artwork and away from neighbouring pins.
+   */
+  labelPosition: MapPinLabelPosition;
 };
+
+export type MapPinLabelPosition = 'top' | 'bottom' | 'left' | 'right';
 
 /** The kind of a session; governs which participant role it can carry. */
 export type SessionType = 'live' | 'dj_set' | 'talk' | 'workshop' | 'other';
@@ -206,15 +216,30 @@ export type TenantInput = {
 };
 
 /**
- * Body of `POST`/`PATCH` on `/admin/tenants/:tenantId/locations`. A `PATCH` may
- * carry any subset of these keys; the ones it omits keep their value.
+ * Body of `POST /admin/tenants/:tenantId/locations`. A new location always
+ * lands at the centre of the map with its label underneath; it is placed from
+ * the map page afterwards, so the pin is not part of this body.
  */
 export type LocationInput = {
   name: string;
   description: string | null;
   position: number;
-  /** Where to place the location on the map; a new one starts at its centre. */
-  mapPin: MapPin;
+};
+
+/**
+ * Body of `PATCH /admin/tenants/:tenantId/locations/:id`. It may carry any
+ * subset of these keys; the ones it omits keep their value.
+ */
+export type LocationUpdate = Partial<LocationInput> & {
+  /**
+   * Where to draw the pin. `labelPosition` may be left out to keep the current
+   * one, so moving a pin doesn't have to echo it back.
+   */
+  mapPin?: {
+    x: number;
+    y: number;
+    labelPosition?: MapPinLabelPosition;
+  };
 };
 
 /**

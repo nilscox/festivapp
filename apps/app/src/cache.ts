@@ -7,7 +7,7 @@ export async function warmTenantCache(tenant: TenantConfig): Promise<void> {
 
   const { logo, backgroundImage } = tenant.theme;
 
-  const urls = [logo.wordmarkUrl, logo.iconUrl, backgroundImage?.url ?? null]
+  const urls = [logo.wordmarkUrl, logo.iconUrl, backgroundImage?.url ?? null, tenant.mapUrl]
     .filter((url) => url !== null)
     .filter((url) => url.startsWith('/'));
 

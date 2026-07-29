@@ -45,6 +45,9 @@ const routeTree = rootRoute.addChildren([
     getParentRoute: () => rootRoute,
     path: '/map',
     component: MapPage,
+    validateSearch: (search: Record<string, unknown>) => ({
+      location: typeof search.location === 'string' ? search.location : undefined,
+    }),
   }),
   createRoute({
     getParentRoute: () => rootRoute,

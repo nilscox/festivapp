@@ -1,4 +1,4 @@
-import type { Session, TenantConfig } from '@festivapp/contracts';
+import type { Location, Session, TenantConfig } from '@festivapp/contracts';
 import { Link } from '@tanstack/react-router';
 import { isAfter, isWithinInterval } from 'date-fns';
 
@@ -33,7 +33,7 @@ export function Now() {
         </div>
 
         {rows.map((row) => (
-          <LocationNow key={row.location.id} name={row.location.name} live={row.live} next={row.next} now={now} />
+          <LocationNow key={row.location.id} location={row.location} live={row.live} next={row.next} now={now} />
         ))}
       </div>
     </div>
@@ -78,22 +78,22 @@ function Header({ tenant }: { tenant: TenantConfig }) {
 }
 
 function LocationNow({
-  name,
+  location,
   live,
   next,
   now,
 }: {
-  name: string;
+  location: Location;
   live: Session | null;
   next: Session | null;
   now: Date;
 }) {
   return (
     <section className="border-line border-t p-4">
-      <div className="row mb-2 items-center gap-2.5">
+      <Link to="/map" search={{ location: location.id }} className="row mb-2 items-center gap-2.5">
         {live && <Live />}
-        <h2 className="font-display text-accent text-lg font-bold tracking-tight">{name}</h2>
-      </div>
+        <h2 className="font-display text-accent text-lg font-bold tracking-tight">{location.name}</h2>
+      </Link>
 
       <div className="col gap-3">
         {live ? <SessionCard session={live} now={now} showLiveIcon={false} /> : <Break />}
