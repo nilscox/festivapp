@@ -1,22 +1,23 @@
 import type { TenantSummary, UploadedFile } from '@festivapp/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouteContext } from '@tanstack/react-router';
+import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import { format } from 'date-fns';
-import { Image, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { Image, SearchX, Trash2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 
-import { IconButton } from '../components/button.tsx';
+import { Button, IconButton } from '../components/button.tsx';
 import { ConfirmDialog } from '../components/confirm-dialog.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
+import { SearchInput } from '../components/search-input.tsx';
 import { Spinner } from '../components/spinner.tsx';
 import { Thumbnail } from '../components/thumbnail.tsx';
 import { UploadButton } from '../components/upload-button.tsx';
 import { ApiError } from '../lib/api.ts';
 import { deleteFileOptions, listFilesOptions } from '../lib/files.ts';
 import { getThemeOptions } from '../lib/theme.ts';
-import { assert, formatBytes } from '../utils.ts';
+import { assert, formatBytes, matchesSearch } from '../utils.ts';
 
 const from = '/festivals/$tenantId/files';
 
@@ -93,18 +94,57 @@ function FilesList({
     setConfirmDeleteTarget(file);
   };
 
+  const { search = '' } = useSearch({ from });
+  const navigate = useNavigate({ from });
+
+  const onSearch = (value: string) => {
+    navigate({ search: { search: value || undefined }, replace: true });
+  };
+
+  const matching = useMemo(() => {
+    return files.filter((file) => matchesSearch(search, file.name));
+  }, [files, search]);
+
   return (
     <div className="reveal">
+      <SearchInput
+        value={search}
+        onValueChange={onSearch}
+        placeholder="Search by file name"
+        className="mb-4 md:max-w-96"
+      />
+
       <p className="text-muted mb-3 font-mono text-xs tracking-wide">
-        {files.length} file{files.length === 1 ? '' : 's'} &bull; served from your festival's own domain, so they work
-        offline
+        {search === '' ? (
+          <>
+            {files.length} file{files.length === 1 ? '' : 's'} &bull; served from your festival's own domain, so they
+            work offline
+          </>
+        ) : (
+          <>
+            {matching.length} of {files.length} &bull; matching "{search}"
+          </>
+        )}
       </p>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {files.map((file) => (
-          <FileCard key={file.id} file={file} background={background} onDelete={() => onDelete(file)} />
-        ))}
-      </div>
+      {matching.length === 0 ? (
+        <EmptyState
+          icon={SearchX}
+          title="No file matches that"
+          description="No uploaded file has a name matching this search. Try a shorter or different term."
+          cta={
+            <Button variant="secondary" onClick={() => onSearch('')}>
+              Clear search
+            </Button>
+          }
+        />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {matching.map((file) => (
+            <FileCard key={file.id} file={file} background={background} onDelete={() => onDelete(file)} />
+          ))}
+        </div>
+      )}
 
       <ConfirmDialog
         open={confirmDeleteOpen}

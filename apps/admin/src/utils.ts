@@ -9,6 +9,20 @@ export function defined<T>(value: T | null | undefined, error?: Error): T {
   return value;
 }
 
+export function matchesSearch(query: string, ...fields: (string | null | undefined)[]): boolean {
+  const terms = normalize(query).split(/\s+/).filter(Boolean);
+  const haystack = normalize(fields.filter(Boolean).join(' '));
+
+  return terms.every((term) => haystack.includes(term));
+}
+
+function normalize(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) {
     return `${bytes} B`;

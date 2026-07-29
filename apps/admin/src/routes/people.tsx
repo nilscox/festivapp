@@ -2,7 +2,7 @@ import { Form } from '@base-ui/react/form';
 import type { Participant, ParticipantInput, TenantSummary } from '@festivapp/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
-import { Pencil, Plus, Trash2, Users } from 'lucide-react';
+import { Pencil, Plus, SearchX, Trash2, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Button, IconButton, LinkButton } from '../components/button.tsx';
@@ -13,6 +13,7 @@ import { Field } from '../components/field.tsx';
 import { FileInput } from '../components/file-input.tsx';
 import { Input } from '../components/input.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
+import { SearchInput } from '../components/search-input.tsx';
 import { Spinner } from '../components/spinner.tsx';
 import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
 import { Textarea } from '../components/textarea.tsx';
@@ -25,7 +26,7 @@ import {
   updateParticipantOptions,
 } from '../lib/participants.ts';
 import { getThemeOptions } from '../lib/theme.ts';
-import { assert } from '../utils.ts';
+import { assert, matchesSearch } from '../utils.ts';
 
 const from = '/festivals/$tenantId/people';
 
@@ -82,7 +83,7 @@ function Header({ tenant, showCreate }: { tenant: TenantSummary; showCreate: boo
       title="People"
       end={
         showCreate && (
-          <LinkButton from={from} search={{ create: true }} className="mt-auto">
+          <LinkButton from={from} search={(prev) => ({ ...prev, create: true })} className="mt-auto">
             <Plus className="size-4" />
             <span className="max-md:hidden">Add someone</span>
           </LinkButton>
@@ -108,28 +109,69 @@ function PeopleList({ tenant, participants }: { tenant: TenantSummary; participa
     setConfirmDeleteTarget(participant);
   };
 
+  const { search = '' } = useSearch({ from });
+  const navigate = useNavigate({ from });
+
+  const onSearch = (value: string) => {
+    navigate({ search: (prev) => ({ ...prev, search: value || undefined }), replace: true });
+  };
+
+  const matching = useMemo(() => {
+    return participants.filter((participant) => {
+      return matchesSearch(search, participant.name, participant.label, participant.origin, ...participant.styles);
+    });
+  }, [participants, search]);
+
   return (
     <div className="reveal">
+      <SearchInput
+        value={search}
+        onValueChange={onSearch}
+        placeholder="Search by name, label, origin or style"
+        className="mb-4 md:max-w-96"
+      />
+
       <p className="text-muted mb-3 font-mono text-xs tracking-wide">
-        {participants.length} {participants.length === 1 ? 'person' : 'people'} &bull; listed alphabetically
+        {search === '' ? (
+          <>
+            {participants.length} {participants.length === 1 ? 'person' : 'people'} &bull; listed alphabetically
+          </>
+        ) : (
+          <>
+            {matching.length} of {participants.length} &bull; matching "{search}"
+          </>
+        )}
       </p>
 
-      <Table>
-        <TableHeader>
-          <TableHeaderCell className="flex-1">Name</TableHeaderCell>
-          <TableHeaderCell className="flex-1 max-md:hidden">Styles</TableHeaderCell>
-          <TableHeaderCell>Actions</TableHeaderCell>
-        </TableHeader>
+      {matching.length === 0 ? (
+        <EmptyState
+          icon={SearchX}
+          title="Nobody matches that"
+          description="No one on the line-up matches this search. Try a shorter or different term."
+          cta={
+            <Button variant="secondary" onClick={() => onSearch('')}>
+              Clear search
+            </Button>
+          }
+        />
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableHeaderCell className="flex-1">Name</TableHeaderCell>
+            <TableHeaderCell className="flex-1 max-md:hidden">Styles</TableHeaderCell>
+            <TableHeaderCell>Actions</TableHeaderCell>
+          </TableHeader>
 
-        {participants.map((participant) => (
-          <ParticipantItem
-            key={participant.id}
-            tenant={tenant}
-            participant={participant}
-            onDelete={() => onDelete(participant)}
-          />
-        ))}
-      </Table>
+          {matching.map((participant) => (
+            <ParticipantItem
+              key={participant.id}
+              tenant={tenant}
+              participant={participant}
+              onDelete={() => onDelete(participant)}
+            />
+          ))}
+        </Table>
+      )}
 
       <ConfirmDialog
         open={confirmDeleteOpen}
@@ -188,7 +230,7 @@ function ParticipantItem({
       </div>
 
       <div className="row shrink-0 items-center gap-1">
-        <LinkButton variant="secondary" size="sm" from={from} search={{ edit: participant.id }}>
+        <LinkButton variant="secondary" size="sm" from={from} search={(prev) => ({ ...prev, edit: participant.id })}>
           <Pencil className="size-3" />
           Edit
         </LinkButton>
@@ -209,7 +251,7 @@ function ParticipantDrawer({ tenant, participants }: { tenant: TenantSummary; pa
   const open = create !== undefined || editId !== undefined;
 
   const navigate = useNavigate({ from });
-  const onClose = () => navigate({ search: {} });
+  const onClose = () => navigate({ search: (prev) => ({ search: prev.search }) });
 
   return (
     <Drawer open={open} onOpenChange={(open) => !open && onClose()} title={create ? 'New person' : 'Edit person'}>

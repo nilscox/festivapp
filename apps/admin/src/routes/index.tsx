@@ -105,7 +105,11 @@ const festivalIndexRoute = createRoute({
 const peopleRoute = createRoute({
   getParentRoute: () => festivalRoute,
   path: 'people',
-  validateSearch: z.object({ create: z.optional(z.literal(true)), edit: z.optional(z.uuid()) }),
+  validateSearch: z.object({
+    search: z.optional(z.string()),
+    create: z.optional(z.literal(true)),
+    edit: z.optional(z.uuid()),
+  }),
   component: People,
   loader: async ({ context: { queryClient, tenant } }) => {
     await Promise.all([
@@ -141,6 +145,7 @@ const mapRoute = createRoute({
 const filesRoute = createRoute({
   getParentRoute: () => festivalRoute,
   path: 'files',
+  validateSearch: z.object({ search: z.optional(z.string()) }),
   component: Files,
   loader: async ({ context: { queryClient, tenant } }) => {
     await Promise.all([

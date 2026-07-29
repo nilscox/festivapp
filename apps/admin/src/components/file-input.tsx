@@ -1,12 +1,14 @@
 import { Field as BaseField } from '@base-ui/react/field';
 import type { UploadedFile } from '@festivapp/contracts';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { listFilesOptions } from '../lib/files.ts';
 import { getThemeOptions } from '../lib/theme.ts';
+import { matchesSearch } from '../utils.ts';
 import { Button } from './button.tsx';
 import { Drawer } from './drawer.tsx';
+import { SearchInput } from './search-input.tsx';
 import { Spinner } from './spinner.tsx';
 import { Thumbnail } from './thumbnail.tsx';
 import { UploadButton } from './upload-button.tsx';
@@ -87,6 +89,11 @@ function FilePicker({
   onSelect: (file: UploadedFile) => void;
 }) {
   const { isPending, data: files = [] } = useQuery(listFilesOptions(tenantId));
+  const [query, setQuery] = useState('');
+
+  const matching = useMemo(() => {
+    return files.filter((file) => matchesSearch(query, file.name));
+  }, [files, query]);
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} eyebrow="File upload" title="Choose a file">
@@ -97,8 +104,14 @@ function FilePicker({
           <p className="text-muted text-sm">Nothing uploaded yet. Upload an image to use it here.</p>
         )}
 
+        {files.length > 0 && <SearchInput value={query} onValueChange={setQuery} placeholder="Search by file name" />}
+
+        {files.length > 0 && matching.length === 0 && (
+          <p className="text-muted text-sm">No file name matches "{query}".</p>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
-          {files.map((file) => (
+          {matching.map((file) => (
             <button
               key={file.id}
               type="button"
