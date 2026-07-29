@@ -144,11 +144,16 @@ export type Organizer = {
 };
 
 /** A festival the signed-in organizer may manage, for the sidebar switcher. */
-export type TenantSummary = {
+export type Tenant = {
   id: string;
   name: string;
+  /** The exact host that resolves to this tenant (e.g. "coolfest.localhost"). */
   domain: string;
+  /** IANA timezone the festival runs in (e.g. "Europe/Paris"). */
+  timezone: string;
 };
+
+export type TenantSummary = Pick<Tenant, 'id' | 'name' | 'domain'>;
 
 /** Body of `POST /admin/auth/login`. */
 export type LoginRequest = {
@@ -160,6 +165,17 @@ export type LoginRequest = {
 export type MeResponse = {
   organizer: Organizer;
   tenants: TenantSummary[];
+};
+
+/**
+ * Body of `PUT /admin/tenants/:tenantId`. Changing `domain` moves the
+ * attendee app: the previous host stops resolving as soon as it is saved, and a
+ * host another festival already uses is rejected with `409 domain_taken`.
+ */
+export type TenantInput = {
+  name: string;
+  domain: string;
+  timezone: string;
 };
 
 /** Body of `POST`/`PATCH` on `/admin/tenants/:tenantId/locations`. */

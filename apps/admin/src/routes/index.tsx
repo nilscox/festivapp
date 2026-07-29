@@ -14,6 +14,7 @@ import { getMeOptions } from '../lib/auth.ts';
 import { listFilesOptions } from '../lib/files.ts';
 import { listLocationsOptions } from '../lib/locations.ts';
 import { listParticipantsOptions } from '../lib/participants.ts';
+import { getTenantOptions } from '../lib/tenant.ts';
 import { getThemeOptions } from '../lib/theme.ts';
 import { assert } from '../utils.ts';
 
@@ -22,6 +23,7 @@ const Layout = lazyRouteComponent(() => import('./layout.tsx'), 'Layout');
 const Locations = lazyRouteComponent(() => import('./locations.tsx'), 'Locations');
 const Login = lazyRouteComponent(() => import('./login.tsx'), 'Login');
 const People = lazyRouteComponent(() => import('./people.tsx'), 'People');
+const Settings = lazyRouteComponent(() => import('./settings.tsx'), 'Settings');
 const Theme = lazyRouteComponent(() => import('./theme.tsx'), 'Theme');
 
 const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -170,7 +172,10 @@ const themeRoute = createRoute({
 const settingsRoute = createRoute({
   getParentRoute: () => festivalRoute,
   path: 'settings',
-  component: () => null,
+  component: Settings,
+  loader: async ({ context: { queryClient, tenant } }) => {
+    await queryClient.ensureQueryData(getTenantOptions(tenant.id));
+  },
 });
 
 export const routeTree = rootRoute.addChildren([

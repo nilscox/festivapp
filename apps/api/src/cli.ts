@@ -1,3 +1,4 @@
+import type { TenantTheme } from '@festivapp/contracts';
 import { Command } from 'commander';
 import { inArray } from 'drizzle-orm';
 
@@ -5,6 +6,7 @@ import { hashPassword } from './auth/password.ts';
 import { db } from './db/client.ts';
 import { organizers, organizerTenants, tenants } from './db/schema.ts';
 import { seed } from './seed.ts';
+import { assert } from './utils.ts';
 
 const program = new Command();
 
@@ -49,6 +51,32 @@ organizer
       .values(tenantRows.map((row) => ({ organizerId: organizer!.id, tenantId: row.id })));
 
     console.log(`Organizer ${email} ready with access to: ${tenantRows.map((r) => r.domain).join(', ')}`);
+  });
+
+const festival = new Command('festival');
+program.addCommand(festival);
+
+festival
+  .command('create')
+  .description('Create an new festivals')
+  .argument('<name>', 'festival name')
+  .option('-t, --timezone <timezone>', 'festival time zone')
+  .option('-d, --domain <domain>', 'attendees app domain')
+  .action(async (name: string, { timezone = 'Europe/London', domain = 'localhost' }) => {
+    const theme: TenantTheme = {
+      backgroundColor: '#000000',
+      accentColor: '#ffffff',
+      fonts: { body: 'sans-serif', display: 'sans-serif', mono: 'monospace' },
+      logo: { wordmarkUrl: null, iconUrl: null },
+      backgroundImage: null,
+      pwa: { name: null, shortName: null },
+      customCss: null,
+    };
+
+    const [tenant] = await db.insert(tenants).values({ name, theme, timezone, domain }).returning();
+    assert(tenant);
+
+    console.log(`Festival ${name} created with id ${tenant.id}`);
   });
 
 await program.parseAsync(process.argv).finally(() => db.$client.end());

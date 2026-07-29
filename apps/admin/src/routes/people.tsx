@@ -61,7 +61,7 @@ export function People() {
               cta={
                 <LinkButton from={from} search={{ create: true }}>
                   <Plus className="size-4" />
-                  Add someone
+                  Add people
                 </LinkButton>
               }
             />
@@ -85,7 +85,7 @@ function Header({ tenant, showCreate }: { tenant: TenantSummary; showCreate: boo
         showCreate && (
           <LinkButton from={from} search={(prev) => ({ ...prev, create: true })} className="mt-auto">
             <Plus className="size-4" />
-            <span className="max-md:hidden">Add someone</span>
+            <span className="max-md:hidden">Add people</span>
           </LinkButton>
         )
       }
@@ -237,7 +237,11 @@ function ParticipantDrawer({ tenant, participants }: { tenant: TenantSummary; pa
   const onClose = () => navigate({ search: (prev) => ({ search: prev.search }) });
 
   return (
-    <Drawer open={open} onOpenChange={(open) => !open && onClose()} title={create ? 'New person' : 'Edit person'}>
+    <Drawer
+      open={open}
+      onOpenChange={(open) => !open && onClose()}
+      title={create ? 'New person or band' : 'Edit person or band'}
+    >
       <ParticipantForm
         tenant={tenant}
         defaultValue={editId ? participants.find((participant) => participant.id === editId) : undefined}

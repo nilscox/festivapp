@@ -5,7 +5,7 @@ type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 type Size = 'md' | 'sm';
 
 const VARIANTS: Record<Variant, string> = {
-  primary: clsx('bg-accent text-white outline-offset-1 hover:brightness-110'),
+  primary: clsx('bg-accent text-white outline-offset-2 hover:brightness-110'),
   secondary: clsx('bg-surface text-ink/80 hover:text-ink hover:border-line-strong border'),
   danger: clsx('bg-danger text-white hover:brightness-110'),
   ghost: clsx('text-muted hover:bg-subtle'),

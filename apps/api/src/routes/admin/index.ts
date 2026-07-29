@@ -5,15 +5,17 @@ import { authRouter } from './auth.ts';
 import { filesRouter } from './files.ts';
 import { locationsRouter } from './locations.ts';
 import { participantsRouter } from './participants.ts';
+import { tenantRouter } from './tenant.ts';
 import { themeRouter } from './theme.ts';
 
 export const adminRouter = Router();
-const tenantRouter = Router();
+const router = Router();
 
 adminRouter.use('/auth', authRouter);
-adminRouter.use('/tenants/:tenantId', requireOrganizer, requireTenantMembership, tenantRouter);
+adminRouter.use('/tenants/:tenantId', requireOrganizer, requireTenantMembership, router);
 
-tenantRouter.use('/files', filesRouter);
-tenantRouter.use('/locations', locationsRouter);
-tenantRouter.use('/participants', participantsRouter);
-tenantRouter.use('/theme', themeRouter);
+router.use(tenantRouter);
+router.use('/files', filesRouter);
+router.use('/locations', locationsRouter);
+router.use('/participants', participantsRouter);
+router.use('/theme', themeRouter);

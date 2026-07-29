@@ -54,14 +54,11 @@
 
   * {
     border-color: var(--color-line);
+    outline-color: var(--color-accent);
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent);
-
-    &[data-invalid] {
-      outline-color: var(--color-danger);
-    }
+    outline-width: 2px;
   }
 
   @media (prefers-reduced-motion: reduce) {

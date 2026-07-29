@@ -1,4 +1,4 @@
-import type { MeResponse, Organizer as OrganizerDto, TenantSummary as TenantDto } from '@festivapp/contracts';
+import type { MeResponse } from '@festivapp/contracts';
 import { Router } from 'express';
 import { z } from 'zod';
 
@@ -28,12 +28,11 @@ async function listOrganizerTenants(organizerId: string) {
   });
 }
 
-function toOrganizerDto(organizer: Organizer): OrganizerDto {
-  return { id: organizer.id, email: organizer.email, name: organizer.name };
-}
-
-function toTenantDto(tenant: Tenant): TenantDto {
-  return { id: tenant.id, name: tenant.name, domain: tenant.domain };
+function toMeResponseDto(organizer: Organizer, tenants: Tenant[]): MeResponse {
+  return {
+    organizer: { id: organizer.id, email: organizer.email, name: organizer.name },
+    tenants: tenants.map((tenant) => ({ id: tenant.id, name: tenant.name, domain: tenant.domain })),
+  };
 }
 
 authRouter.post('/login', async (req, res) => {
@@ -51,21 +50,14 @@ authRouter.post('/login', async (req, res) => {
   const tenants = await listOrganizerTenants(organizer.id);
 
   res.cookie('token', token, sessionCookieOptions(expiresAt));
-
-  res.json({
-    organizer: toOrganizerDto(organizer),
-    tenants: tenants.map(toTenantDto),
-  } satisfies MeResponse);
+  res.json(toMeResponseDto(organizer, tenants));
 });
 
 authRouter.get('/me', requireOrganizer, async (req, res) => {
   const organizer = req.organizer!;
   const tenants = await listOrganizerTenants(organizer.id);
 
-  res.json({
-    organizer: toOrganizerDto(organizer),
-    tenants: tenants.map(toTenantDto),
-  } satisfies MeResponse);
+  res.json(toMeResponseDto(organizer, tenants));
 });
 
 authRouter.post('/logout', requireOrganizer, async (req, res) => {
