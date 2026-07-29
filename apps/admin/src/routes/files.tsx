@@ -134,7 +134,7 @@ function FileCard({ file, background, onDelete }: { file: UploadedFile; backgrou
         alt={file.name ?? 'Uploaded file'}
         fit="cover"
         background={background}
-        className="h-36"
+        className="h-36 rounded-b-none"
       />
 
       <div className="row items-center justify-between gap-4 border-t p-3">

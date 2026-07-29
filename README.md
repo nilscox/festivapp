@@ -71,12 +71,12 @@ Run from the repo root (whole workspace):
 
 Run from `apps/api`:
 
-| Command           | Description                            |
-| ----------------- | -------------------------------------- |
-| `pnpm dev`        | Run the API with `node --watch`        |
-| `pnpm start`      | Run the API once                       |
-| `pnpm db:migrate` | Apply pending migrations               |
-| `pnpm db:seed`    | Seed the database (`apps/api/seed.ts`) |
+| Command           | Description                     |
+| ----------------- | ------------------------------- |
+| `pnpm dev`        | Run the API with `node --watch` |
+| `pnpm start`      | Run the API once                |
+| `pnpm db:migrate` | Apply pending migrations        |
+| `pnpm cli`        | Run the CLI (`pnpm cli --help`) |
 
 ## Configuration
 

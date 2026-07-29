@@ -4,10 +4,21 @@ import { inArray } from 'drizzle-orm';
 import { hashPassword } from './auth/password.ts';
 import { db } from './db/client.ts';
 import { organizers, organizerTenants, tenants } from './db/schema.ts';
+import { seed } from './seed.ts';
 
 const program = new Command();
 
 program.name('festivapp').description('FestivApp CLI');
+
+program
+  .command('seed')
+  .description('Create a festival, its line-up and its images from a seed file')
+  .argument('<file>', 'path to the seed JSON file; its images are relative to it')
+  .action(async (file: string) => {
+    await seed(file);
+
+    console.log(`Seeded ${file}`);
+  });
 
 const organizer = new Command('organizer');
 program.addCommand(organizer);

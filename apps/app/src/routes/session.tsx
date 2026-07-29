@@ -190,7 +190,7 @@ function About({ description }: { description: React.ReactNode }) {
 
   return (
     <Section label="About">
-      <p className="text-ink-soft text-sm leading-relaxed">{description}</p>
+      <p className="text-ink-soft text-sm leading-relaxed whitespace-pre-line">{description}</p>
     </Section>
   );
 }

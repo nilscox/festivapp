@@ -68,9 +68,11 @@ packages/
   `Host`; only the public attendee routes run `resolveTenant`.
 - **Date math via date-fns** — `add(Date.now(), { months: 3 })`, not raw
   millisecond arithmetic.
-- **The seed and the migrations are committed** (`apps/api/seed.ts`,
+- **The seed and the migrations are committed** (`apps/api/src/seed.ts`,
   `apps/api/drizzle/`); the seed is the canonical dev dataset, and `drizzle/` is
-  excluded from formatting.
+  excluded from formatting. It takes a JSON file (`pnpm cli seed <file>`) whose
+  image paths are relative to it, and turns each one into a `files` row plus a
+  copy in the storage.
 
 ## Backoffice conventions (`apps/admin`)
 
@@ -158,9 +160,10 @@ Deliberately simpler than the backoffice — no auth, no forms, no router contex
 
 - Root: `pnpm typecheck`, `pnpm lint`, `pnpm format`, `pnpm format:check` —
   **all four must pass before a change is done.**
-- `apps/api`: `pnpm dev`, `pnpm db:migrate`, `pnpm db:seed`, `pnpm cli`
+- `apps/api`: `pnpm dev`, `pnpm db:migrate`, `pnpm cli`
   (e.g. `pnpm cli organizer create <email> <password> <domain…>` to get a
-  backoffice login). Generate a migration with `pnpm drizzle-kit generate`.
+  backoffice login, `pnpm cli seed <file>` to load a festival). Generate a
+  migration with `pnpm drizzle-kit generate`.
 - `apps/app` / `apps/admin`: `pnpm dev`, `pnpm build`, `pnpm preview`.
 - Local Postgres runs in a container — see the README for the `docker run` command.
 

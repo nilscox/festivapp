@@ -1,25 +1,4 @@
-import type { TenantTheme } from '@festivapp/contracts';
 import { z } from 'zod';
-
-export const defaultTheme: TenantTheme = {
-  backgroundColor: '#ffffff',
-  accentColor: '#18181b',
-  fonts: {
-    display: "'Space Grotesk Variable', system-ui, sans-serif",
-    body: "'Space Grotesk Variable', system-ui, sans-serif",
-    mono: "'IBM Plex Mono', ui-monospace, monospace",
-  },
-  logo: {
-    wordmarkUrl: null,
-    iconUrl: null,
-  },
-  backgroundImage: null,
-  pwa: {
-    name: null,
-    shortName: null,
-  },
-  customCss: null,
-};
 
 const color = z
   .string()
@@ -39,25 +18,25 @@ const nullableText = (max: number) =>
     .transform((value) => value || null)
     .nullable();
 
-export const themeSchema = z.object({
+export const themeSchema = z.strictObject({
   backgroundColor: color,
   accentColor: color,
-  fonts: z.object({
+  fonts: z.strictObject({
     display: fontStack,
     body: fontStack,
     mono: fontStack,
   }),
-  logo: z.object({
+  logo: z.strictObject({
     wordmarkUrl: url.nullable(),
     iconUrl: url.nullable(),
   }),
   backgroundImage: z
-    .object({
+    .strictObject({
       url,
       opacity: z.number().min(0).max(1),
     })
     .nullable(),
-  pwa: z.object({
+  pwa: z.strictObject({
     name: nullableText(60),
     shortName: nullableText(12),
   }),
