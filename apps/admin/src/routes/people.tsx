@@ -6,7 +6,7 @@ import { Pencil, Plus, SearchX, Trash2, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Button, IconButton, LinkButton } from '../components/button.tsx';
-import { ConfirmDialog } from '../components/confirm-dialog.tsx';
+import { useConfirmDialog } from '../components/confirm-dialog.tsx';
 import { Drawer } from '../components/drawer.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
 import { Field } from '../components/field.tsx';
@@ -26,7 +26,7 @@ import {
   updateParticipantOptions,
 } from '../lib/participants.ts';
 import { getThemeOptions } from '../lib/theme.ts';
-import { assert, matchesSearch } from '../utils.ts';
+import { matchesSearch } from '../utils.ts';
 
 const from = '/festivals/$tenantId/people';
 
@@ -101,12 +101,15 @@ function PeopleList({ tenant, participants }: { tenant: TenantSummary; participa
     onSuccess: () => queryClient.invalidateQueries(listParticipantsOptions(tenant.id)),
   });
 
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<Participant | null>(null);
+  const confirm = useConfirmDialog();
 
   const onDelete = (participant: Participant) => {
-    setConfirmDeleteOpen(true);
-    setConfirmDeleteTarget(participant);
+    confirm({
+      title: `Delete "${participant.name}"?`,
+      description: `This removes ${participant.name} from ${tenant.name} and from every session they appear on. This can't be undone.`,
+      confirmLabel: 'Delete',
+      onConfirm: () => deleteMutation.mutateAsync(participant.id),
+    });
   };
 
   const { search = '' } = useSearch({ from });
@@ -172,26 +175,6 @@ function PeopleList({ tenant, participants }: { tenant: TenantSummary; participa
           ))}
         </Table>
       )}
-
-      <ConfirmDialog
-        open={confirmDeleteOpen}
-        onOpenChange={(open) => !open && setConfirmDeleteOpen(false)}
-        onOpenChangeComplete={(open) => !open && setConfirmDeleteTarget(null)}
-        title={`Delete "${confirmDeleteTarget?.name}"?`}
-        description={`This removes ${confirmDeleteTarget?.name ?? 'this person'} from ${tenant.name} and from every session they appear on. This can't be undone.`}
-        confirmLabel="Delete"
-        pending={deleteMutation.isPending}
-        onConfirm={() => {
-          assert(confirmDeleteTarget);
-
-          deleteMutation.mutate(confirmDeleteTarget.id, {
-            onSuccess: () => {
-              setConfirmDeleteTarget(null);
-              setConfirmDeleteOpen(false);
-            },
-          });
-        }}
-      />
     </div>
   );
 }

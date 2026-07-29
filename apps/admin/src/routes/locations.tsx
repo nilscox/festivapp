@@ -2,10 +2,10 @@ import { Form } from '@base-ui/react/form';
 import type { Location, TenantSummary } from '@festivapp/contracts';
 import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import { MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { Button, IconButton, LinkButton } from '../components/button.tsx';
-import { ConfirmDialog } from '../components/confirm-dialog.tsx';
+import { useConfirmDialog } from '../components/confirm-dialog.tsx';
 import { Drawer } from '../components/drawer.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
 import { Field } from '../components/field.tsx';
@@ -16,7 +16,6 @@ import { Spinner } from '../components/spinner.tsx';
 import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
 import { parseValidationError } from '../lib/errors.ts';
 import { useCreateLocation, useDeleteLocation, useLocations, useUpdateLocation } from '../lib/locations.ts';
-import { assert } from '../utils.ts';
 
 const from = '/festivals/$tenantId/locations';
 
@@ -76,12 +75,15 @@ function Header({ tenant, showCreate }: { tenant: TenantSummary; showCreate: boo
 
 function LocationsList({ tenant, locations }: { tenant: TenantSummary; locations: Location[] }) {
   const deleteMutation = useDeleteLocation(tenant.id);
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<Location | null>(null);
+  const confirm = useConfirmDialog();
 
   const onDelete = (location: Location) => {
-    setConfirmDeleteOpen(true);
-    setConfirmDeleteTarget(location);
+    confirm({
+      title: `Delete "${location.name}"?`,
+      description: `This removes the location from ${tenant.name}. Sessions assigned to it will need a new location. This can't be undone.`,
+      confirmLabel: 'Delete',
+      onConfirm: () => deleteMutation.mutateAsync(location.id),
+    });
   };
 
   return (
@@ -101,26 +103,6 @@ function LocationsList({ tenant, locations }: { tenant: TenantSummary; locations
           <LocationItem key={location.id} location={location} onDelete={() => onDelete(location)} />
         ))}
       </Table>
-
-      <ConfirmDialog
-        open={confirmDeleteOpen}
-        onOpenChange={(open) => !open && setConfirmDeleteOpen(false)}
-        onOpenChangeComplete={(open) => !open && setConfirmDeleteTarget(null)}
-        title={`Delete "${confirmDeleteTarget?.name}"?`}
-        description={`This removes the location from ${tenant.name}. Sessions assigned to it will need a new location. This can't be undone.`}
-        confirmLabel="Delete"
-        pending={deleteMutation.isPending}
-        onConfirm={() => {
-          assert(confirmDeleteTarget);
-
-          deleteMutation.mutate(confirmDeleteTarget.id, {
-            onSuccess: () => {
-              setConfirmDeleteTarget(null);
-              setConfirmDeleteOpen(false);
-            },
-          });
-        }}
-      />
     </div>
   );
 }

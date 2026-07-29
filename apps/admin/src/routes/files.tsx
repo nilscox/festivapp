@@ -3,11 +3,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import { format } from 'date-fns';
 import { Image, SearchX, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import toast from 'react-hot-toast';
 
 import { Button, IconButton } from '../components/button.tsx';
-import { ConfirmDialog } from '../components/confirm-dialog.tsx';
+import { useConfirmDialog } from '../components/confirm-dialog.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { SearchInput } from '../components/search-input.tsx';
@@ -17,7 +17,7 @@ import { UploadButton } from '../components/upload-button.tsx';
 import { ApiError } from '../lib/api.ts';
 import { deleteFileOptions, listFilesOptions } from '../lib/files.ts';
 import { getThemeOptions } from '../lib/theme.ts';
-import { assert, formatBytes, matchesSearch } from '../utils.ts';
+import { formatBytes, matchesSearch } from '../utils.ts';
 
 const from = '/festivals/$tenantId/files';
 
@@ -86,12 +86,15 @@ function FilesList({
     },
   });
 
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<UploadedFile | null>(null);
+  const confirm = useConfirmDialog();
 
   const onDelete = (file: UploadedFile) => {
-    setConfirmDeleteOpen(true);
-    setConfirmDeleteTarget(file);
+    confirm({
+      title: `Delete "${file.name ?? 'this file'}"?`,
+      description: "Anything still pointing at this file will show a broken image. This can't be undone.",
+      confirmLabel: 'Delete',
+      onConfirm: () => deleteMutation.mutateAsync(file.id),
+    });
   };
 
   const { search = '' } = useSearch({ from });
@@ -145,23 +148,6 @@ function FilesList({
           ))}
         </div>
       )}
-
-      <ConfirmDialog
-        open={confirmDeleteOpen}
-        onOpenChange={(open) => !open && setConfirmDeleteOpen(false)}
-        onOpenChangeComplete={(open) => !open && setConfirmDeleteTarget(null)}
-        title={`Delete "${confirmDeleteTarget?.name ?? 'this file'}"?`}
-        description="Anything still pointing at this file will show a broken image. This can't be undone."
-        confirmLabel="Delete"
-        pending={deleteMutation.isPending}
-        onConfirm={() => {
-          assert(confirmDeleteTarget);
-
-          deleteMutation.mutate(confirmDeleteTarget.id, {
-            onSettled: () => setConfirmDeleteOpen(false),
-          });
-        }}
-      />
     </div>
   );
 }

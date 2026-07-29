@@ -7,6 +7,7 @@ import { CalendarDays, ChevronDown, Image, LogOut, Map, MapPin, Palette, Setting
 import { useState } from 'react';
 
 import { Button } from '../components/button.tsx';
+import { ConfirmDialogProvider } from '../components/confirm-dialog.tsx';
 import { Eyebrow } from '../components/eyebrow.tsx';
 import { OpenDrawerProvider } from '../components/page.tsx';
 import { useMediaQuery } from '../hooks/use-media-query.ts';
@@ -31,13 +32,15 @@ export function Layout() {
 
   return (
     <OpenDrawerProvider open={() => setDrawerOpen(true)}>
-      <div className="h-dvh md:pl-64">
-        <Sidebar open={drawerOpen} onOpenChange={setDrawerOpen} />
+      <ConfirmDialogProvider>
+        <div className="h-dvh md:pl-64">
+          <Sidebar open={drawerOpen} onOpenChange={setDrawerOpen} />
 
-        <main className="bg-surface col h-full overflow-hidden">
-          <Outlet />
-        </main>
-      </div>
+          <main className="bg-surface col h-full overflow-hidden">
+            <Outlet />
+          </main>
+        </div>
+      </ConfirmDialogProvider>
     </OpenDrawerProvider>
   );
 }
