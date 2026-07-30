@@ -83,7 +83,10 @@ const festivalRoute = createRoute({
     }
 
     const tenant = me.tenants.find(has('id', params.tenantId));
-    assert(tenant, new Error(`Can't find tenant "${params.tenantId}"`));
+
+    if (!tenant) {
+      throw redirect({ to: '/' });
+    }
 
     return {
       me,
