@@ -1,5 +1,6 @@
 import { Form } from '@base-ui/react/form';
 import type { Participant, ParticipantInput, TenantSummary } from '@festivapp/contracts';
+import { matchesSearch } from '@festivapp/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import { Pencil, Plus, SearchX, Trash2, Users } from 'lucide-react';
@@ -26,7 +27,6 @@ import {
   updateParticipantOptions,
 } from '../lib/participants.ts';
 import { getThemeOptions } from '../lib/theme.ts';
-import { matchesSearch } from '../utils.ts';
 
 const from = '/festivals/$tenantId/people';
 

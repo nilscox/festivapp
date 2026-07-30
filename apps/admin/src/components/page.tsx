@@ -1,7 +1,7 @@
+import { defined } from '@festivapp/utils';
 import { Menu } from 'lucide-react';
 import { createContext, use } from 'react';
 
-import { defined } from '../utils.ts';
 import { IconButton } from './button.tsx';
 import { Eyebrow } from './eyebrow.tsx';
 

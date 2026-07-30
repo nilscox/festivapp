@@ -4,6 +4,7 @@
     { "path": "apps/api" },
     { "path": "apps/app" },
     { "path": "apps/admin" },
-    { "path": "packages/contracts" }
+    { "path": "packages/contracts" },
+    { "path": "packages/utils" }
   ]
 }

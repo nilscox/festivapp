@@ -1,4 +1,5 @@
 import type { UploadedFile as FileDto, TenantTheme } from '@festivapp/contracts';
+import { assert } from '@festivapp/utils';
 import { and, eq } from 'drizzle-orm';
 import express, { Router } from 'express';
 import { z } from 'zod';
@@ -7,7 +8,7 @@ import { config } from '../../config.ts';
 import { db } from '../../db/client.ts';
 import { files, type File } from '../../db/schema.ts';
 import { storage } from '../../storage.ts';
-import { assert, createId } from '../../utils.ts';
+import { createId } from '../../utils.ts';
 
 export const filesRouter = Router({ mergeParams: true });
 

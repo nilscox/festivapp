@@ -1,13 +1,9 @@
 import type { TenantConfig } from '@festivapp/contracts';
-
-import { colorMix, isLight } from './lib/colors';
-
-const inkOnLight = '#18181b';
-const inkOnDark = '#fafafa';
+import { colorMix, inkOn } from '@festivapp/utils';
 
 export function applyTenant(tenant: TenantConfig): void {
   const { backgroundColor, accentColor, fonts, logo, backgroundImage } = tenant.theme;
-  const ink = isLight(backgroundColor) ? inkOnLight : inkOnDark;
+  const ink = inkOn(backgroundColor);
 
   const variables: Record<string, string> = {
     '--color-app': backgroundColor,

@@ -1,10 +1,10 @@
 import type { BootstrapResponse, Participant, Session } from '@festivapp/contracts';
+import { assert } from '@festivapp/utils';
 import { asc, eq } from 'drizzle-orm';
 import { Router } from 'express';
 
 import { db } from '../../db/client.ts';
 import * as schema from '../../db/schema.ts';
-import { assert } from '../../utils.ts';
 
 export const bootstrapRouter = Router();
 

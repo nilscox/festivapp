@@ -1,9 +1,22 @@
+const inkOnLight = '#18181b';
+const inkOnDark = '#fafafa';
+
 export function colorMix(color: string, amount: number, into: string): string {
   return `color-mix(in srgb, ${color} ${amount}%, ${into})`;
 }
 
 export function isLight(color: string): boolean {
   return luminance(color) > 0.4;
+}
+
+export function inkOn(background: string): string {
+  return isLight(background) ? inkOnLight : inkOnDark;
+}
+
+export function contrastRatio(a: string, b: string): number {
+  const [darker, lighter] = [luminance(a), luminance(b)].toSorted((x, y) => x - y) as [number, number];
+
+  return (lighter + 0.05) / (darker + 0.05);
 }
 
 function luminance(color: string): number {

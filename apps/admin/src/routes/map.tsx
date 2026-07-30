@@ -1,4 +1,5 @@
 import type { Location, MapPin, MapPinLabelPosition, TenantSummary } from '@festivapp/contracts';
+import { assert } from '@festivapp/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouteContext } from '@tanstack/react-router';
 import clsx from 'clsx';
@@ -14,7 +15,6 @@ import { Spinner } from '../components/spinner.tsx';
 import { useLocations, useUpdateLocation } from '../lib/locations.ts';
 import { getTenantOptions, updateTenantOptions } from '../lib/tenant.ts';
 import { getThemeOptions } from '../lib/theme.ts';
-import { assert } from '../utils.ts';
 
 const from = '/festivals/$tenantId/map';
 

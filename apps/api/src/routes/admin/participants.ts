@@ -1,11 +1,11 @@
 import type { Participant as ParticipantDto } from '@festivapp/contracts';
+import { assert } from '@festivapp/utils';
 import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 
 import { db } from '../../db/client.ts';
 import { participants, type Participant } from '../../db/schema.ts';
-import { assert } from '../../utils.ts';
 
 export const participantsRouter = Router({ mergeParams: true });
 

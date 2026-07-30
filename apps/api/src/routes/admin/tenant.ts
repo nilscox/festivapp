@@ -1,11 +1,11 @@
 import type { Tenant as TenantDto } from '@festivapp/contracts';
+import { assert } from '@festivapp/utils';
 import { eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 
 import { db } from '../../db/client.ts';
 import { type Tenant, tenants } from '../../db/schema.ts';
-import { assert } from '../../utils.ts';
 
 export const tenantRouter = Router({ mergeParams: true });
 

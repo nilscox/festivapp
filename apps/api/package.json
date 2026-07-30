@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@festivapp/contracts": "workspace:*",
+    "@festivapp/utils": "workspace:*",
     "commander": "^15.0.0",
     "date-fns": "^4.4.0",
     "drizzle-orm": "1.0.0-beta.22",

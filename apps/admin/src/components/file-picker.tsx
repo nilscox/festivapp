@@ -1,9 +1,9 @@
 import type { UploadedFile } from '@festivapp/contracts';
+import { matchesSearch } from '@festivapp/utils';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
 import { listFilesOptions } from '../lib/files.ts';
-import { matchesSearch } from '../utils.ts';
 import { Drawer } from './drawer.tsx';
 import { SearchInput } from './search-input.tsx';
 import { Spinner } from './spinner.tsx';

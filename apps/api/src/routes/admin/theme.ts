@@ -1,11 +1,11 @@
 import type { TenantTheme as TenantThemeDto } from '@festivapp/contracts';
+import { assert } from '@festivapp/utils';
 import { eq } from 'drizzle-orm';
 import { Router } from 'express';
 
 import { db } from '../../db/client.ts';
 import { tenants } from '../../db/schema.ts';
 import { themeSchema } from '../../theme.ts';
-import { assert } from '../../utils.ts';
 
 export const themeRouter = Router({ mergeParams: true });
 

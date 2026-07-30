@@ -1,4 +1,5 @@
 import type { TenantTheme } from '@festivapp/contracts';
+import { assert } from '@festivapp/utils';
 import { Command } from 'commander';
 import { inArray } from 'drizzle-orm';
 
@@ -6,7 +7,6 @@ import { hashPassword } from './auth/password.ts';
 import { db } from './db/client.ts';
 import { organizers, organizerTenants, tenants } from './db/schema.ts';
 import { seed } from './seed.ts';
-import { assert } from './utils.ts';
 
 const program = new Command();
 

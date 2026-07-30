@@ -1,11 +1,11 @@
 import type { Location as LocationDto } from '@festivapp/contracts';
+import { assert } from '@festivapp/utils';
 import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 
 import { db } from '../../db/client.ts';
 import { locations, type Location } from '../../db/schema.ts';
-import { assert } from '../../utils.ts';
 
 export const locationsRouter = Router({ mergeParams: true });
 

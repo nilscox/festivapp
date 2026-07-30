@@ -20,6 +20,7 @@ apps/
 packages/
   contracts/   Shared, type-only request/response types (@festivapp/contracts)
   config/      Shared base tsconfig + oxlint/oxfmt configs (@festivapp/config)
+  utils/       Shared dependency-free helpers (@festivapp/utils)
 ```
 
 ## Runtime & TypeScript
@@ -33,8 +34,12 @@ packages/
 - Tooling config is layered: `packages/config` holds the base
   `tsconfig.base.json` / `oxlint.config.ts` / `oxfmt.config.ts`, and each
   app/package extends (or spreads) it in its own config file.
-- **Narrow invariants with `assert(value, error?)`** (each app's `src/utils.ts`),
-  not `!` — e.g. `assert(req.tenant)` then `req.tenant.id`.
+- **Narrow invariants with `assert(value, error?)`** (`@festivapp/utils`), not `!`
+  — e.g. `assert(req.tenant)` then `req.tenant.id`.
+- **`packages/utils` holds only pure, dependency-free helpers** that could serve any
+  of the three apps (`assert`/`defined`, color math, `formatBytes`, `matchesSearch`).
+  It has no runtime dependencies and touches neither the DOM nor Node built-ins —
+  anything app-specific stays in that app's `src/lib/`.
 - **Environment variables have no defaults.** Read them through `requireEnv` (see
   `apps/api/src/config.ts`); a missing required variable must crash the process at
   startup. Each app has its own `.env` (git-ignored), never a shared root one.

@@ -1,6 +1,5 @@
+import { assert } from '@festivapp/utils';
 import { Router } from 'express';
-
-import { assert } from '../../utils.ts';
 
 export const manifestRouter = Router();
 

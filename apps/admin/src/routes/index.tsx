@@ -1,3 +1,4 @@
+import { assert } from '@festivapp/utils';
 import type { QueryClient } from '@tanstack/react-query';
 import {
   createRootRouteWithContext,
@@ -16,7 +17,6 @@ import { listLocationsOptions } from '../lib/locations.ts';
 import { listParticipantsOptions } from '../lib/participants.ts';
 import { getTenantOptions } from '../lib/tenant.ts';
 import { getThemeOptions } from '../lib/theme.ts';
-import { assert } from '../utils.ts';
 
 const Files = lazyRouteComponent(() => import('./files.tsx'), 'Files');
 const Layout = lazyRouteComponent(() => import('./layout.tsx'), 'Layout');

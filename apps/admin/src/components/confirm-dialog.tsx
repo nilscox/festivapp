@@ -1,7 +1,7 @@
 import { AlertDialog } from '@base-ui/react/alert-dialog';
+import { assert, defined } from '@festivapp/utils';
 import { createContext, use, useCallback, useState, type ReactNode } from 'react';
 
-import { assert, defined } from '../utils.ts';
 import { Button } from './button.tsx';
 
 type ConfirmOptions = {

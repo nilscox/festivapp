@@ -1,9 +1,9 @@
+import { assert } from '@festivapp/utils';
 import { createReadStream, type ReadStream } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 
 import { config } from './config.ts';
-import { assert } from './utils.ts';
 
 export interface Storage {
   put(key: string, data: Buffer): Promise<void>;

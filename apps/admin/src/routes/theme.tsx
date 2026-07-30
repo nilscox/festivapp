@@ -1,6 +1,7 @@
 import { Field as BaseField } from '@base-ui/react/field';
 import { Form } from '@base-ui/react/form';
 import type { TenantSummary, TenantTheme } from '@festivapp/contracts';
+import { contrastRatio } from '@festivapp/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouteContext } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -15,7 +16,6 @@ import { Range } from '../components/range.tsx';
 import { Section } from '../components/section.tsx';
 import { Spinner } from '../components/spinner.tsx';
 import { Textarea } from '../components/textarea.tsx';
-import { contrastRatio } from '../lib/colors.ts';
 import { getThemeOptions, updateThemeOptions } from '../lib/theme.ts';
 
 const from = '/festivals/$tenantId/theme';
