@@ -104,7 +104,7 @@ export const sessionParticipants = p.pgTable(
       .text()
       .notNull()
       .references(() => participants.id, { onDelete: 'cascade' }),
-    position: p.integer().notNull().default(0),
+    position: p.integer().notNull(),
   },
   (table) => [
     p.primaryKey({ columns: [table.sessionId, table.participantId] }),

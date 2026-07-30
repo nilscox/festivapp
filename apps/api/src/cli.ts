@@ -2,6 +2,7 @@ import type { TenantTheme } from '@festivapp/contracts';
 import { assert, defined } from '@festivapp/utils';
 import { Command } from 'commander';
 import { inArray } from 'drizzle-orm';
+import z from 'zod';
 
 import { hashPassword } from './auth/password.ts';
 import { closeDatabase, db } from './db/client.ts';
@@ -17,9 +18,17 @@ program
   .description('Create a festival, its line-up and its images from a seed file')
   .argument('<file>', 'path to the seed JSON file; its images are relative to it')
   .action(async (file: string) => {
-    await seed(file);
-
-    console.log(`Seeded ${file}`);
+    try {
+      await seed(file);
+      console.log(`Seeded ${file}`);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.log(z.prettifyError(error));
+        process.exitCode = 1;
+      } else {
+        throw error;
+      }
+    }
   });
 
 const organizer = new Command('organizer');

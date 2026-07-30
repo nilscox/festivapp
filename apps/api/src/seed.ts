@@ -1,4 +1,3 @@
-import type { TenantTheme } from '@festivapp/contracts';
 import { defined } from '@festivapp/utils';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -19,27 +18,27 @@ const contentTypes: Record<string, string> = {
   '.svg': 'image/svg+xml',
 };
 
-const themeInputSchema = z.strictObject({
-  ...themeSchema.shape,
-  logo: z.strictObject({
-    wordmarkUrl: z.string().nullable(),
-    iconUrl: z.string().nullable(),
-  }),
-  backgroundImage: z
-    .strictObject({
-      url: z.string(),
-      opacity: z.number().min(0).max(1),
-    })
-    .nullable(),
-});
-
 const dataSchema = z.strictObject({
   tenant: z.strictObject({
     name: z.string(),
     domain: z.string(),
     timezone: z.string(),
-    mapUrl: z.string().nullish(),
-    theme: themeInputSchema,
+    map: z.string().nullish(),
+    theme: z.strictObject({
+      ...themeSchema.shape,
+      logo: z
+        .strictObject({
+          wordmark: z.string().optional(),
+          icon: z.string().optional(),
+        })
+        .optional(),
+      backgroundImage: z
+        .strictObject({
+          path: z.string(),
+          opacity: z.number().min(0).max(1),
+        })
+        .optional(),
+    }),
   }),
   locations: z.array(
     z.strictObject({
@@ -81,11 +80,130 @@ export async function seed(input: string): Promise<void> {
   const data = dataSchema.parse(JSON.parse(await fs.readFile(input, 'utf8')));
 
   const tenantId = createId();
-  const fileValues: (typeof schema.files.$inferInsert)[] = [];
 
-  async function upload<T extends string | null>(image: T): Promise<T> {
+  const files = new Array<typeof schema.files.$inferInsert>();
+  const participants = new Array<typeof schema.participants.$inferInsert>();
+  const locations = new Array<typeof schema.locations.$inferInsert>();
+  const sessions = new Array<typeof schema.sessions.$inferInsert>();
+  const sessionParticipants = new Array<typeof schema.sessionParticipants.$inferInsert>();
+
+  const locationsMap = new Map<string, string>();
+  const participantsMap = new Map<string, string>();
+
+  const filesToUpload = new Map<string, Buffer>();
+
+  const theme = data.tenant.theme;
+
+  const tenant: typeof schema.tenants.$inferInsert = {
+    id: tenantId,
+    name: data.tenant.name,
+    domain: data.tenant.domain,
+    timezone: data.tenant.timezone,
+    mapUrl: await upload(data.tenant.map),
+    theme: {
+      ...theme,
+      logo: {
+        iconUrl: await upload(theme.logo?.icon),
+        wordmarkUrl: await upload(theme.logo?.wordmark),
+      },
+      backgroundImage: theme.backgroundImage
+        ? {
+            url: defined(await upload(theme.backgroundImage.path)),
+            opacity: theme.backgroundImage.opacity,
+          }
+        : null,
+    },
+  };
+
+  for (const [index, location] of data.locations.entries()) {
+    const id = createId();
+
+    locationsMap.set(location.name, id);
+
+    locations.push({
+      id,
+      tenantId,
+      name: location.name,
+      description: location.description,
+      position: index + 1,
+      mapX: location.mapPin?.x,
+      mapY: location.mapPin?.y,
+    });
+  }
+
+  for (const { image, ...participant } of data.participants) {
+    const id = createId();
+
+    participantsMap.set(participant.name, id);
+
+    participants.push({
+      id,
+      tenantId,
+      imageUrl: await upload(image),
+      ...participant,
+    });
+  }
+
+  for (const session of data.sessions) {
+    const id = createId();
+
+    sessions.push({
+      id,
+      tenantId,
+      locationId: defined(locationsMap.get(session.location)),
+      type: session.type,
+      title: session.title,
+      startsAt: new Date(session.start),
+      endsAt: new Date(session.end),
+      description: session.description,
+    });
+
+    let position = 1;
+
+    for (const participant of session.participants) {
+      sessionParticipants.push({
+        sessionId: id,
+        participantId: defined(participantsMap.get(participant)),
+        position: position++,
+      });
+    }
+  }
+
+  if (await db.query.tenants.findFirst({ where: { domain: tenant.domain } })) {
+    throw new Error(`Domain "${tenant.domain}" is already taken`);
+  }
+
+  await db.transaction(async (tx) => {
+    await tx.insert(schema.tenants).values(tenant);
+
+    if (files.length > 0) {
+      await tx.insert(schema.files).values(files);
+    }
+
+    if (locations.length > 0) {
+      await tx.insert(schema.locations).values(locations);
+    }
+
+    if (participants.length > 0) {
+      await tx.insert(schema.participants).values(participants);
+    }
+
+    if (sessions.length > 0) {
+      await tx.insert(schema.sessions).values(sessions);
+    }
+
+    if (sessionParticipants.length > 0) {
+      await tx.insert(schema.sessionParticipants).values(sessionParticipants);
+    }
+  });
+
+  for (const [key, content] of filesToUpload.entries()) {
+    await storage.put(key, content);
+  }
+
+  async function upload(image: string | null | undefined) {
     if (!image) {
-      return null as T;
+      return null;
     }
 
     const file = path.resolve(path.dirname(input), image);
@@ -100,9 +218,9 @@ export async function seed(input: string): Promise<void> {
     const id = createId();
     const storageKey = `${tenantId}/${id}${extension}`;
 
-    await storage.put(storageKey, content);
+    filesToUpload.set(storageKey, content);
 
-    fileValues.push({
+    files.push({
       id,
       tenantId,
       storageKey,
@@ -111,82 +229,6 @@ export async function seed(input: string): Promise<void> {
       size: content.length,
     });
 
-    return `/files/${id}` as T;
+    return `/files/${id}`;
   }
-
-  const tenant = data.tenant;
-  const mapUrl = await upload(tenant.mapUrl ?? null);
-
-  const theme: TenantTheme = {
-    backgroundColor: tenant.theme.backgroundColor,
-    accentColor: tenant.theme.accentColor,
-    fonts: tenant.theme.fonts,
-    logo: {
-      wordmarkUrl: await upload(tenant.theme.logo.wordmarkUrl),
-      iconUrl: await upload(tenant.theme.logo.iconUrl),
-    },
-    backgroundImage: tenant.theme.backgroundImage
-      ? { url: await upload(tenant.theme.backgroundImage.url), opacity: tenant.theme.backgroundImage.opacity }
-      : null,
-    pwa: tenant.theme.pwa,
-    customCss: tenant.theme.customCss,
-  };
-
-  const participantValues: (typeof schema.participants.$inferInsert)[] = [];
-
-  for (const { image, ...participant } of data.participants) {
-    participantValues.push({ tenantId, ...participant, imageUrl: await upload(image) });
-  }
-
-  await db.transaction(async (tx) => {
-    await tx.insert(schema.tenants).values({ ...tenant, id: tenantId, mapUrl, theme });
-    await tx.insert(schema.files).values(fileValues);
-
-    const locationRows = await tx
-      .insert(schema.locations)
-      .values(
-        data.locations.map(({ name, description, mapPin }, index): typeof schema.locations.$inferInsert => ({
-          tenantId,
-          name,
-          description,
-          position: index + 1,
-          mapX: mapPin?.x,
-          mapY: mapPin?.y,
-        })),
-      )
-      .returning();
-
-    const locations = new Map(locationRows.map((row) => [row.name, row.id]));
-
-    const participantRows = await tx.insert(schema.participants).values(participantValues).returning();
-
-    const participants = new Map(participantRows.map((row) => [row.name, row.id]));
-
-    const sessionRows = await tx
-      .insert(schema.sessions)
-      .values(
-        data.sessions.map((session) => ({
-          tenantId,
-          locationId: defined(locations.get(session.location)),
-          type: session.type,
-          title: session.title,
-          startsAt: new Date(session.start),
-          endsAt: new Date(session.end),
-          description: session.description,
-        })),
-      )
-      .returning();
-
-    const sessions = new Map(sessionRows.map((row, index) => [index, row.id]));
-
-    await tx.insert(schema.sessionParticipants).values(
-      data.sessions.flatMap((session, index) =>
-        session.participants.map((participant, position) => ({
-          sessionId: defined(sessions.get(index)),
-          participantId: defined(participants.get(participant)),
-          position,
-        })),
-      ),
-    );
-  });
 }
