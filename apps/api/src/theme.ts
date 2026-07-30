@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { falsyToNull } from './utils.ts';
+
 const color = z
   .string()
   .trim()
@@ -8,15 +10,7 @@ const color = z
 
 const fontStack = z.string().trim().min(1).max(200);
 
-const url = z.union([z.url(), z.string().regex(/^\/[^\s]*$/, 'must be a URL or an absolute path')]);
-
-const nullableText = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max)
-    .transform((value) => value || null)
-    .nullable();
+const url = z.string().trim().startsWith('/');
 
 export const themeSchema = z.strictObject({
   backgroundColor: color,
@@ -37,8 +31,8 @@ export const themeSchema = z.strictObject({
     })
     .nullable(),
   pwa: z.strictObject({
-    name: nullableText(60),
-    shortName: nullableText(12),
+    name: z.string().trim().max(60).transform(falsyToNull).nullable(),
+    shortName: z.string().trim().max(12).transform(falsyToNull).nullable(),
   }),
-  customCss: nullableText(20_000),
+  customCss: z.string().trim().max(20_000).transform(falsyToNull).nullable(),
 });

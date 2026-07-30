@@ -1,11 +1,10 @@
-import type { Session } from '@festivapp/contracts';
 import { Link } from '@tanstack/react-router';
 import { isWithinInterval } from 'date-fns';
 import { Radio } from 'lucide-react';
 
+import { useTenant, type ResolvedSession } from '../lib/bootstrap.ts';
 import { formatTime } from '../lib/datetime.ts';
 import { formatSessionType, sessionImageUrl, sessionListMeta, sessionTitle } from '../lib/session.ts';
-import { useSessionLocation, useSessionParticipants, useTenant } from '../use-bootstrap.ts';
 import { Chip } from './chip.tsx';
 
 export function SessionCard({
@@ -13,13 +12,10 @@ export function SessionCard({
   now,
   showLiveIcon = true,
 }: {
-  session: Session;
+  session: ResolvedSession;
   now: Date;
   showLiveIcon?: boolean;
 }) {
-  const location = useSessionLocation(session.id);
-  const participants = useSessionParticipants(session.id);
-
   const isLive = isWithinInterval(now, { start: session.startsAt, end: session.endsAt });
 
   return (
@@ -30,28 +26,25 @@ export function SessionCard({
         <div className="row items-center gap-2">
           {isLive && showLiveIcon && <Radio className="text-accent size-4" />}
 
-          <div className="font-display line-clamp-2 leading-tight font-semibold">
-            {sessionTitle(session, participants)}
-          </div>
+          <div className="font-display line-clamp-2 leading-tight font-semibold">{sessionTitle(session)}</div>
 
           <Chip size="small">{formatSessionType(session.type)}</Chip>
         </div>
 
-        <div className="text-muted mt-0.5 text-sm">{location.name}</div>
+        <div className="text-muted mt-0.5 text-sm">{session.location.name}</div>
 
-        <div className="text-muted mt-0.5 text-sm">{sessionListMeta(session, participants)}</div>
+        <div className="text-muted mt-0.5 text-sm">{sessionListMeta(session)}</div>
       </div>
     </Link>
   );
 }
 
-function Thumbnail({ session }: { session: Session }) {
-  const { timezone } = useTenant()!;
-  const participants = useSessionParticipants(session.id);
+function Thumbnail({ session }: { session: ResolvedSession }) {
+  const { timezone } = useTenant();
 
   const start = formatTime(session.startsAt, timezone);
   const end = formatTime(session.endsAt, timezone);
-  const imageUrl = sessionImageUrl(session, participants);
+  const imageUrl = sessionImageUrl(session);
 
   const times = (
     <div className="col absolute inset-x-0 bottom-0 rounded-lg bg-linear-to-t from-black/80 via-black/50 via-60% to-transparent px-2 pt-2 pb-0.5 font-mono leading-tight tabular-nums">

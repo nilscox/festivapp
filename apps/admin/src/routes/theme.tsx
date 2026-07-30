@@ -5,7 +5,7 @@ import { contrastRatio } from '@festivapp/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouteContext } from '@tanstack/react-router';
 import { useState } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 
 import { Button } from '../components/button.tsx';
 import { Field } from '../components/field.tsx';

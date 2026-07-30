@@ -1,3 +1,4 @@
+import { defined } from '@festivapp/utils';
 import '@fontsource-variable/space-grotesk';
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
@@ -6,7 +7,7 @@ import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-qu
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import toast, { Toaster } from 'react-hot-toast';
+import { toast, Toaster } from 'react-hot-toast';
 
 import { ApiError } from './lib/api.ts';
 import { routeTree } from './routes/index.tsx';
@@ -54,7 +55,9 @@ const router = createRouter({
   context: { queryClient },
 });
 
-createRoot(document.getElementById('root')!).render(
+const root = defined(document.getElementById('root'));
+
+createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <Toaster position="top-right" />

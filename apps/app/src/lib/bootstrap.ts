@@ -1,7 +1,11 @@
-import type { BootstrapResponse } from '@festivapp/contracts';
-import { has } from '@festivapp/utils';
+import type { BootstrapResponse, Location, Participant, Session } from '@festivapp/contracts';
+import { defined } from '@festivapp/utils';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+
+export type ResolvedSession = Session & {
+  location: Location;
+  participants: Participant[];
+};
 
 export function useBootstrapQuery() {
   return useQuery({
@@ -40,31 +44,17 @@ function selectBootstrap({ tenant, locations, participants, sessions }: Bootstra
     tenant,
     locations: locations.toSorted((a, b) => a.position - b.position),
     sessions: sessions
-      .map((session) => ({
-        ...session,
-        location: locationById.get(session.locationId)!,
-        participants: session.participantIds.map((id) => participantsById.get(id)!),
-      }))
+      .map(
+        (session): ResolvedSession => ({
+          ...session,
+          location: defined(locationById.get(session.locationId)),
+          participants: session.participantIds.map((id) => defined(participantsById.get(id))),
+        }),
+      )
       .toSorted((a, b) => a.startsAt.localeCompare(b.startsAt)),
   };
 }
 
 export function useTenant() {
   return useBootstrap().tenant;
-}
-
-export function useSession(id: string) {
-  const { sessions } = useBootstrap();
-
-  return useMemo(() => {
-    return sessions.find(has('id', id));
-  }, [sessions, id]);
-}
-
-export function useSessionLocation(id: string) {
-  return useSession(id)!.location;
-}
-
-export function useSessionParticipants(id: string) {
-  return useSession(id)!.participants;
 }

@@ -3,7 +3,7 @@ import { assert, defined, has } from '@festivapp/utils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Upload } from 'lucide-react';
 import { useRef } from 'react';
-import toast, { type Renderable } from 'react-hot-toast';
+import { toast, type Renderable } from 'react-hot-toast';
 
 import { ApiError } from '../lib/api.ts';
 import { listFilesOptions, uploadFilesOptions } from '../lib/files.ts';

@@ -1,5 +1,5 @@
 import type { LoginRequest, MeResponse } from '@festivapp/contracts';
-import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 
 import { api } from './api.ts';
@@ -11,10 +11,6 @@ export function getMeOptions() {
       return api.get<MeResponse>('/admin/auth/me');
     },
   });
-}
-
-export function useMe() {
-  return useQuery(getMeOptions());
 }
 
 export function useLogin() {

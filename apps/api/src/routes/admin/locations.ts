@@ -1,5 +1,5 @@
 import type { Location as LocationDto } from '@festivapp/contracts';
-import { assert } from '@festivapp/utils';
+import { assert, defined } from '@festivapp/utils';
 import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
@@ -65,7 +65,7 @@ locationsRouter.post('/', async (req, res) => {
     })
     .returning();
 
-  res.status(201).json(toLocationDto(row!));
+  res.status(201).json(toLocationDto(defined(row)));
 });
 
 locationsRouter.patch('/:id', async (req, res) => {
@@ -97,7 +97,7 @@ locationsRouter.delete('/:id', async (req, res) => {
 
   const [row] = await db
     .delete(locations)
-    .where(and(eq(locations.id, req.params.id), eq(locations.tenantId, req.tenant!.id)))
+    .where(and(eq(locations.id, req.params.id), eq(locations.tenantId, req.tenant.id)))
     .returning();
 
   if (!row) {

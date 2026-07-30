@@ -5,14 +5,14 @@ import { useRouteContext } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Circle, Map, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 
 import { Button, IconButton } from '../components/button.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
 import { FilePicker } from '../components/file-picker.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { Spinner } from '../components/spinner.tsx';
-import { useLocations, useUpdateLocation } from '../lib/locations.ts';
+import { listLocationsOptions, updateLocationOptions } from '../lib/locations.ts';
 import { getTenantOptions, updateTenantOptions } from '../lib/tenant.ts';
 import { getThemeOptions } from '../lib/theme.ts';
 
@@ -23,7 +23,7 @@ export function FestivalMap() {
   const [picking, setPicking] = useState(false);
 
   const tenantQuery = useQuery(getTenantOptions(tenant.id));
-  const locationsQuery = useLocations(tenant.id);
+  const locationsQuery = useQuery(listLocationsOptions(tenant.id));
   const themeQuery = useQuery(getThemeOptions(tenant.id));
 
   const mutation = useSetMapUrl(tenant.id);
@@ -124,21 +124,23 @@ function Board({ tenantId, mapUrl, locations }: { tenantId: string; mapUrl: stri
   const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number }>();
   const [selected, setSelected] = useState<string>();
 
-  const mutation = useUpdateLocation(tenantId);
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    ...updateLocationOptions(tenantId),
+    onSuccess: () => queryClient.invalidateQueries(listLocationsOptions(tenantId)),
+  });
 
   const pinOf = (location: Location) => pins[location.id] ?? location.mapPin;
 
   const save = (location: Location, mapPin: MapPin) => {
     setPins((pins) => ({ ...pins, [location.id]: mapPin }));
 
-    mutation.mutate(
-      { id: location.id, mapPin },
-      {
-        onError: () => {
-          setPins(({ [location.id]: _, ...pins }) => pins);
-        },
+    mutation.mutate([location.id, { mapPin }], {
+      onError: () => {
+        setPins(({ [location.id]: _, ...pins }) => pins);
       },
-    );
+    });
   };
 
   const pointerPin = (event: React.PointerEvent) => {

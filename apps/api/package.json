@@ -25,6 +25,7 @@
   "devDependencies": {
     "@festivapp/config": "workspace:*",
     "@types/express": "^5.0.6",
+    "@types/express-serve-static-core": "^5.1.2",
     "@types/pg": "^8.20.0",
     "drizzle-kit": "1.0.0-beta.22",
     "typescript": "^7.0.2"

@@ -13,6 +13,7 @@ declare global {
 
 export const requireTenant: RequestHandler = async (req, res, next) => {
   const domain =
+    // oxlint-disable-next-line no-underscore-dangle
     (typeof req.query.__tenant === 'string' ? req.query.__tenant : undefined) ??
     req.get('x-tenant-domain') ??
     req.hostname;

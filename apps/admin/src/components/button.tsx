@@ -4,14 +4,14 @@ import clsx from 'clsx';
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 type Size = 'md' | 'sm';
 
-const VARIANTS: Record<Variant, string> = {
+const variants: Record<Variant, string> = {
   primary: clsx('bg-accent text-white outline-offset-2 hover:brightness-110'),
   secondary: clsx('bg-surface text-ink/80 hover:text-ink hover:border-line-strong border'),
   danger: clsx('bg-danger text-white hover:brightness-110'),
   ghost: clsx('text-muted hover:bg-subtle'),
 };
 
-const SIZES: Record<Size, string> = {
+const sizes: Record<Size, string> = {
   md: clsx('h-9 gap-2 px-4 text-sm'),
   sm: clsx('h-8 gap-1.5 px-3 text-sm'),
 };
@@ -19,8 +19,8 @@ const SIZES: Record<Size, string> = {
 const buttonClassName = (variant: Variant, size: Size, className?: string) => {
   return clsx(
     'inline-flex cursor-pointer items-center justify-center truncate rounded-lg font-semibold transition disabled:cursor-not-allowed disabled:opacity-50',
-    VARIANTS[variant],
-    SIZES[size],
+    variants[variant],
+    sizes[size],
     className,
   );
 };
@@ -60,7 +60,7 @@ export function IconButton({ icon: Icon, variant = 'primary', className, ...prop
       type="button"
       className={clsx(
         'flex size-8 cursor-pointer items-center justify-center rounded-lg transition-colors',
-        VARIANTS[variant],
+        variants[variant],
         className,
       )}
       {...props}

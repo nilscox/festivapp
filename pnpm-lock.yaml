@@ -130,6 +130,9 @@ importers:
       '@types/express':
         specifier: ^5.0.6
         version: 5.0.6
+      '@types/express-serve-static-core':
+        specifier: ^5.1.2
+        version: 5.1.2
       '@types/pg':
         specifier: ^8.20.0
         version: 8.20.0

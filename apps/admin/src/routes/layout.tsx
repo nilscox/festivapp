@@ -84,7 +84,7 @@ function Sidebar({ open, onOpenChange }: { open: boolean; onOpenChange: (open: b
           </section>
 
           <section className="border-t px-3">
-            <Organizer organizer={organizer} />
+            <OrganizerInfo organizer={organizer} />
           </section>
         </Dialog.Popup>
       </Dialog.Portal>
@@ -182,7 +182,7 @@ function Navigation({ tenantId, onNavigate }: { tenantId: string; onNavigate: ()
   );
 }
 
-function Organizer({ organizer }: { organizer: Organizer }) {
+function OrganizerInfo({ organizer }: { organizer: Organizer }) {
   return (
     <>
       <div className="row items-center gap-2.5 py-3">
@@ -223,6 +223,6 @@ function initials(organizer: Organizer): string {
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
-    .map((part) => part[0]!.toUpperCase())
+    .map((part) => part[0]?.toUpperCase())
     .join('');
 }

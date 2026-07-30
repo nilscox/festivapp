@@ -1,4 +1,5 @@
 import type { MeResponse } from '@festivapp/contracts';
+import { assert } from '@festivapp/utils';
 import { Router } from 'express';
 import { z } from 'zod';
 
@@ -54,7 +55,9 @@ authRouter.post('/login', async (req, res) => {
 });
 
 authRouter.get('/me', requireOrganizer, async (req, res) => {
-  const organizer = req.organizer!;
+  assert(req.organizer);
+
+  const organizer = req.organizer;
   const tenants = await listOrganizerTenants(organizer.id);
 
   res.json(toMeResponseDto(organizer, tenants));

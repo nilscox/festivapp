@@ -5,7 +5,7 @@ import clsx from 'clsx';
 import { Download, Map as MapIcon } from 'lucide-react';
 
 import { PageHeader } from '../components/page-header.tsx';
-import { useBootstrap } from '../use-bootstrap.ts';
+import { useBootstrap } from '../lib/bootstrap.ts';
 
 export function MapPage() {
   const { tenant, locations } = useBootstrap();

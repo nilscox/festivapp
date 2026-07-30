@@ -1,16 +1,15 @@
 import { Dialog } from '@base-ui/react/dialog';
 import clsx from 'clsx';
 import { X } from 'lucide-react';
-import type { ReactNode } from 'react';
 
 import { Eyebrow } from './eyebrow.tsx';
 
 type DrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  eyebrow?: ReactNode;
-  title: ReactNode;
-  children: ReactNode;
+  eyebrow?: React.ReactNode;
+  title: React.ReactNode;
+  children: React.ReactNode;
 };
 
 export function Drawer({ open, onOpenChange, eyebrow, title, children }: DrawerProps) {

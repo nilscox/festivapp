@@ -71,7 +71,7 @@ const indexRoute = createRoute({
     assert(firstTenant, new Error('No tenant'));
 
     throw redirect({
-      to: '/festivals/$tenantId/people',
+      to: '/festivals/$tenantId',
       params: { tenantId: firstTenant.id },
       replace: true,
     });
@@ -101,7 +101,7 @@ const festivalIndexRoute = createRoute({
   getParentRoute: () => festivalRoute,
   path: '/',
   beforeLoad: ({ params }) => {
-    throw redirect({ to: '/festivals/$tenantId/locations', params, replace: true });
+    throw redirect({ to: '/festivals/$tenantId/people', params, replace: true });
   },
 });
 

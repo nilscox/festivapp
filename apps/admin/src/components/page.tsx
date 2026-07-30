@@ -5,6 +5,8 @@ import { createContext, use } from 'react';
 import { IconButton } from './button.tsx';
 import { Eyebrow } from './eyebrow.tsx';
 
+const OpenDrawerContext = createContext<(() => void) | null>(null);
+
 export function Page({ header, children }: { header?: React.ReactNode; children?: React.ReactNode }) {
   return (
     <>
@@ -42,8 +44,6 @@ export function PageHeader({
     </header>
   );
 }
-
-const OpenDrawerContext = createContext<(() => void) | null>(null);
 
 export function OpenDrawerProvider({ open, children }: { open: () => void; children: React.ReactNode }) {
   return <OpenDrawerContext value={open}>{children}</OpenDrawerContext>;

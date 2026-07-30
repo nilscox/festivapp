@@ -1,5 +1,5 @@
 import type { UploadedFile as FileDto, TenantTheme } from '@festivapp/contracts';
-import { assert } from '@festivapp/utils';
+import { assert, defined } from '@festivapp/utils';
 import { and, eq } from 'drizzle-orm';
 import express, { Router } from 'express';
 import { z } from 'zod';
@@ -91,9 +91,7 @@ filesRouter.post(
       })
       .returning();
 
-    assert(row);
-
-    res.status(201).json(toFileDto(row));
+    res.status(201).json(toFileDto(defined(row)));
   },
 );
 

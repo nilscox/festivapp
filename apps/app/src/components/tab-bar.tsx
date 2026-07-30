@@ -9,7 +9,7 @@ type Tab = {
   exact: boolean;
 };
 
-const TABS: Tab[] = [
+const tabs: Tab[] = [
   { to: '/', label: 'Now', icon: Radio, exact: true },
   { to: '/timetable', label: 'Timetable', icon: CalendarDays, exact: false },
   { to: '/map', label: 'Map', icon: MapIcon, exact: false },
@@ -22,7 +22,7 @@ export function TabBar() {
       aria-label="Main navigation"
       className="border-line bg-app z-50 flex flex-none border-t px-1.5 pb-[env(safe-area-inset-bottom)]"
     >
-      {TABS.map(({ to, label, icon: Icon, exact }) => (
+      {tabs.map(({ to, label, icon: Icon, exact }) => (
         <Link
           key={to}
           to={to}

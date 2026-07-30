@@ -1,14 +1,13 @@
 import type { Location, Participant, Session } from '@festivapp/contracts';
-import { has } from '@festivapp/utils';
+import { defined, has } from '@festivapp/utils';
 import { Link, useParams } from '@tanstack/react-router';
 import { Calendar, ChevronLeft, Disc3, Map, MapPin } from 'lucide-react';
-import type { ReactNode } from 'react';
 
 import { Chip } from '../components/chip.tsx';
 import { SocialIcon } from '../components/social-icon.tsx';
+import { useBootstrap, useTenant, type ResolvedSession } from '../lib/bootstrap.ts';
 import { formatDayLabel, formatTime } from '../lib/datetime.ts';
 import { formatSessionType, isMusicSession, sessionSubhead, sessionTitle } from '../lib/session.ts';
-import { useBootstrap, useTenant } from '../use-bootstrap.ts';
 
 export function SessionDetail() {
   const { sessionId } = useParams({ from: '/session/$sessionId' });
@@ -26,7 +25,7 @@ export function SessionDetail() {
   const content = () => {
     if (isMusic) {
       if (participants.length === 1) {
-        return <SingleArtistDetails session={session} artist={session.participants[0]!} />;
+        return <SingleArtistDetails session={session} artist={defined(session.participants[0])} />;
       } else {
         return <>Multiple artists.</>;
       }
@@ -65,8 +64,8 @@ function Header() {
   );
 }
 
-function MainInfo({ session }: { session: Session & { participants: Participant[] } }) {
-  const subhead = sessionSubhead(session, session.participants);
+function MainInfo({ session }: { session: ResolvedSession }) {
+  const subhead = sessionSubhead(session);
 
   return (
     <div className="px-4 pt-5">
@@ -74,9 +73,7 @@ function MainInfo({ session }: { session: Session & { participants: Participant[
         <Chip>{formatSessionType(session.type)}</Chip>
       </div>
 
-      <h1 className="font-display mt-3 text-3xl leading-tight font-bold tracking-tight">
-        {sessionTitle(session, session.participants)}
-      </h1>
+      <h1 className="font-display mt-3 text-3xl leading-tight font-bold tracking-tight">{sessionTitle(session)}</h1>
 
       {subhead && <p className="text-muted mt-2">{subhead}</p>}
     </div>
@@ -177,7 +174,7 @@ function MetaRow({
   );
 }
 
-function Section({ label, children }: { label: string; children: ReactNode }) {
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <section className="px-4 pt-6">
       <h2 className="text-muted mb-3 font-mono text-xs tracking-widest uppercase">{label}</h2>

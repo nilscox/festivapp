@@ -2,13 +2,16 @@ import { defineConfig } from 'oxlint';
 
 export default defineConfig({
   $schema: 'https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json',
-  plugins: ['typescript', 'unicorn'],
+  plugins: ['typescript', 'unicorn', 'import'],
   categories: {
     correctness: 'error',
     suspicious: 'warn',
   },
   rules: {
     'no-shadow': ['off'],
-    'no-underscore-dangle': ['warn', { allow: ['__tenant'] }],
+    'no-underscore-dangle': ['warn'],
+    'import/extensions': ['warn', 'ignorePackages'],
+    'import/no-unassigned-import': ['warn', { allow: ['@fontsource-variable/*', '**/*.css'] }],
+    'typescript/no-non-null-assertion': 'error',
   },
 });

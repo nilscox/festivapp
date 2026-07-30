@@ -3,7 +3,7 @@ import type { Tenant } from '@festivapp/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouteContext, useRouter } from '@tanstack/react-router';
 import { useMemo } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 
 import { Button } from '../components/button.tsx';
 import { Combobox } from '../components/combobox.tsx';

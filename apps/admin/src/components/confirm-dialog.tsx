@@ -1,17 +1,19 @@
 import { AlertDialog } from '@base-ui/react/alert-dialog';
 import { assert, defined } from '@festivapp/utils';
-import { createContext, use, useCallback, useState, type ReactNode } from 'react';
+import { createContext, use, useCallback, useState } from 'react';
 
 import { Button } from './button.tsx';
 
+const ConfirmContext = createContext<((options: ConfirmOptions) => void) | null>(null);
+
 type ConfirmOptions = {
-  title: ReactNode;
-  description: ReactNode;
+  title: React.ReactNode;
+  description: React.ReactNode;
   confirmLabel: string;
   onConfirm: () => unknown;
 };
 
-export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
+export function ConfirmDialogProvider({ children }: { children: React.ReactNode }) {
   const [options, setOptions] = useState<ConfirmOptions>();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -66,5 +68,3 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
 export function useConfirmDialog() {
   return defined(use(ConfirmContext));
 }
-
-const ConfirmContext = createContext<((options: ConfirmOptions) => void) | null>(null);

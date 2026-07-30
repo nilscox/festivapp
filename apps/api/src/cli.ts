@@ -1,5 +1,5 @@
 import type { TenantTheme } from '@festivapp/contracts';
-import { assert } from '@festivapp/utils';
+import { assert, defined } from '@festivapp/utils';
 import { Command } from 'commander';
 import { inArray } from 'drizzle-orm';
 
@@ -48,7 +48,7 @@ organizer
 
     await db
       .insert(organizerTenants)
-      .values(tenantRows.map((row) => ({ organizerId: organizer!.id, tenantId: row.id })));
+      .values(tenantRows.map((row) => ({ organizerId: defined(organizer).id, tenantId: row.id })));
 
     console.log(`Organizer ${email} ready with access to: ${tenantRows.map((r) => r.domain).join(', ')}`);
   });
@@ -58,7 +58,7 @@ program.addCommand(festival);
 
 festival
   .command('create')
-  .description('Create an new festivals')
+  .description('Create a new festival')
   .argument('<name>', 'festival name')
   .option('-t, --timezone <timezone>', 'festival time zone')
   .option('-d, --domain <domain>', 'attendees app domain')

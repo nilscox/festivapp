@@ -1,6 +1,7 @@
 import { Form } from '@base-ui/react/form';
 import type { Location, TenantSummary } from '@festivapp/contracts';
 import { has } from '@festivapp/utils';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import { MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo } from 'react';
@@ -17,7 +18,12 @@ import { Spinner } from '../components/spinner.tsx';
 import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
 import { Textarea } from '../components/textarea.tsx';
 import { parseValidationError } from '../lib/errors.ts';
-import { useCreateLocation, useDeleteLocation, useLocations, useUpdateLocation } from '../lib/locations.ts';
+import {
+  createLocationOptions,
+  deleteLocationOptions,
+  listLocationsOptions,
+  updateLocationOptions,
+} from '../lib/locations.ts';
 
 const from = '/festivals/$tenantId/locations';
 
@@ -30,7 +36,7 @@ type FormValues = {
 export function Locations() {
   const { tenant } = useRouteContext({ from });
 
-  const { isPending, isError, isSuccess, data, error } = useLocations(tenant.id);
+  const { isPending, isError, isSuccess, data, error } = useQuery(listLocationsOptions(tenant.id));
   const locations = data ?? [];
 
   return (
@@ -47,7 +53,7 @@ export function Locations() {
               title="No locations yet"
               description="Locations are the stages, rooms and places where sessions happen. Add your first one to start building the schedule."
               cta={
-                <LinkButton from={`/festivals/$tenantId/locations`} search={{ create: true }}>
+                <LinkButton from={from} search={{ create: true }}>
                   <Plus className="size-4" />
                   Add location
                 </LinkButton>
@@ -71,7 +77,7 @@ function Header({ tenant, showCreate }: { tenant: TenantSummary; showCreate: boo
       title="Locations"
       end={
         showCreate && (
-          <LinkButton from="/festivals/$tenantId/locations" search={{ create: true }} className="mt-auto">
+          <LinkButton from={from} search={{ create: true }} className="mt-auto">
             <Plus className="size-4" />
             <span className="max-md:hidden">Add location</span>
           </LinkButton>
@@ -82,7 +88,13 @@ function Header({ tenant, showCreate }: { tenant: TenantSummary; showCreate: boo
 }
 
 function LocationsList({ tenant, locations }: { tenant: TenantSummary; locations: Location[] }) {
-  const deleteMutation = useDeleteLocation(tenant.id);
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    ...deleteLocationOptions(tenant.id),
+    onSuccess: () => queryClient.invalidateQueries(listLocationsOptions(tenant.id)),
+  });
+
   const confirm = useConfirmDialog();
 
   const onDelete = (location: Location) => {
@@ -128,7 +140,7 @@ function LocationItem({ location, onDelete }: { location: Location; onDelete: ()
       </div>
 
       <div className="row shrink-0 items-center gap-1">
-        <LinkButton variant="secondary" size="sm" from="/festivals/$tenantId/locations" search={{ edit: location.id }}>
+        <LinkButton variant="secondary" size="sm" from={from} search={{ edit: location.id }}>
           <Pencil className="size-3" />
           Edit
         </LinkButton>
@@ -174,19 +186,28 @@ function LocationForm({
   defaultValue?: Location;
   onClose: () => void;
 }) {
-  const positionOptions = Array.from(
-    { length: Math.max(1, defaultValue ? locations.length : locations.length + 1) },
-    (_, index) => ({ value: index + 1, label: String(index + 1) }),
-  );
+  const queryClient = useQueryClient();
 
-  const createMutation = useCreateLocation(tenant.id);
-  const updateMutation = useUpdateLocation(tenant.id);
+  const createMutation = useMutation({
+    ...createLocationOptions(tenant.id),
+    onSuccess: () => queryClient.invalidateQueries(listLocationsOptions(tenant.id)),
+  });
+
+  const updateMutation = useMutation({
+    ...updateLocationOptions(tenant.id),
+    onSuccess: () => queryClient.invalidateQueries(listLocationsOptions(tenant.id)),
+  });
 
   const pending = createMutation.isPending || updateMutation.isPending;
 
   const errors = useMemo(() => {
     return parseValidationError(createMutation.error ?? updateMutation.error);
   }, [createMutation.error, updateMutation.error]);
+
+  const positionOptions = Array.from(
+    { length: Math.max(1, defaultValue ? locations.length : locations.length + 1) },
+    (_, index) => ({ value: index + 1, label: String(index + 1) }),
+  );
 
   const handleSubmit = (values: FormValues) => {
     const input = {
@@ -198,7 +219,7 @@ function LocationForm({
     if (!defaultValue) {
       createMutation.mutate(input, { onSuccess: onClose });
     } else {
-      updateMutation.mutate({ id: defaultValue.id, ...input }, { onSuccess: onClose });
+      updateMutation.mutate([defaultValue.id, input], { onSuccess: onClose });
     }
   };
 

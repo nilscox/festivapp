@@ -1,55 +1,56 @@
-import type { Participant, Session, SessionType } from '@festivapp/contracts';
+import type { SessionType } from '@festivapp/contracts';
+import { defined } from '@festivapp/utils';
 
-const SESSION_TYPE_LABELS: Record<SessionType, string> = {
-  dj_set: 'DJ Set',
-  live: 'Live',
-  talk: 'Talk',
-  workshop: 'Workshop',
-  other: 'Other',
-};
+import type { ResolvedSession } from './bootstrap';
 
 export function formatSessionType(type: SessionType): string {
-  return SESSION_TYPE_LABELS[type];
+  return {
+    dj_set: 'DJ Set',
+    live: 'Live',
+    talk: 'Talk',
+    workshop: 'Workshop',
+    other: 'Other',
+  }[type];
 }
 
 export function isMusicSession(type: SessionType): boolean {
   return type === 'dj_set' || type === 'live';
 }
 
-export function sessionTitle(session: Session, participants: Participant[]): string | null {
+export function sessionTitle(session: ResolvedSession): string | null {
   if (session.title) {
     return session.title;
   }
 
-  if (isMusicSession(session.type) && session.participantIds.length === 1) {
-    return participants[0]!.name;
+  if (isMusicSession(session.type) && session.participants.length === 1) {
+    return defined(session.participants[0]).name;
   }
 
   return null;
 }
 
-export function sessionImageUrl(session: Session, participants: Participant[]): string | null {
-  if (isMusicSession(session.type) && participants.length === 1 && participants[0]?.imageUrl) {
-    return participants[0].imageUrl;
+export function sessionImageUrl(session: ResolvedSession): string | null {
+  if (isMusicSession(session.type) && session.participants.length === 1 && session.participants[0]?.imageUrl) {
+    return session.participants[0].imageUrl;
   }
 
   return null;
 }
 
-export function sessionListMeta(session: Session, participants: Participant[]): string | null {
-  if (isMusicSession(session.type) && participants.length === 1) {
-    return participants[0]!.styles.join(' / ');
+export function sessionListMeta(session: ResolvedSession): string | null {
+  if (isMusicSession(session.type) && session.participants.length === 1) {
+    return defined(session.participants[0]).styles.join(' / ');
   }
 
   if (session.type === 'talk' || session.type === 'workshop') {
-    return sessionSubhead(session, participants);
+    return sessionSubhead(session);
   }
 
   return null;
 }
 
-export function sessionSubhead(session: Session, participants: Participant[]): string | null {
-  const names = participants.map((participant) => participant.name).join(', ');
+export function sessionSubhead(session: ResolvedSession): string | null {
+  const names = session.participants.map((participant) => participant.name).join(', ');
 
   if (session.type === 'talk') {
     return `Talk by ${names}`;
@@ -60,16 +61,4 @@ export function sessionSubhead(session: Session, participants: Participant[]): s
   }
 
   return null;
-}
-
-export function participantsHeading(type: SessionType, count: number): string {
-  if (type === 'talk') {
-    return count === 1 ? 'Speaker' : 'Speakers';
-  }
-
-  if (type === 'workshop') {
-    return count === 1 ? 'Facilitator' : 'Facilitators';
-  }
-
-  return count === 1 ? 'Artist' : 'Line-up';
 }

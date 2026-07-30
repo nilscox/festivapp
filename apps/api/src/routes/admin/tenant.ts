@@ -1,11 +1,12 @@
 import type { Tenant as TenantDto } from '@festivapp/contracts';
-import { assert } from '@festivapp/utils';
+import { assert, defined } from '@festivapp/utils';
 import { eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 
 import { db } from '../../db/client.ts';
 import { type Tenant, tenants } from '../../db/schema.ts';
+import { falsyToNull } from '../../utils.ts';
 
 export const tenantRouter = Router({ mergeParams: true });
 
@@ -33,7 +34,7 @@ const schema = z
     name: z.string().trim().min(1).max(100),
     domain: z.string().trim().toLowerCase().max(253).regex(hostname, 'must be a host name'),
     timezone: z.string().refine((value) => timezones.has(value), 'must be an IANA timezone'),
-    mapUrl: z.string().trim().nullable(),
+    mapUrl: z.string().trim().startsWith('/').transform(falsyToNull).nullable(),
   })
   .partial();
 
@@ -56,7 +57,5 @@ tenantRouter.patch('/', async (req, res) => {
     .where(eq(tenants.id, req.tenant.id))
     .returning();
 
-  assert(row);
-
-  res.json(toTenantDto(row));
+  res.json(toTenantDto(defined(row)));
 });

@@ -1,15 +1,14 @@
-import type { Session } from '@festivapp/contracts';
 import { formatInTimeZone } from 'date-fns-tz';
 
 import { PageHeader } from '../components/page-header.tsx';
 import { SessionCard } from '../components/session-card.tsx';
+import { useClock } from '../hooks/use-clock.ts';
+import { useBootstrap, type ResolvedSession } from '../lib/bootstrap.ts';
 import { formatDayLabel } from '../lib/datetime.ts';
-import { useBootstrap } from '../use-bootstrap.ts';
-import { useClock } from '../use-clock.ts';
 
 type Day = {
   date: string;
-  sessions: Session[];
+  sessions: ResolvedSession[];
 };
 
 export function Timetable() {
@@ -17,11 +16,7 @@ export function Timetable() {
   const timezone = tenant.timezone;
 
   const now = useClock();
-
-  const days = groupByDay(
-    sessions.toSorted((a, b) => a.startsAt.localeCompare(b.startsAt)),
-    timezone,
-  );
+  const days = groupByDay(sessions, timezone);
 
   return (
     <div className="col min-h-0 flex-1">
@@ -49,7 +44,7 @@ export function Timetable() {
   );
 }
 
-function groupByDay(sessions: Session[], timeZone: string): Day[] {
+function groupByDay(sessions: ResolvedSession[], timeZone: string): Day[] {
   const map = new Map<string, Day>();
 
   for (const session of sessions) {

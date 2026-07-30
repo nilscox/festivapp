@@ -3,10 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "pnpm -r typecheck",
+    "typecheck": "tsc -b",
     "lint": "oxlint",
-    "format": "oxfmt",
-    "format:check": "oxfmt --check"
+    "format": "oxfmt"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

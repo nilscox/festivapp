@@ -291,7 +291,7 @@ function ParticipantForm({
     if (!defaultValue) {
       createMutation.mutate(input, { onSuccess: onClose });
     } else {
-      updateMutation.mutate({ id: defaultValue.id, ...input }, { onSuccess: onClose });
+      updateMutation.mutate([defaultValue.id, input], { onSuccess: onClose });
     }
   };
 

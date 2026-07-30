@@ -5,27 +5,31 @@ A tenant (one festival) is resolved from the request's `Host` header.
 
 ## Stack
 
-- **API** — Express 5 + Drizzle ORM + Postgres, TypeScript run directly by Node 26
+- **API** — Express 5 + Drizzle ORM + Postgres, TypeScript run directly by Node
   (native type stripping, no build step).
-- **Clients** — Vite + React SPAs (`app` = attendee PWA, `admin` = backoffice,
-  `landing`). _Added in later milestones._
+- **Clients** — Vite + React SPAs: `app` (attendee PWA, offline-first) and
+  `admin` (organizer backoffice).
 - **Monorepo** — pnpm workspaces. Shared, type-only API contracts in
-  `packages/contracts`; shared tool configs in `packages/config`.
+  `packages/contracts`, dependency-free helpers in `packages/utils`, and shared
+  tool configs in `packages/config`.
 - **Tooling** — oxlint, oxfmt.
 
 ## Layout
 
 ```
 apps/
-  api/         Express API (tenant resolution, /bootstrap)
+  api/         Express 5 + Drizzle + Postgres API
+  app/         Attendee PWA (Vite + React, offline-first)
+  admin/       Organizer backoffice (Vite + React)
 packages/
   contracts/   Shared, type-only request/response types
+  utils/       Shared dependency-free helpers
   config/      Shared base tsconfig, oxlint and oxfmt configs
 ```
 
 ## Prerequisites
 
-Node ≥ 24, pnpm, and Docker (for local Postgres).
+Node ≥ 24, pnpm, a PostgreSQL database.
 
 ## Getting started
 
@@ -34,40 +38,30 @@ pnpm install
 cp apps/api/.env.example apps/api/.env
 ```
 
-Start Postgres in a container:
-
-```bash
-docker run -d --name festivapp-pg \
-  -e POSTGRES_HOST_AUTH_METHOD=trust \
-  -e POSTGRES_DB=festivapp \
-  -p 5432:5432 \
-  docker.io/postgres:17-alpine
-```
-
 Then, from `apps/api`:
 
 ```bash
-pnpm db:push               # push the Drizzle schema to the database
-pnpm seed                  # seed the demo tenant
-pnpm dev                   # start the API on http://127.0.0.1:3000
+pnpm db:push                 # apply the Drizzle schema to the database
+pnpm cli seed <file>         # load a festival from a seed JSON file
+pnpm dev                     # start the API on http://127.0.0.1:3000
 ```
 
-Verify:
+Then run either client:
 
 ```bash
-curl 127.0.0.1:3000/health
-curl -H "Host: coolfest.localhost" 127.0.0.1:3000/bootstrap
+cd apps/app   && pnpm dev    # attendee PWA on http://localhost:8000
+cd apps/admin && pnpm dev    # admin backoffice on http://localhost:8001
 ```
 
 ## Scripts
 
 Run from the repo root (whole workspace):
 
-| Command                     | Description                       |
-| --------------------------- | --------------------------------- |
-| `pnpm typecheck`            | Typecheck every workspace package |
-| `pnpm lint` / `pnpm format` | oxlint / oxfmt                    |
-| `pnpm format:check`         | Verify formatting without writing |
+| Command          | Description                       |
+| ---------------- | --------------------------------- |
+| `pnpm typecheck` | Typecheck every workspace package |
+| `pnpm lint`      | Run oxlint                        |
+| `pnpm format`    | Run oxfmt                         |
 
 Run from `apps/api`:
 
@@ -78,6 +72,14 @@ Run from `apps/api`:
 | `pnpm db:push`    | Push the schema to the database |
 | `pnpm db:migrate` | Apply pending migrations        |
 | `pnpm cli`        | Run the CLI (`pnpm cli --help`) |
+
+Run from `apps/app` or `apps/admin`:
+
+| Command        | Description                |
+| -------------- | -------------------------- |
+| `pnpm dev`     | Start the Vite dev server  |
+| `pnpm build`   | Build the SPA into `dist/` |
+| `pnpm preview` | Serve the built SPA        |
 
 ## Configuration
 
@@ -99,24 +101,3 @@ URL instead, and `/files` from the file id). The tenant is matched against
 `tenants.domain` using, in order: a `?__tenant=` query param, an `X-Tenant-Domain`
 header (both for local/testing convenience), then the real `Host`. Unknown hosts
 get a 404.
-
-## File storage
-
-Organizers upload assets (logos, background images) to
-`POST /admin/tenants/:tenantId/files` with the raw bytes as the request body and
-the media type as `Content-Type` — no multipart. PNG, JPEG, WebP, AVIF and SVG are
-accepted; `?name=` keeps the original file name for the backoffice listing.
-
-Bytes go through `src/storage.ts`, a `put`/`read`/`delete` seam whose only
-implementation writes under `STORAGE_DIR` (keyed `<tenantId>/<fileId><ext>`); an
-object store can replace it without touching the routes. Files are served back
-publicly and immutably from `GET /files/:id` — no tenant resolution, so the
-backoffice on its own host can preview them, with the file id as the only
-capability.
-
-That path is deliberately at the **origin root**, not under the SPAs' `/api`
-prefix: a theme's logo also has to resolve from a manifest icon and a stylesheet,
-where no client code runs to prepend anything. So each deployment routes `/files/*`
-to the API alongside `/api/*` and `/manifest.webmanifest` (the Vite dev servers
-already do). The URLs are same-origin for the attendee app, so they survive
-offline. Deleting a file the tenant's theme still points at is refused with a 409.

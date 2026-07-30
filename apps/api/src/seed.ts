@@ -1,4 +1,5 @@
 import type { TenantTheme } from '@festivapp/contracts';
+import { defined } from '@festivapp/utils';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import z from 'zod';
@@ -166,7 +167,7 @@ export async function seed(input: string): Promise<void> {
       .values(
         data.sessions.map((session) => ({
           tenantId,
-          locationId: locations.get(session.location)!,
+          locationId: defined(locations.get(session.location)),
           type: session.type,
           title: session.title,
           startsAt: new Date(session.start),
@@ -181,8 +182,8 @@ export async function seed(input: string): Promise<void> {
     await tx.insert(schema.sessionParticipants).values(
       data.sessions.flatMap((session, index) =>
         session.participants.map((participant, position) => ({
-          sessionId: sessions.get(index)!,
-          participantId: participants.get(participant)!,
+          sessionId: defined(sessions.get(index)),
+          participantId: defined(participants.get(participant)),
           position,
         })),
       ),

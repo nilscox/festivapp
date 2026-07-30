@@ -1,5 +1,5 @@
 import type { Participant as ParticipantDto } from '@festivapp/contracts';
-import { assert } from '@festivapp/utils';
+import { assert, defined } from '@festivapp/utils';
 import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
@@ -65,9 +65,7 @@ participantsRouter.post('/', async (req, res) => {
     })
     .returning();
 
-  assert(row);
-
-  res.status(201).json(toParticipantDto(row));
+  res.status(201).json(toParticipantDto(defined(row)));
 });
 
 participantsRouter.patch('/:id', async (req, res) => {

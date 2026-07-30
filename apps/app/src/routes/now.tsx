@@ -1,14 +1,14 @@
-import type { Location, Session, TenantConfig } from '@festivapp/contracts';
+import type { Location, TenantConfig } from '@festivapp/contracts';
 import { has } from '@festivapp/utils';
 import { Link } from '@tanstack/react-router';
 import { isAfter, isWithinInterval } from 'date-fns';
 
 import { PageHeader } from '../components/page-header.tsx';
 import { SessionCard } from '../components/session-card.tsx';
+import { useClock } from '../hooks/use-clock.ts';
+import { useBootstrap, useTenant, type ResolvedSession } from '../lib/bootstrap.ts';
 import { countdownLabel, formatNowHeading, formatTime } from '../lib/datetime.ts';
 import { sessionTitle } from '../lib/session.ts';
-import { useBootstrap, useSessionParticipants, useTenant } from '../use-bootstrap.ts';
-import { useClock } from '../use-clock.ts';
 
 export function Now() {
   const data = useBootstrap();
@@ -41,7 +41,7 @@ export function Now() {
   );
 }
 
-function findLocationNow(locationId: string, sessions: Session[], now: Date) {
+function findLocationNow(locationId: string, sessions: ResolvedSession[], now: Date) {
   const locationSessions = sessions.filter(has('locationId', locationId));
 
   const live = locationSessions.find((session) =>
@@ -85,8 +85,8 @@ function LocationNow({
   now,
 }: {
   location: Location;
-  live: Session | null;
-  next: Session | null;
+  live: ResolvedSession | null;
+  next: ResolvedSession | null;
   now: Date;
 }) {
   return (
@@ -116,14 +116,13 @@ function Break() {
   return <span className="text-muted font-semibold uppercase">Break</span>;
 }
 
-function Next({ session, now }: { session: Session; now: Date }) {
-  const { timezone } = useTenant()!;
-  const participants = useSessionParticipants(session.id);
+function Next({ session, now }: { session: ResolvedSession; now: Date }) {
+  const { timezone } = useTenant();
 
   return (
     <Link to="/session/$sessionId" params={{ sessionId: session.id }} className="row items-baseline gap-2">
       <span className="text-muted text-sm">Next:</span>
-      <span className="text-sm font-medium">{sessionTitle(session, participants)}</span>
+      <span className="text-sm font-medium">{sessionTitle(session)}</span>
       <span className="text-muted font-mono text-xs">
         at {formatTime(session.startsAt, timezone)} ({countdownLabel(now, session.startsAt)})
       </span>

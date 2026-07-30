@@ -1,5 +1,4 @@
-import type { TenantTheme as TenantThemeDto } from '@festivapp/contracts';
-import { assert } from '@festivapp/utils';
+import { assert, defined } from '@festivapp/utils';
 import { eq } from 'drizzle-orm';
 import { Router } from 'express';
 
@@ -11,8 +10,7 @@ export const themeRouter = Router({ mergeParams: true });
 
 themeRouter.get('/', (req, res) => {
   assert(req.tenant);
-
-  res.json(req.tenant.theme satisfies TenantThemeDto);
+  res.json(req.tenant.theme);
 });
 
 themeRouter.put('/', async (req, res) => {
@@ -26,7 +24,5 @@ themeRouter.put('/', async (req, res) => {
     .where(eq(tenants.id, req.tenant.id))
     .returning();
 
-  assert(row);
-
-  res.json(row.theme satisfies TenantThemeDto);
+  res.json(defined(row).theme);
 });

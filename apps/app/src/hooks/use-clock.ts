@@ -2,7 +2,7 @@ import { useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 
 export function useClock(): Date {
-  const { date: dateParam } = useSearch({ strict: false });
+  const search = useSearch({ from: '__root__' });
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -11,8 +11,8 @@ export function useClock(): Date {
     return () => window.clearInterval(id);
   }, []);
 
-  if (dateParam) {
-    return new Date(dateParam);
+  if (search.date) {
+    return new Date(search.date);
   }
 
   return now;

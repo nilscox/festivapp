@@ -5,7 +5,7 @@ import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router'
 import { format } from 'date-fns';
 import { Image, SearchX, Trash2 } from 'lucide-react';
 import { useMemo } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 
 import { Button, IconButton } from '../components/button.tsx';
 import { useConfirmDialog } from '../components/confirm-dialog.tsx';
@@ -101,7 +101,7 @@ function FilesList({
   const navigate = useNavigate({ from });
 
   const onSearch = (value: string) => {
-    navigate({ search: { search: value || undefined }, replace: true });
+    navigate({ search: (prev) => ({ ...prev, search: value || undefined }), replace: true });
   };
 
   const matching = useMemo(() => {

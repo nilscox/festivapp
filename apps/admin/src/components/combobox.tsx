@@ -1,7 +1,7 @@
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox';
 import { Check, ChevronDown } from 'lucide-react';
 
-import { Input } from './input';
+import { Input } from './input.tsx';
 
 const { Root, Icon, Portal, Positioner, Popup, Empty, List, Item, ItemIndicator } = BaseCombobox;
 

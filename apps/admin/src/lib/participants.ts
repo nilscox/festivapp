@@ -18,7 +18,7 @@ export function createParticipantOptions(tenantId: string) {
 
 export function updateParticipantOptions(tenantId: string) {
   return mutationOptions({
-    mutationFn: ({ id, ...input }: { id: string } & ParticipantInput) =>
+    mutationFn: ([id, input]: [id: string, participant: ParticipantInput]) =>
       api.patch<Participant>(`/admin/tenants/${tenantId}/participants/${id}`, input),
   });
 }

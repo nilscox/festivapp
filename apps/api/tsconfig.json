@@ -3,6 +3,7 @@
   "include": ["src"],
   "files": ["drizzle.config.ts"],
   "compilerOptions": {
+    "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo"
   }
 }

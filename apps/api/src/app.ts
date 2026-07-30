@@ -14,11 +14,11 @@ export function createApp(): Express {
   app.use('/files', filesRouter);
   app.use('/admin', adminRouter);
   app.use(tenantRouter);
+  app.use(notFound);
 
   app.use(payloadErrorHandler);
   app.use(zodErrorHandler);
   app.use(errorHandler);
-  app.use(notFound);
 
   return app;
 }

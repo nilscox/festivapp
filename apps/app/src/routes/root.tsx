@@ -3,10 +3,10 @@ import { Outlet } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 
-import { warmTenantCache } from '../cache.ts';
 import { TabBar } from '../components/tab-bar.tsx';
-import { applyTenant } from '../theme.ts';
-import { useBootstrapQuery } from '../use-bootstrap.ts';
+import { useBootstrapQuery } from '../lib/bootstrap.ts';
+import { warmTenantCache } from '../lib/cache.ts';
+import { applyTenant } from '../lib/theme.ts';
 
 export function RootLayout() {
   const query = useBootstrapQuery();

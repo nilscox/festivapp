@@ -1,4 +1,4 @@
-import { Field } from '@base-ui/react';
+import { Field } from '@base-ui/react/field';
 import clsx from 'clsx';
 import { useState } from 'react';
 
