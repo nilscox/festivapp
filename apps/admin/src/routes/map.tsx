@@ -1,4 +1,4 @@
-import type { Location, MapPin, MapPinLabelPosition, TenantSummary } from '@festivapp/contracts';
+import type { Location, MapPin, MapPinLabelPosition } from '@festivapp/contracts';
 import { assert, has } from '@festivapp/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouteContext } from '@tanstack/react-router';
@@ -11,7 +11,7 @@ import { Button, IconButton } from '../components/button.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
 import { FilePicker } from '../components/file-picker.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
-import { Spinner } from '../components/spinner.tsx';
+import { QueryBoundary } from '../components/query-boundary.tsx';
 import { listLocationsOptions, updateLocationOptions } from '../lib/locations.ts';
 import { getTenantOptions, updateTenantOptions } from '../lib/tenant.ts';
 import { getThemeOptions } from '../lib/theme.ts';
@@ -34,87 +34,78 @@ export function FestivalMap() {
     mutation.mutate({ mapUrl }, { onSuccess: () => toast.success(mapUrl ? 'Map updated' : 'Map removed') });
   };
 
-  const isPending = tenantQuery.isPending || locationsQuery.isPending;
-  const error = tenantQuery.error ?? locationsQuery.error;
-
   return (
     <Page
       header={
-        <Header
-          tenant={tenant}
-          mapUrl={mapUrl}
-          pending={mutation.isPending}
-          onChange={() => setPicking(true)}
-          onRemove={() => setMapUrl(null)}
+        <PageHeader
+          eyebrow={tenant.name}
+          title="Map"
+          end={
+            tenantQuery.isSuccess &&
+            locationsQuery.isSuccess &&
+            mapUrl && (
+              <HeaderActions
+                pending={mutation.isPending}
+                onChange={() => setPicking(true)}
+                onRemove={() => setMapUrl(null)}
+              />
+            )
+          }
         />
       }
     >
-      {isPending && <Spinner className="mx-auto my-8 size-6" />}
+      <QueryBoundary query={[tenantQuery, locationsQuery]}>
+        {({ mapUrl }, locations) => (
+          <>
+            {mapUrl === null ? (
+              <EmptyState
+                icon={Map}
+                title="No map yet"
+                description="Upload a picture of the festival grounds, then drag a pin onto it for each location to show attendees where things are."
+                cta={
+                  <Button onClick={() => setPicking(true)}>
+                    <Upload className="size-4" /> Set a map
+                  </Button>
+                }
+              />
+            ) : (
+              <Board tenantId={tenant.id} mapUrl={mapUrl} locations={locations} />
+            )}
 
-      {error && <>Error: {error.message}</>}
-
-      {tenantQuery.isSuccess && locationsQuery.isSuccess && (
-        <>
-          {mapUrl === null ? (
-            <EmptyState
-              icon={Map}
-              title="No map yet"
-              description="Upload a picture of the festival grounds, then drag a pin onto it for each location to show attendees where things are."
-              cta={
-                <Button onClick={() => setPicking(true)}>
-                  <Upload className="size-4" /> Set a map
-                </Button>
-              }
+            <FilePicker
+              tenantId={tenant.id}
+              background={themeQuery.data?.backgroundColor}
+              open={picking}
+              onOpenChange={setPicking}
+              onSelect={(file) => setMapUrl(file.url)}
             />
-          ) : (
-            <Board tenantId={tenant.id} mapUrl={mapUrl} locations={locationsQuery.data} />
-          )}
-
-          <FilePicker
-            tenantId={tenant.id}
-            background={themeQuery.data?.backgroundColor}
-            open={picking}
-            onOpenChange={setPicking}
-            onSelect={(file) => setMapUrl(file.url)}
-          />
-        </>
-      )}
+          </>
+        )}
+      </QueryBoundary>
     </Page>
   );
 }
 
-function Header({
-  tenant,
-  mapUrl,
+function HeaderActions({
   pending,
   onChange,
   onRemove,
 }: {
-  tenant: TenantSummary;
-  mapUrl: string | null;
   pending: boolean;
   onChange: () => void;
   onRemove: () => void;
 }) {
   return (
-    <PageHeader
-      eyebrow={tenant.name}
-      title="Map"
-      end={
-        mapUrl !== null && (
-          <div className="row mt-auto gap-2">
-            <Button variant="ghost" disabled={pending} onClick={onRemove} className="max-md:hidden">
-              Remove
-            </Button>
+    <div className="row mt-auto gap-2">
+      <Button variant="ghost" disabled={pending} onClick={onRemove} className="max-md:hidden">
+        Remove
+      </Button>
 
-            <Button disabled={pending} onClick={onChange}>
-              <Upload className="size-4" />
-              <span className="max-md:hidden">Change map</span>
-            </Button>
-          </div>
-        )
-      }
-    />
+      <Button disabled={pending} onClick={onChange}>
+        <Upload className="size-4" />
+        <span className="max-md:hidden">Change map</span>
+      </Button>
+    </div>
   );
 }
 

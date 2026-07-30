@@ -89,10 +89,14 @@ packages/
 
 - **The router owns navigation state and gating** (TanStack Router, code-based).
   Do auth/data gating in route `beforeLoad`/`loader`, never in `useEffect`:
-  `createRootRouteWithContext<{ queryClient }>`, prefetch with
-  `queryClient.ensureQueryData(...)`, branch with `throw redirect(...)`, and thread
-  shared data (`me`, `tenant`) through route **context**, read via
-  `useRouteContext({ from })`.
+  `createRootRouteWithContext<{ queryClient }>`, branch with `throw redirect(...)`,
+  and thread shared data (`me`, `tenant`) through route **context**, read via
+  `useRouteContext({ from })`. Only the auth gate awaits its data (the root's
+  `beforeLoad` + `ensureQueryData(getMeOptions())`); route **loaders fire
+  `queryClient.prefetchQuery(...)` without awaiting**, so the page paints at once
+  (and a hover still warms the cache through `defaultPreload: 'intent'`). Awaiting
+  there would both delay the first paint and turn a failed request into a route
+  load error.
 - **Transient UI state lives in the URL, not `useState`.** Model drawers/dialogs and
   the selected record as validated search params
   (`validateSearch: z.object({ create: z.optional(z.literal(true)), edit: z.optional(z.string()) })`),
@@ -100,13 +104,32 @@ packages/
 - **Share `queryOptions` / `mutationOptions` factories**, named
   `<verb><Resource>Options(tenantId)` — `getMeOptions()`, `listLocationsOptions(id)`,
   `createParticipantOptions(id)`. Reuse the same factory in route loaders
-  (`ensureQueryData`) and in components (`useQuery` / `useMutation`); the call site
+  (`prefetchQuery`) and in components (`useQuery` / `useMutation`); the call site
   spreads it and adds `onSuccess`, invalidating by the query factory's key.
+- **Gate on data with `<QueryBoundary>`**, never a hand-rolled
+  `isPending`/`isError`/`isSuccess` triplet. It takes one query result or a tuple
+  (`query={[tenantQuery, locationsQuery]}`), renders a spinner until every one has
+  data, and hands its `children` render prop one typed argument per query. A query
+  whose failure shouldn't take the page down (a theme color, a thumbnail) stays
+  outside the boundary and keeps reading `query.data?.…`.
+- **Errors are thrown, and caught by two boundaries, both rendering `RouteError`**
+  (message, retry through `router.invalidate()`, stack in dev). `Page` wraps its
+  content — not its header — in a `CatchBoundary` keyed on the router's `loadedAt`,
+  so a page that throws keeps its title and the shell around it; the router's
+  `defaultErrorComponent` is the outer net for whatever throws outside a page's
+  content (the header, `beforeLoad`, a lazy chunk). Keep headers readable without
+  data (`Boolean(query.data?.length)`), since they still render in the error state.
 - **One `ApiError`, guarded by `ApiError.is(err, status?)`.** `lib/api.ts` throws it
   (carrying `status`, raw `body`, parsed `error` code). Cross-cutting handling is
-  central in `main.tsx`: a `QueryCache` + mutation `onError` toasts 5xx
-  (`react-hot-toast`) and `retry` skips 4xx. Field-level 400s come from the API's
-  zod tree via `parseValidationError` (`lib/errors.ts`) and render in `<Field error=…>`.
+  central in `main.tsx`: `retry` skips 4xx; a 401 on any query or mutation — while a
+  session is cached, so a failed login isn't one — clears the cache and re-runs the
+  router, letting the root's `beforeLoad` redirect to `/login`; and the
+  `MutationCache` runs `toast.error` (`react-hot-toast`) on every failure except a
+  400 and except a mutation that declares its own `onError`. **That opt-out only sees
+  `useMutation` options** — a per-call `mutate(vars, { onError })` is invisible to the
+  cache and still toasts, which is how a call site reverts an optimistic update
+  without silencing the message. Field-level 400s come from the API's zod tree via
+  `parseValidationError` (`lib/errors.ts`) and render in `<Field error=…>`.
 - **Forms use Base UI `<Form onFormSubmit>`** — it yields typed values; don't read
   `FormData` or control inputs by hand. Keep inputs uncontrolled (`defaultValue`) and
   wrap every control (`Input`, `Select`) in `<Field name=…>` so it registers with the

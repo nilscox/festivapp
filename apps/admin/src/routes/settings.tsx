@@ -11,8 +11,8 @@ import { useConfirmDialog } from '../components/confirm-dialog.tsx';
 import { Field } from '../components/field.tsx';
 import { Input } from '../components/input.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
+import { QueryBoundary } from '../components/query-boundary.tsx';
 import { Section } from '../components/section.tsx';
-import { Spinner } from '../components/spinner.tsx';
 import { ApiError } from '../lib/api.ts';
 import { getMeOptions } from '../lib/auth.ts';
 import { parseValidationError } from '../lib/errors.ts';
@@ -28,9 +28,7 @@ export function Settings() {
 
   return (
     <Page header={<PageHeader eyebrow={tenant.name} title="Settings" />}>
-      {query.isPending && <Spinner className="mx-auto my-8 size-6" />}
-      {query.isError && <>Error: {query.error.message}</>}
-      {query.isSuccess && <SettingsForm tenant={query.data} />}
+      <QueryBoundary query={query}>{(data) => <SettingsForm tenant={data} />}</QueryBoundary>
     </Page>
   );
 }

@@ -12,9 +12,9 @@ import { Field } from '../components/field.tsx';
 import { FileInput } from '../components/file-input.tsx';
 import { Input } from '../components/input.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
+import { QueryBoundary } from '../components/query-boundary.tsx';
 import { Range } from '../components/range.tsx';
 import { Section } from '../components/section.tsx';
-import { Spinner } from '../components/spinner.tsx';
 import { Textarea } from '../components/textarea.tsx';
 import { getThemeOptions, updateThemeOptions } from '../lib/theme.ts';
 
@@ -41,15 +41,11 @@ type Images = {
 
 export function Theme() {
   const { tenant } = useRouteContext({ from });
-  const { isPending, isError, isSuccess, data, error } = useQuery(getThemeOptions(tenant.id));
+  const query = useQuery(getThemeOptions(tenant.id));
 
   return (
     <Page header={<PageHeader eyebrow={tenant.name} title="Theme" />}>
-      {isPending && <Spinner className="mx-auto my-8 size-6" />}
-
-      {isError && <>Error: {error.message}</>}
-
-      {isSuccess && <ThemeForm tenant={tenant} theme={data} />}
+      <QueryBoundary query={query}>{(theme) => <ThemeForm tenant={tenant} theme={theme} />}</QueryBoundary>
     </Page>
   );
 }

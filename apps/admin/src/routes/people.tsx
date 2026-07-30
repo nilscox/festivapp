@@ -14,8 +14,8 @@ import { Field } from '../components/field.tsx';
 import { FileInput } from '../components/file-input.tsx';
 import { Input } from '../components/input.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
+import { QueryBoundary } from '../components/query-boundary.tsx';
 import { SearchInput } from '../components/search-input.tsx';
-import { Spinner } from '../components/spinner.tsx';
 import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
 import { Textarea } from '../components/textarea.tsx';
 import { Thumbnail } from '../components/thumbnail.tsx';
@@ -42,36 +42,33 @@ type Row = { key: string; value: string };
 export function People() {
   const { tenant } = useRouteContext({ from });
 
-  const { isPending, isError, isSuccess, data, error } = useQuery(listParticipantsOptions(tenant.id));
-  const participants = data ?? [];
+  const query = useQuery(listParticipantsOptions(tenant.id));
 
   return (
-    <Page header={<Header tenant={tenant} showCreate={participants.length > 0} />}>
-      {isPending && <Spinner className="mx-auto my-8 size-6" />}
+    <Page header={<Header tenant={tenant} showCreate={Boolean(query.data?.length)} />}>
+      <QueryBoundary query={query}>
+        {(participants) => (
+          <>
+            {participants.length === 0 ? (
+              <EmptyState
+                icon={Users}
+                title="Nobody on the line-up yet"
+                description="People are the acts on your line-up — artists, speakers, facilitators. Add them here, then put them on sessions in the schedule."
+                cta={
+                  <LinkButton from={from} search={{ create: true }}>
+                    <Plus className="size-4" />
+                    Add people
+                  </LinkButton>
+                }
+              />
+            ) : (
+              <PeopleList tenant={tenant} participants={participants} />
+            )}
 
-      {isError && <>Error: {error.message}</>}
-
-      {isSuccess && (
-        <>
-          {participants.length === 0 ? (
-            <EmptyState
-              icon={Users}
-              title="Nobody on the line-up yet"
-              description="People are the acts on your line-up — artists, speakers, facilitators. Add them here, then put them on sessions in the schedule."
-              cta={
-                <LinkButton from={from} search={{ create: true }}>
-                  <Plus className="size-4" />
-                  Add people
-                </LinkButton>
-              }
-            />
-          ) : (
-            <PeopleList tenant={tenant} participants={participants} />
-          )}
-
-          <ParticipantDrawer tenant={tenant} participants={participants} />
-        </>
-      )}
+            <ParticipantDrawer tenant={tenant} participants={participants} />
+          </>
+        )}
+      </QueryBoundary>
     </Page>
   );
 }

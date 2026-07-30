@@ -1,18 +1,24 @@
 import { defined } from '@festivapp/utils';
+import { CatchBoundary, useRouterState } from '@tanstack/react-router';
 import { Menu } from 'lucide-react';
 import { createContext, use } from 'react';
 
 import { IconButton } from './button.tsx';
 import { Eyebrow } from './eyebrow.tsx';
+import { RouteError } from './route-error.tsx';
 
 const OpenDrawerContext = createContext<(() => void) | null>(null);
 
 export function Page({ header, children }: { header?: React.ReactNode; children?: React.ReactNode }) {
+  const loadedAt = useRouterState({ select: (state) => state.loadedAt });
+
   return (
     <>
       {header}
       <div className="col flex-1 overflow-y-scroll">
-        <div className="col mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-8">{children}</div>
+        <CatchBoundary getResetKey={() => loadedAt} errorComponent={RouteError}>
+          <div className="col mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-8">{children}</div>
+        </CatchBoundary>
       </div>
     </>
   );

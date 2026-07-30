@@ -11,8 +11,8 @@ import { Button, IconButton } from '../components/button.tsx';
 import { useConfirmDialog } from '../components/confirm-dialog.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
+import { QueryBoundary } from '../components/query-boundary.tsx';
 import { SearchInput } from '../components/search-input.tsx';
-import { Spinner } from '../components/spinner.tsx';
 import { Thumbnail } from '../components/thumbnail.tsx';
 import { UploadButton } from '../components/upload-button.tsx';
 import { ApiError } from '../lib/api.ts';
@@ -24,31 +24,29 @@ const from = '/festivals/$tenantId/files';
 export function Files() {
   const { tenant } = useRouteContext({ from });
 
-  const { isPending, isError, isSuccess, data, error } = useQuery(listFilesOptions(tenant.id));
+  const query = useQuery(listFilesOptions(tenant.id));
   const theme = useQuery(getThemeOptions(tenant.id));
-  const files = data ?? [];
 
   return (
-    <Page header={<Header tenant={tenant} showUpload={files.length > 0} />}>
-      {isPending && <Spinner className="mx-auto my-8 size-6" />}
-
-      {isError && <>Error: {error.message}</>}
-
-      {isSuccess &&
-        (files.length === 0 ? (
-          <EmptyState
-            icon={Image}
-            title="No files yet"
-            description="Upload the images this festival needs — a wordmark, a square icon, a background. Once uploaded, you can pick them straight from the theme page."
-            cta={
-              <UploadButton tenantId={tenant.id} multiple>
-                Upload files
-              </UploadButton>
-            }
-          />
-        ) : (
-          <FilesList tenant={tenant} files={files} background={theme.data?.backgroundColor} />
-        ))}
+    <Page header={<Header tenant={tenant} showUpload={Boolean(query.data?.length)} />}>
+      <QueryBoundary query={query}>
+        {(files) =>
+          files.length === 0 ? (
+            <EmptyState
+              icon={Image}
+              title="No files yet"
+              description="Upload the images this festival needs — a wordmark, a square icon, a background. Once uploaded, you can pick them straight from the theme page."
+              cta={
+                <UploadButton tenantId={tenant.id} multiple>
+                  Upload files
+                </UploadButton>
+              }
+            />
+          ) : (
+            <FilesList tenant={tenant} files={files} background={theme.data?.backgroundColor} />
+          )
+        }
+      </QueryBoundary>
     </Page>
   );
 }

@@ -13,8 +13,8 @@ import { EmptyState } from '../components/empty-state.tsx';
 import { Field } from '../components/field.tsx';
 import { Input } from '../components/input.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
+import { QueryBoundary } from '../components/query-boundary.tsx';
 import { Select } from '../components/select.tsx';
-import { Spinner } from '../components/spinner.tsx';
 import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
 import { Textarea } from '../components/textarea.tsx';
 import { parseValidationError } from '../lib/errors.ts';
@@ -36,36 +36,33 @@ type FormValues = {
 export function Locations() {
   const { tenant } = useRouteContext({ from });
 
-  const { isPending, isError, isSuccess, data, error } = useQuery(listLocationsOptions(tenant.id));
-  const locations = data ?? [];
+  const query = useQuery(listLocationsOptions(tenant.id));
 
   return (
-    <Page header={<Header tenant={tenant} showCreate={locations.length > 0} />}>
-      {isPending && <Spinner className="mx-auto my-8 size-6" />}
+    <Page header={<Header tenant={tenant} showCreate={Boolean(query.data?.length)} />}>
+      <QueryBoundary query={query}>
+        {(locations) => (
+          <>
+            {locations.length === 0 ? (
+              <EmptyState
+                icon={MapPin}
+                title="No locations yet"
+                description="Locations are the stages, rooms and places where sessions happen. Add your first one to start building the schedule."
+                cta={
+                  <LinkButton from={from} search={{ create: true }}>
+                    <Plus className="size-4" />
+                    Add location
+                  </LinkButton>
+                }
+              />
+            ) : (
+              <LocationsList tenant={tenant} locations={locations} />
+            )}
 
-      {isError && <>Error: {error.message}</>}
-
-      {isSuccess && (
-        <>
-          {locations.length === 0 ? (
-            <EmptyState
-              icon={MapPin}
-              title="No locations yet"
-              description="Locations are the stages, rooms and places where sessions happen. Add your first one to start building the schedule."
-              cta={
-                <LinkButton from={from} search={{ create: true }}>
-                  <Plus className="size-4" />
-                  Add location
-                </LinkButton>
-              }
-            />
-          ) : (
-            <LocationsList tenant={tenant} locations={locations} />
-          )}
-
-          <LocationDrawer tenant={tenant} locations={locations} />
-        </>
-      )}
+            <LocationDrawer tenant={tenant} locations={locations} />
+          </>
+        )}
+      </QueryBoundary>
     </Page>
   );
 }
