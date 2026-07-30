@@ -181,5 +181,11 @@ export const relations = defineRelations(
         to: r.participants.id.through(r.sessionParticipants.participantId),
       }),
     },
+    sessionParticipants: {
+      session: r.one.sessions({
+        from: r.sessionParticipants.sessionId,
+        to: r.sessions.id,
+      }),
+    },
   }),
 );
