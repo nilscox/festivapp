@@ -1,6 +1,6 @@
 import { Form } from '@base-ui/react/form';
 import type { Participant, ParticipantInput, TenantSummary } from '@festivapp/contracts';
-import { matchesSearch } from '@festivapp/utils';
+import { has, matchesSearch } from '@festivapp/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import { Pencil, Plus, SearchX, Trash2, Users } from 'lucide-react';
@@ -244,7 +244,7 @@ function ParticipantDrawer({ tenant, participants }: { tenant: TenantSummary; pa
     >
       <ParticipantForm
         tenant={tenant}
-        defaultValue={editId ? participants.find((participant) => participant.id === editId) : undefined}
+        defaultValue={editId ? participants.find(has('id', editId)) : undefined}
         onClose={onClose}
       />
     </Drawer>

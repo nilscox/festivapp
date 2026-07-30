@@ -1,4 +1,5 @@
 import type { Location, MapPinLabelPosition } from '@festivapp/contracts';
+import { has } from '@festivapp/utils';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { Download, Map as MapIcon } from 'lucide-react';
@@ -51,7 +52,7 @@ export function MapPage() {
               onSelect={select}
             />
 
-            <SelectedLocation location={locations.find((location) => location.id === selected)} />
+            <SelectedLocation location={locations.find(has('id', selected))} />
           </>
         )}
       </div>

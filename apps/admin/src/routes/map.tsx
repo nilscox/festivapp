@@ -1,5 +1,5 @@
 import type { Location, MapPin, MapPinLabelPosition, TenantSummary } from '@festivapp/contracts';
-import { assert } from '@festivapp/utils';
+import { assert, has } from '@festivapp/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouteContext } from '@tanstack/react-router';
 import clsx from 'clsx';
@@ -193,7 +193,7 @@ function Board({ tenantId, mapUrl, locations }: { tenantId: string; mapUrl: stri
     save(location, mapPin);
   };
 
-  const selectedLocation = locations.find((location) => location.id === selected);
+  const selectedLocation = locations.find(has('id', selected));
 
   return (
     <div className="reveal col gap-4">

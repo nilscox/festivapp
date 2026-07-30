@@ -1,5 +1,6 @@
 import { Field as BaseField } from '@base-ui/react/field';
 import type { UploadedFile } from '@festivapp/contracts';
+import { has } from '@festivapp/utils';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -23,7 +24,7 @@ export function FileInput({
 
   const { data: selected } = useQuery({
     ...listFilesOptions(tenantId),
-    select: (files) => files.find((file) => file.url === value),
+    select: (files) => files.find(has('url', value)),
   });
 
   const onSelect = (file: UploadedFile) => {

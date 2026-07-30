@@ -1,4 +1,5 @@
 import type { Location, Participant, Session } from '@festivapp/contracts';
+import { has } from '@festivapp/utils';
 import { Link, useParams } from '@tanstack/react-router';
 import { Calendar, ChevronLeft, Disc3, Map, MapPin } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -13,7 +14,7 @@ export function SessionDetail() {
   const { sessionId } = useParams({ from: '/session/$sessionId' });
   const { sessions } = useBootstrap();
 
-  const session = sessions.find((item) => item.id === sessionId);
+  const session = sessions.find(has('id', sessionId));
 
   if (!session) {
     return <SessionNotFound />;

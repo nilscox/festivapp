@@ -1,4 +1,5 @@
 import type { Location, Session, TenantConfig } from '@festivapp/contracts';
+import { has } from '@festivapp/utils';
 import { Link } from '@tanstack/react-router';
 import { isAfter, isWithinInterval } from 'date-fns';
 
@@ -41,7 +42,7 @@ export function Now() {
 }
 
 function findLocationNow(locationId: string, sessions: Session[], now: Date) {
-  const locationSessions = sessions.filter((session) => session.locationId === locationId);
+  const locationSessions = sessions.filter(has('locationId', locationId));
 
   const live = locationSessions.find((session) =>
     isWithinInterval(now, { start: session.startsAt, end: session.endsAt }),

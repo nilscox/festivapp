@@ -1,5 +1,6 @@
 import { Form } from '@base-ui/react/form';
 import type { Location, TenantSummary } from '@festivapp/contracts';
+import { has } from '@festivapp/utils';
 import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import { MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo } from 'react';
@@ -155,7 +156,7 @@ function LocationDrawer({ tenant, locations }: { tenant: TenantSummary; location
       <LocationForm
         tenant={tenant}
         locations={locations}
-        defaultValue={editId ? locations.find((location) => location.id === editId) : undefined}
+        defaultValue={editId ? locations.find(has('id', editId)) : undefined}
         onClose={onClose}
       />
     </Drawer>

@@ -1,5 +1,5 @@
 import type { UploadedFile } from '@festivapp/contracts';
-import { assert, defined } from '@festivapp/utils';
+import { assert, defined, has } from '@festivapp/utils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Upload } from 'lucide-react';
 import { useRef } from 'react';
@@ -39,7 +39,7 @@ export function UploadButton({
 
       await queryClient.invalidateQueries(listFilesOptions(tenantId));
 
-      onUploaded?.(results.filter((result) => result.status === 'fulfilled').map((result) => result.value));
+      onUploaded?.(results.filter(has('status', 'fulfilled')).map((result) => result.value));
     },
     onSettled: () => {
       assert(inputRef.current);

@@ -1,4 +1,5 @@
 import type { BootstrapResponse } from '@festivapp/contracts';
+import { has } from '@festivapp/utils';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
@@ -56,7 +57,7 @@ export function useSession(id: string) {
   const { sessions } = useBootstrap();
 
   return useMemo(() => {
-    return sessions.find((session) => session.id === id);
+    return sessions.find(has('id', id));
   }, [sessions, id]);
 }
 

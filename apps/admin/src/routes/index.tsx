@@ -1,4 +1,4 @@
-import { assert } from '@festivapp/utils';
+import { assert, has } from '@festivapp/utils';
 import type { QueryClient } from '@tanstack/react-query';
 import {
   createRootRouteWithContext,
@@ -87,7 +87,7 @@ const festivalRoute = createRoute({
       throw redirect({ to: '/login', replace: true });
     }
 
-    const tenant = me.tenants.find((tenant) => tenant.id === params.tenantId);
+    const tenant = me.tenants.find(has('id', params.tenantId));
     assert(tenant, new Error(`Can't find tenant "${params.tenantId}"`));
 
     return {
