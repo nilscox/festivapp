@@ -23,5 +23,6 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm format --check
+      - run: pnpm --filter @festivapp/api test
       - run: pnpm --filter @festivapp/app build
       - run: pnpm --filter @festivapp/admin build

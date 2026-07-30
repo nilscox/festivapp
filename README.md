@@ -1,7 +1,8 @@
 # FestivApp
 
 White-label, multi-tenant PWA for festival attendees, with an organizer backoffice.
-A tenant (one festival) is resolved from the request's `Host` header.
+One deployment serves many festivals: a tenant (one festival) is resolved from the
+request's `Host` header, and all of its data is scoped to it.
 
 ## Stack
 
@@ -16,6 +17,8 @@ A tenant (one festival) is resolved from the request's `Host` header.
 
 ## Layout
 
+pnpm workspaces, TypeScript run directly by Node (no build step), oxlint + oxfmt.
+
 ```
 apps/
   api/         Express 5 + Drizzle + Postgres API
@@ -27,72 +30,48 @@ packages/
   config/      Shared base tsconfig, oxlint and oxfmt configs
 ```
 
-## Prerequisites
-
-Node ≥ 24, pnpm, a PostgreSQL database.
-
 ## Getting started
+
+Node ≥ 24 and pnpm. A PostgreSQL database is optional — see [Configuration](#configuration).
 
 ```bash
 pnpm install
 cp apps/api/.env.example apps/api/.env
+
+cd apps/api   && pnpm db:push && pnpm dev   # API on http://127.0.0.1:3000
+cd apps/app   && pnpm dev                   # attendee PWA on http://localhost:8000
+cd apps/admin && pnpm dev                   # backoffice on http://localhost:8001
 ```
 
-Then, from `apps/api`:
-
-```bash
-pnpm db:push                 # apply the Drizzle schema to the database
-pnpm cli seed <file>         # load a festival from a seed JSON file
-pnpm dev                     # start the API on http://127.0.0.1:3000
-```
-
-Then run either client:
-
-```bash
-cd apps/app   && pnpm dev    # attendee PWA on http://localhost:8000
-cd apps/admin && pnpm dev    # admin backoffice on http://localhost:8001
-```
-
-## Scripts
-
-Run from the repo root (whole workspace):
-
-| Command          | Description                       |
-| ---------------- | --------------------------------- |
-| `pnpm typecheck` | Typecheck every workspace package |
-| `pnpm lint`      | Run oxlint                        |
-| `pnpm format`    | Run oxfmt                         |
-
-Run from `apps/api`:
-
-| Command           | Description                     |
-| ----------------- | ------------------------------- |
-| `pnpm dev`        | Run the API with `node --watch` |
-| `pnpm start`      | Run the API once                |
-| `pnpm db:push`    | Push the schema to the database |
-| `pnpm db:migrate` | Apply pending migrations        |
-| `pnpm cli`        | Run the CLI (`pnpm cli --help`) |
-
-Run from `apps/app` or `apps/admin`:
-
-| Command        | Description                |
-| -------------- | -------------------------- |
-| `pnpm dev`     | Start the Vite dev server  |
-| `pnpm build`   | Build the SPA into `dist/` |
-| `pnpm preview` | Serve the built SPA        |
+`pnpm cli seed <file>` loads a festival from a seed JSON file, `pnpm cli --help`
+lists the rest.
 
 ## Configuration
 
-Each app has its own `.env` (never committed); required variables have no defaults,
-so the process crashes on startup if one is missing. For the API:
+Each app has its own `.env`, and every variable is optional. For the API:
 
-| Variable           | Description                             |
-| ------------------ | --------------------------------------- |
-| `HOST`             | Address the API listens on              |
-| `PORT`             | Port the API listens on                 |
-| `DATABASE_URL`     | Postgres connection string              |
-| `STORAGE_DIR`      | Directory uploaded files are written to |
-| `UPLOAD_MAX_BYTES` | Largest accepted upload, in bytes       |
+| Variable           | Unset means | Description                             |
+| ------------------ | ----------- | --------------------------------------- |
+| `HOST`             | localhost   | Address the API listens on              |
+| `PORT`             | 3000        | Port the API listens on                 |
+| `DATABASE_URL`     | in-memory   | Postgres connection string              |
+| `STORAGE_DIR`      | in-memory   | Directory uploaded files are written to |
+| `UPLOAD_MAX_BYTES` | 100kb       | Largest accepted upload (`5mb`, `2048`) |
+
+The last three switch to an in-memory implementation rather than to a default
+value: with no `DATABASE_URL` the API runs on a Postgres compiled to wasm
+([PGlite](https://pglite.dev)), created empty and thrown away on exit.
+
+## Tests
+
+```bash
+cd apps/api && pnpm test
+```
+
+Node's test runner, driving the Express app over HTTP. Nothing needs to be running:
+each test file gets its own wasm Postgres and keeps uploads in memory, so the files
+run in parallel. Exporting `DATABASE_URL` runs the same suite against a real
+Postgres — add `--test-concurrency=1` there, or the files truncate each other's rows.
 
 ## Tenant resolution
 

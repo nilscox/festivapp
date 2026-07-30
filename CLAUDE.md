@@ -43,12 +43,30 @@ packages/
   of the three apps (`assert`/`defined`, `has`, color math, `formatBytes`, `matchesSearch`).
   It has no runtime dependencies and touches neither the DOM nor Node built-ins —
   anything app-specific stays in that app's `src/lib/`.
-- **Environment variables have no defaults.** Read them through `requireEnv` (see
-  `apps/api/src/config.ts`); a missing required variable must crash the process at
-  startup. Each app has its own `.env` (git-ignored), never a shared root one.
+- **Every environment variable is optional**, read through `env(name, default?)`
+  (`apps/api/src/config.ts`). `HOST` and `PORT` fall back to a value; the other
+  three switch behaviour when unset, rather than standing in for one: no
+  `DATABASE_URL` runs an in-process wasm Postgres, no `STORAGE_DIR` keeps uploads
+  in memory, no `UPLOAD_MAX_BYTES` leaves body-parser its own 100kb limit. Nothing
+  crashes at startup any more, so `pnpm dev` and `pnpm test` work on a machine with
+  nothing installed — the flip side being that a deployment which forgets
+  `DATABASE_URL` boots on a throwaway database instead of failing loudly. Each app
+  has its own `.env` (git-ignored), never a shared root one.
+- `UPLOAD_MAX_BYTES` is passed straight to body-parser, so it takes its size
+  strings (`5mb`, `1kb`) as well as a plain byte count.
 
 ## API conventions
 
+- **With no `DATABASE_URL`, `db/client.ts` swaps the driver for an in-process wasm
+  Postgres** (`@electric-sql/pglite`), created empty, schema-pushed at boot with
+  `pushSchema` from `drizzle-kit/api-postgres`, and dropped with the process. It is
+  what the tests run on, and it boots the API with no database installed. Each
+  process gets its own, so nothing written by the CLI is visible to a running
+  server — anything that needs data to outlive the process wants real Postgres.
+  Both drivers are reached through the same `Database` type and
+  `closeDatabase()`; never touch `db.$client` directly, since its two clients have
+  different shutdown methods. Keep pglite a devDependency behind the dynamic
+  `import()` it sits in — the Postgres path must not load it.
 - **Read with the Drizzle relational query API** — prefer
   `db.query.<table>.findMany/findFirst({ where, orderBy })` over hand-written
   `select().from().innerJoin()`; declare cross-table `relations` (`defineRelations`
@@ -84,6 +102,41 @@ packages/
 - **The seed is committed** (`apps/api/src/seed.ts`) and is the canonical dev
   dataset. It takes a JSON file (`pnpm cli seed <file>`) whose image paths are
   relative to it, and turns each one into a `files` row plus a copy in the storage.
+
+## Tests (`apps/api/test`)
+
+- **`node --test` + `node:assert/strict` only** — no test framework, no new
+  dependency. Files are `test/<subject>.test.ts`, `describe`/`it`, run with
+  `pnpm test` from `apps/api`.
+- **Tests hit a real Postgres over real HTTP.** `useApi()` (`test/helpers/api.ts`)
+  starts the Express app on an ephemeral port, truncates every table before each
+  test and closes the pool at the end; the returned client carries a cookie jar,
+  so `api.login(...)` authenticates every later call. Call it **once per file, at
+  the top level** — inside a `describe` its hooks would be suite-scoped and the
+  first suite to finish would close the pool for the rest.
+- **Tests need nothing running, and read no env file** — every variable being unset
+  is the point: each file gets its own private wasm Postgres (hence the parallel
+  run), uploads stay in memory, and the upload limit is body-parser's own 100kb,
+  which is what the 413 test has to exceed. Keep it that way; a test that needs a
+  setting should get it from the request or the fixture, not from the environment.
+- Anything exported in the shell still reaches the tests, which is how you run the
+  suite against a real Postgres: point `DATABASE_URL` at it, push the schema
+  (`DATABASE_URL=… pnpm db:push`), then run node directly so the files stop
+  truncating each other's rows —
+  `node --test --test-concurrency=1 'test/**/*.test.ts'`.
+  `pnpm test --test-concurrency=1` does **not** work: pnpm appends the flag after
+  the file pattern, where node ignores it.
+- **Build rows with the fixtures** (`test/helpers/fixtures.ts`,
+  `createTenant`/`createOrganizer`/`createLocation`/…), which fill in every
+  required column and give each row a unique name and domain — don't insert
+  through Drizzle in a test file.
+- **Only critical paths**, not exhaustive coverage: tenant resolution and tenant
+  isolation, authentication and membership, validation rejections, and the
+  response body of each read. Assert a full payload with `deepEqual` at least once
+  per endpoint — a partial assertion would not catch a row leaking columns the
+  contract doesn't declare.
+- Cover the tenant scoping of every resource route (another festival's row must
+  answer 404, never 200), since that is the invariant the whole product rests on.
 
 ## Backoffice conventions (`apps/admin`)
 
@@ -196,7 +249,7 @@ Deliberately simpler than the backoffice — no auth, no forms, no router contex
 ## Commands
 
 - Root: `pnpm typecheck`, `pnpm lint`, `pnpm format`
-- `apps/api`: `pnpm dev`, `pnpm db:push`, `pnpm cli`
+- `apps/api`: `pnpm dev`, `pnpm db:push`, `pnpm test`, `pnpm cli`
   (e.g. `pnpm cli organizer create <email> <password> <domain…>` to get a
   backoffice login, `pnpm cli seed <file>` to load a festival).
 - `apps/app` / `apps/admin`: `pnpm dev`, `pnpm build`, `pnpm preview`.

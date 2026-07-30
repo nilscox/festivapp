@@ -4,7 +4,7 @@ import { Command } from 'commander';
 import { inArray } from 'drizzle-orm';
 
 import { hashPassword } from './auth/password.ts';
-import { db } from './db/client.ts';
+import { closeDatabase, db } from './db/client.ts';
 import { organizers, organizerTenants, tenants } from './db/schema.ts';
 import { seed } from './seed.ts';
 
@@ -79,4 +79,4 @@ festival
     console.log(`Festival ${name} created with id ${tenant.id}`);
   });
 
-await program.parseAsync(process.argv).finally(() => db.$client.end());
+await program.parseAsync(process.argv).finally(closeDatabase);

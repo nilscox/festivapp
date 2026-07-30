@@ -1,13 +1,14 @@
 import { assert } from '@festivapp/utils';
-import { createReadStream, type ReadStream } from 'node:fs';
+import { createReadStream } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
+import { Readable } from 'node:stream';
 
 import { config } from './config.ts';
 
 export interface Storage {
   put(key: string, data: Buffer): Promise<void>;
-  read(key: string): ReadStream;
+  read(key: string): Readable;
   delete(key: string): Promise<void>;
 }
 
@@ -42,4 +43,24 @@ class DiskStorage implements Storage {
   }
 }
 
-export const storage = new DiskStorage(config.storageDir);
+class MemoryStorage implements Storage {
+  private files = new Map<string, Buffer>();
+
+  async put(key: string, data: Buffer) {
+    this.files.set(key, data);
+  }
+
+  read(key: string) {
+    const data = this.files.get(key);
+
+    assert(data, new Error(`No such file in the storage: ${key}`));
+
+    return Readable.from(data);
+  }
+
+  async delete(key: string) {
+    this.files.delete(key);
+  }
+}
+
+export const storage: Storage = config.storageDir ? new DiskStorage(config.storageDir) : new MemoryStorage();

@@ -1,6 +1,6 @@
 {
   "extends": "@festivapp/config/tsconfig.base.json",
-  "include": ["src"],
+  "include": ["src", "test"],
   "files": ["drizzle.config.ts"],
   "compilerOptions": {
     "composite": true,
