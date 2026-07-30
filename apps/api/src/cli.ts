@@ -17,9 +17,10 @@ program
   .command('seed')
   .description('Create a festival, its line-up and its images from a seed file')
   .argument('<file>', 'path to the seed JSON file; its images are relative to it')
-  .action(async (file: string) => {
+  .option('--drop', 'drop existing festival with the same domain')
+  .action(async (file: string, { drop }: { drop: boolean }) => {
     try {
-      await seed(file);
+      await seed(file, drop);
       console.log(`Seeded ${file}`);
     } catch (error) {
       if (error instanceof z.ZodError) {

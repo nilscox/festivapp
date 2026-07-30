@@ -1,4 +1,5 @@
 import { defined } from '@festivapp/utils';
+import { eq } from 'drizzle-orm';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import z from 'zod';
@@ -76,7 +77,7 @@ const dataSchema = z.strictObject({
   ),
 });
 
-export async function seed(input: string): Promise<void> {
+export async function seed(input: string, drop = false): Promise<void> {
   const data = dataSchema.parse(JSON.parse(await fs.readFile(input, 'utf8')));
 
   const tenantId = createId();
@@ -169,7 +170,9 @@ export async function seed(input: string): Promise<void> {
     }
   }
 
-  if (await db.query.tenants.findFirst({ where: { domain: tenant.domain } })) {
+  if (drop) {
+    await db.delete(schema.tenants).where(eq(schema.tenants.domain, tenant.domain));
+  } else if (await db.query.tenants.findFirst({ where: { domain: tenant.domain } })) {
     throw new Error(`Domain "${tenant.domain}" is already taken`);
   }
 
