@@ -1,2 +1,0 @@
-CREATE TYPE "map_label_position" AS ENUM('top', 'bottom', 'left', 'right');--> statement-breakpoint
-ALTER TABLE "locations" ADD COLUMN "map_label_position" "map_label_position" DEFAULT 'bottom'::"map_label_position" NOT NULL;

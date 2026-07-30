@@ -1,14 +1,13 @@
 import type { UploadedFile as FileDto, TenantTheme } from '@festivapp/contracts';
 import { and, eq } from 'drizzle-orm';
 import express, { Router } from 'express';
-import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
 import { config } from '../../config.ts';
 import { db } from '../../db/client.ts';
 import { files, type File } from '../../db/schema.ts';
 import { storage } from '../../storage.ts';
-import { assert } from '../../utils.ts';
+import { assert, createId } from '../../utils.ts';
 
 export const filesRouter = Router({ mergeParams: true });
 
@@ -74,7 +73,7 @@ filesRouter.post(
       return res.status(400).json({ error: 'empty_file' });
     }
 
-    const id = randomUUID();
+    const id = createId();
     const storageKey = `${req.tenant.id}/${id}${extension}`;
 
     await storage.put(storageKey, req.body);

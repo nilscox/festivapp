@@ -7,6 +7,7 @@
     "dev": "node --watch --env-file=.env src/index.ts",
     "start": "node --env-file=.env src/index.ts",
     "typecheck": "tsc --noEmit",
+    "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
     "cli": "node --env-file=.env src/cli.ts"
   },
@@ -16,6 +17,7 @@
     "date-fns": "^4.4.0",
     "drizzle-orm": "1.0.0-beta.22",
     "express": "^5.2.1",
+    "nanoid": "^6.0.0",
     "pg": "^8.22.0",
     "zod": "^4.4.3"
   },

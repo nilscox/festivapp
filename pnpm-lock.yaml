@@ -108,6 +108,9 @@ importers:
       express:
         specifier: ^5.2.1
         version: 5.2.1
+      nanoid:
+        specifier: ^6.0.0
+        version: 6.0.0
       pg:
         specifier: ^8.22.0
         version: 8.22.0
@@ -2891,6 +2894,11 @@ packages:
   nanoid@3.3.16:
     resolution: {integrity: sha512-bzlKTyNJ7+LdGIIwy8ijFpIqEQIvafahV7eYykJ8Cvh42EdJeODoJ6gUJXpQJvej1BddH8OqTXZNE/KfbWAu8Q==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
+    hasBin: true
+
+  nanoid@6.0.0:
+    resolution: {integrity: sha512-mkUH+rPkwU2qPadJ0oJZOjeZ5Mxn8Q1UhevwkTRWNuUZzyia3h4rhzK39hxaHTk0o2OxB8W2SQ6A8k23ZDi1pQ==}
+    engines: {node: ^22 || ^24 || >=26}
     hasBin: true
 
   negotiator@1.0.0:
@@ -5934,6 +5942,8 @@ snapshots:
   ms@2.1.3: {}
 
   nanoid@3.3.16: {}
+
+  nanoid@6.0.0: {}
 
   negotiator@1.0.0: {}
 

@@ -1,5 +1,4 @@
 import type { TenantTheme } from '@festivapp/contracts';
-import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import z from 'zod';
@@ -8,6 +7,7 @@ import { db } from './db/client.ts';
 import * as schema from './db/schema.ts';
 import { storage } from './storage.ts';
 import { themeSchema } from './theme.ts';
+import { createId } from './utils.ts';
 
 const contentTypes: Record<string, string> = {
   '.png': 'image/png',
@@ -79,7 +79,7 @@ const dataSchema = z.strictObject({
 export async function seed(input: string): Promise<void> {
   const data = dataSchema.parse(JSON.parse(await fs.readFile(input, 'utf8')));
 
-  const tenantId = randomUUID();
+  const tenantId = createId();
   const fileValues: (typeof schema.files.$inferInsert)[] = [];
 
   async function upload<T extends string | null>(image: T): Promise<T> {
@@ -96,7 +96,7 @@ export async function seed(input: string): Promise<void> {
     }
 
     const content = await fs.readFile(file);
-    const id = randomUUID();
+    const id = createId();
     const storageKey = `${tenantId}/${id}${extension}`;
 
     await storage.put(storageKey, content);

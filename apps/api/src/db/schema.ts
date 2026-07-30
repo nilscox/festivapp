@@ -2,6 +2,8 @@ import type { TenantTheme } from '@festivapp/contracts';
 import { defineRelations } from 'drizzle-orm';
 import * as p from 'drizzle-orm/pg-core';
 
+import { createId } from '../utils.ts';
+
 export type Tenant = typeof tenants.$inferSelect;
 export type File = typeof files.$inferSelect;
 export type Location = typeof locations.$inferSelect;
@@ -16,7 +18,7 @@ export const sessionType = p.pgEnum('session_type', ['dj_set', 'live', 'talk', '
 export const mapLabelPosition = p.pgEnum('map_label_position', ['top', 'bottom', 'left', 'right']);
 
 export const tenants = p.pgTable('tenants', {
-  id: p.uuid().primaryKey().defaultRandom(),
+  id: p.text().primaryKey().$defaultFn(createId),
   name: p.text().notNull(),
   domain: p.text().notNull().unique(),
   timezone: p.text().notNull(),
@@ -27,9 +29,9 @@ export const tenants = p.pgTable('tenants', {
 });
 
 export const files = p.pgTable('files', {
-  id: p.uuid().primaryKey().defaultRandom(),
+  id: p.text().primaryKey().$defaultFn(createId),
   tenantId: p
-    .uuid()
+    .text()
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
   storageKey: p.text().notNull().unique(),
@@ -40,9 +42,9 @@ export const files = p.pgTable('files', {
 });
 
 export const locations = p.pgTable('locations', {
-  id: p.uuid().primaryKey().defaultRandom(),
+  id: p.text().primaryKey().$defaultFn(createId),
   tenantId: p
-    .uuid()
+    .text()
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
   name: p.text().notNull(),
@@ -56,9 +58,9 @@ export const locations = p.pgTable('locations', {
 });
 
 export const participants = p.pgTable('participants', {
-  id: p.uuid().primaryKey().defaultRandom(),
+  id: p.text().primaryKey().$defaultFn(createId),
   tenantId: p
-    .uuid()
+    .text()
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
   name: p.text().notNull(),
@@ -73,13 +75,13 @@ export const participants = p.pgTable('participants', {
 });
 
 export const sessions = p.pgTable('sessions', {
-  id: p.uuid().primaryKey().defaultRandom(),
+  id: p.text().primaryKey().$defaultFn(createId),
   tenantId: p
-    .uuid()
+    .text()
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
   locationId: p
-    .uuid()
+    .text()
     .notNull()
     .references(() => locations.id, { onDelete: 'cascade' }),
   type: sessionType().notNull(),
@@ -95,11 +97,11 @@ export const sessionParticipants = p.pgTable(
   'session_participants',
   {
     sessionId: p
-      .uuid()
+      .text()
       .notNull()
       .references(() => sessions.id, { onDelete: 'cascade' }),
     participantId: p
-      .uuid()
+      .text()
       .notNull()
       .references(() => participants.id, { onDelete: 'cascade' }),
     position: p.integer().notNull().default(0),
@@ -111,7 +113,7 @@ export const sessionParticipants = p.pgTable(
 );
 
 export const organizers = p.pgTable('organizers', {
-  id: p.uuid().primaryKey().defaultRandom(),
+  id: p.text().primaryKey().$defaultFn(createId),
   email: p.text().notNull().unique(),
   passwordHash: p.text().notNull(),
   name: p.text(),
@@ -123,11 +125,11 @@ export const organizerTenants = p.pgTable(
   'organizer_tenants',
   {
     organizerId: p
-      .uuid()
+      .text()
       .notNull()
       .references(() => organizers.id, { onDelete: 'cascade' }),
     tenantId: p
-      .uuid()
+      .text()
       .notNull()
       .references(() => tenants.id, { onDelete: 'cascade' }),
   },
@@ -137,7 +139,7 @@ export const organizerTenants = p.pgTable(
 export const authSessions = p.pgTable('auth_sessions', {
   token: p.text().primaryKey(),
   organizerId: p
-    .uuid()
+    .text()
     .notNull()
     .references(() => organizers.id, { onDelete: 'cascade' }),
   createdAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),

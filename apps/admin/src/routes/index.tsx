@@ -111,7 +111,7 @@ const peopleRoute = createRoute({
   validateSearch: z.object({
     search: z.optional(z.string()),
     create: z.optional(z.literal(true)),
-    edit: z.optional(z.uuid()),
+    edit: z.optional(z.string()),
   }),
   component: People,
   loader: async ({ context: { queryClient, tenant } }) => {
@@ -132,7 +132,7 @@ const scheduleRoute = createRoute({
 const locationsRoute = createRoute({
   getParentRoute: () => festivalRoute,
   path: 'locations',
-  validateSearch: z.object({ create: z.optional(z.literal(true)), edit: z.optional(z.uuid()) }),
+  validateSearch: z.object({ create: z.optional(z.literal(true)), edit: z.optional(z.string()) }),
   component: Locations,
   loader: async ({ context: { queryClient, tenant } }) => {
     await queryClient.ensureQueryData(listLocationsOptions(tenant.id));

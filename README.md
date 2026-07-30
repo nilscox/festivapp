@@ -47,7 +47,7 @@ docker run -d --name festivapp-pg \
 Then, from `apps/api`:
 
 ```bash
-pnpm db:migrate            # apply Drizzle migrations
+pnpm db:push               # push the Drizzle schema to the database
 pnpm seed                  # seed the demo tenant
 pnpm dev                   # start the API on http://127.0.0.1:3000
 ```
@@ -75,6 +75,7 @@ Run from `apps/api`:
 | ----------------- | ------------------------------- |
 | `pnpm dev`        | Run the API with `node --watch` |
 | `pnpm start`      | Run the API once                |
+| `pnpm db:push`    | Push the schema to the database |
 | `pnpm db:migrate` | Apply pending migrations        |
 | `pnpm cli`        | Run the CLI (`pnpm cli --help`) |
 
