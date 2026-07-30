@@ -91,7 +91,7 @@ const festivalRoute = createRoute({
     assert(tenant, new Error(`Can't find tenant "${params.tenantId}"`));
 
     return {
-      me: me,
+      me,
       tenant,
     };
   },
