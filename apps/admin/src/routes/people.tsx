@@ -10,6 +10,7 @@ import { Button, IconButton, LinkButton } from '../components/button.tsx';
 import { useConfirmDialog } from '../components/confirm-dialog.tsx';
 import { Drawer } from '../components/drawer.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
+import { FieldArray, getFieldArrayValues, useFieldArray } from '../components/field-array.tsx';
 import { Field } from '../components/field.tsx';
 import { FileInput } from '../components/file-input.tsx';
 import { Input } from '../components/input.tsx';
@@ -37,8 +38,6 @@ type FormValues = {
   label: string;
   description: string;
 };
-
-type Row = { key: string; value: string };
 
 export function People() {
   const { tenant } = useRouteContext({ from });
@@ -249,8 +248,6 @@ function ParticipantForm({
   const updateMutation = useMutation({ ...updateParticipantOptions(tenant.id), onSuccess: invalidate });
 
   const [imageUrl, setImageUrl] = useState(defaultValue?.imageUrl ?? null);
-  const [styles, setStyles] = useState<Row[]>(() => (defaultValue?.styles ?? []).map(toRow));
-  const [socialLinks, setSocialLinks] = useState<Row[]>(() => (defaultValue?.socialLinks ?? []).map(toRow));
 
   const pending = createMutation.isPending || updateMutation.isPending;
 
@@ -265,8 +262,8 @@ function ParticipantForm({
       imageUrl,
       origin: values.origin.trim() || null,
       label: values.label.trim() || null,
-      styles: styles.map((style) => style.value.trim()).filter(Boolean),
-      socialLinks: socialLinks.map((link) => link.value.trim()).filter(Boolean),
+      styles: getFieldArrayValues(values, 'styles', nonEmptyString),
+      socialLinks: getFieldArrayValues(values, 'socialLinks', nonEmptyString),
     };
 
     if (!defaultValue) {
@@ -302,13 +299,13 @@ function ParticipantForm({
           </Field>
         </div>
 
-        <StylesEditor styles={styles} onChange={setStyles} error={errors?.styles?.errors[0]} />
+        <StylesEditor styles={defaultValue?.styles} error={errors?.styles?.errors[0]} />
 
         <Field name="description" label="Description" error={errors?.description?.errors[0]}>
           <Textarea rows={6} defaultValue={defaultValue?.description ?? ''} />
         </Field>
 
-        <SocialLinksEditor links={socialLinks} onChange={setSocialLinks} error={errors?.socialLinks?.errors[0]} />
+        <SocialLinksEditor links={defaultValue?.socialLinks} error={errors?.socialLinks?.errors[0]} />
       </div>
 
       <div className="row gap-4 border-t p-4">
@@ -324,105 +321,45 @@ function ParticipantForm({
   );
 }
 
-function StylesEditor({
-  styles,
-  onChange,
-  error,
-}: {
-  styles: Row[];
-  onChange: (styles: Row[]) => void;
-  error?: React.ReactNode;
-}) {
+function StylesEditor({ styles = [], error }: { styles?: string[]; error?: React.ReactNode }) {
+  const { fields, append, remove } = useFieldArray(styles);
+
   return (
-    <fieldset className="col gap-2">
-      <legend className="text-muted text-label mb-1 font-medium">Styles</legend>
-
-      {styles.map((style) => (
-        <div key={style.key} className="row items-start gap-2">
-          <div className="min-w-0 flex-1">
-            <Field>
-              <Input
-                value={style.value}
-                onChange={(event) => {
-                  const value = event.currentTarget.value;
-
-                  onChange(styles.map((current) => (current.key === style.key ? { ...current, value } : current)));
-                }}
-                placeholder="e.g. techno"
-              />
-            </Field>
-          </div>
-
-          <IconButton
-            icon={Trash2}
-            variant="ghost"
-            aria-label={`Remove ${style.value || 'style'}`}
-            onClick={() => onChange(styles.filter((current) => current.key !== style.key))}
-            className="hover:text-danger mt-1.5"
-          />
-        </div>
-      ))}
-
-      {error && <div className="text-danger-ink text-xs">{error}</div>}
-
-      <Button variant="secondary" size="sm" className="mr-auto" onClick={() => onChange([...styles, toRow('')])}>
-        <Plus className="size-3" />
-        Add a style
-      </Button>
-    </fieldset>
+    <FieldArray
+      fields={fields}
+      onAdd={() => append('')}
+      onRemove={remove}
+      label="Styles"
+      add="Add a style"
+      error={error}
+    >
+      {(style, index) => (
+        <Field>
+          <Input name={`styles.${index}`} defaultValue={style} placeholder="e.g. techno" />
+        </Field>
+      )}
+    </FieldArray>
   );
 }
 
-function SocialLinksEditor({
-  links,
-  onChange,
-  error,
-}: {
-  links: Row[];
-  onChange: (links: Row[]) => void;
-  error?: React.ReactNode;
-}) {
+function SocialLinksEditor({ links = [], error }: { links?: string[]; error?: React.ReactNode }) {
+  const { fields, append, remove } = useFieldArray(links);
+
   return (
-    <fieldset className="col gap-2">
-      <legend className="text-muted text-label mb-1 font-medium">Links</legend>
-
-      {links.map((link) => (
-        <div key={link.key} className="row items-start gap-2">
-          <div className="min-w-0 flex-1">
-            <Field errors={[{ match: 'typeMismatch', message: 'Enter a full URL, starting with https://' }]}>
-              <Input
-                type="url"
-                value={link.value}
-                onChange={(event) => {
-                  const value = event.currentTarget.value;
-
-                  onChange(links.map((current) => (current.key === link.key ? { ...current, value } : current)));
-                }}
-                placeholder="https://"
-              />
-            </Field>
-          </div>
-
-          <IconButton
-            icon={Trash2}
-            variant="ghost"
-            aria-label={`Remove ${link.value || 'link'}`}
-            onClick={() => onChange(links.filter((current) => current.key !== link.key))}
-            className="hover:text-danger mt-1.5"
-          />
-        </div>
-      ))}
-
-      {error && <div className="text-danger-ink text-xs">{error}</div>}
-
-      <Button variant="secondary" size="sm" className="mr-auto" onClick={() => onChange([...links, toRow('')])}>
-        <Plus className="size-3" />
-        Add a link
-      </Button>
-    </fieldset>
+    <FieldArray fields={fields} onAdd={() => append('')} onRemove={remove} label="Links" add="Add a link" error={error}>
+      {(link, index) => (
+        <Field errors={[{ match: 'typeMismatch', message: 'Enter a full URL, starting with https://' }]}>
+          <Input type="url" name={`socialLinks.${index}`} defaultValue={link} placeholder="https://" />
+        </Field>
+      )}
+    </FieldArray>
   );
 }
 
-function toRow(value: string): Row {
-  return { value, key: crypto.randomUUID() };
+function nonEmptyString(value: unknown) {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  return value.trim() || undefined;
 }
