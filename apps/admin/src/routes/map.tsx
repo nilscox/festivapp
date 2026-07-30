@@ -1,5 +1,5 @@
 import type { Location, MapPin, MapPinLabelPosition } from '@festivapp/contracts';
-import { assert, has } from '@festivapp/utils';
+import { has } from '@festivapp/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouteContext } from '@tanstack/react-router';
 import clsx from 'clsx';
@@ -12,7 +12,8 @@ import { EmptyState } from '../components/empty-state.tsx';
 import { FilePicker } from '../components/file-picker.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { QueryBoundary } from '../components/query-boundary.tsx';
-import { listLocationsOptions, updateLocationOptions } from '../lib/locations.ts';
+import { useDraggablePins, type PinHandlers } from '../hooks/use-draggable-pins.ts';
+import { listLocationsOptions } from '../lib/locations.ts';
 import { getTenantOptions, updateTenantOptions } from '../lib/tenant.ts';
 import { getThemeOptions } from '../lib/theme.ts';
 
@@ -111,80 +112,13 @@ function HeaderActions({
 
 function Board({ tenantId, mapUrl, locations }: { tenantId: string; mapUrl: string; locations: Location[] }) {
   const imageRef = useRef<HTMLImageElement>(null);
-  const [pins, setPins] = useState<Record<string, MapPin>>({});
-  const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number }>();
   const [selected, setSelected] = useState<string>();
 
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    ...updateLocationOptions(tenantId),
-    onSuccess: () => queryClient.invalidateQueries(listLocationsOptions(tenantId)),
+  const pins = useDraggablePins({
+    tenantId,
+    imageRef,
+    onClick: (location) => setSelected(selected === location.id ? undefined : location.id),
   });
-
-  const pinOf = (location: Location) => pins[location.id] ?? location.mapPin;
-
-  const save = (location: Location, mapPin: MapPin) => {
-    setPins((pins) => ({ ...pins, [location.id]: mapPin }));
-
-    mutation.mutate([location.id, { mapPin }], {
-      onError: () => {
-        setPins(({ [location.id]: _, ...pins }) => pins);
-      },
-    });
-  };
-
-  const pointerPin = (event: React.PointerEvent) => {
-    assert(imageRef.current);
-
-    const rect = imageRef.current.getBoundingClientRect();
-
-    return {
-      x: ((event.clientX - rect.left) / rect.width) * 100,
-      y: ((event.clientY - rect.top) / rect.height) * 100,
-    };
-  };
-
-  const onPointerDown = (event: React.PointerEvent, location: Location) => {
-    const pointer = pointerPin(event);
-    const pin = pinOf(location);
-
-    event.currentTarget.setPointerCapture(event.pointerId);
-    setDragging({ id: location.id, offsetX: pin.x - pointer.x, offsetY: pin.y - pointer.y });
-  };
-
-  const onPointerMove = (event: React.PointerEvent, location: Location) => {
-    if (dragging?.id !== location.id) {
-      return;
-    }
-
-    const pointer = pointerPin(event);
-
-    setPins((pins) => ({
-      ...pins,
-      [location.id]: {
-        ...pinOf(location),
-        x: round(pointer.x + dragging.offsetX),
-        y: round(pointer.y + dragging.offsetY),
-      },
-    }));
-  };
-
-  const onPointerUp = (location: Location) => {
-    if (dragging?.id !== location.id) {
-      return;
-    }
-
-    setDragging(undefined);
-
-    const mapPin = pins[location.id];
-
-    if (!mapPin || (mapPin.x === location.mapPin.x && mapPin.y === location.mapPin.y)) {
-      return setSelected(selected === location.id ? undefined : location.id);
-    }
-
-    save(location, mapPin);
-  };
 
   const selectedLocation = locations.find(has('id', selected));
 
@@ -202,12 +136,10 @@ function Board({ tenantId, mapUrl, locations }: { tenantId: string; mapUrl: stri
             <Pin
               key={location.id}
               location={location}
-              pin={pinOf(location)}
-              dragging={dragging?.id === location.id}
+              pin={pins.pinOf(location)}
+              dragging={pins.isDragging(location)}
               selected={selected === location.id}
-              onPointerDown={(event) => onPointerDown(event, location)}
-              onPointerMove={(event) => onPointerMove(event, location)}
-              onPointerUp={() => onPointerUp(location)}
+              handlers={pins.handlers(location)}
             />
           ))}
         </div>
@@ -215,8 +147,8 @@ function Board({ tenantId, mapUrl, locations }: { tenantId: string; mapUrl: stri
 
       {selectedLocation && (
         <LabelPositionPicker
-          pin={pinOf(selectedLocation)}
-          onChange={(labelPosition) => save(selectedLocation, { ...pinOf(selectedLocation), labelPosition })}
+          pin={pins.pinOf(selectedLocation)}
+          onChange={(labelPosition) => pins.save(selectedLocation, { ...pins.pinOf(selectedLocation), labelPosition })}
         />
       )}
     </div>
@@ -269,17 +201,13 @@ function Pin({
   pin,
   dragging,
   selected,
-  onPointerDown,
-  onPointerMove,
-  onPointerUp,
+  handlers,
 }: {
   location: Location;
   pin: MapPin;
   dragging: boolean;
   selected: boolean;
-  onPointerDown: (event: React.PointerEvent) => void;
-  onPointerMove: (event: React.PointerEvent) => void;
-  onPointerUp: () => void;
+  handlers: PinHandlers;
 }) {
   return (
     <div
@@ -289,10 +217,7 @@ function Pin({
       <button
         type="button"
         aria-label={`Move ${location.name}`}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        {...handlers}
         className={clsx(
           'block cursor-grab touch-none transition-transform hover:scale-110',
           (dragging || selected) && 'scale-110 cursor-grabbing',
@@ -321,8 +246,4 @@ function useSetMapUrl(tenantId: string) {
     ...updateTenantOptions(tenantId),
     onSuccess: () => queryClient.invalidateQueries(getTenantOptions(tenantId)),
   });
-}
-
-function round(value: number): number {
-  return Math.round(Math.min(Math.max(value, 0), 100) * 10) / 10;
 }
