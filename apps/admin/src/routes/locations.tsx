@@ -14,6 +14,7 @@ import { Field } from '../components/field.tsx';
 import { Input } from '../components/input.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { QueryBoundary } from '../components/query-boundary.tsx';
+import { SearchSummary } from '../components/search.tsx';
 import { Select } from '../components/select.tsx';
 import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
 import { Textarea } from '../components/textarea.tsx';
@@ -104,10 +105,10 @@ function LocationsList({ tenant, locations }: { tenant: TenantSummary; locations
   };
 
   return (
-    <div className="reveal">
-      <p className="text-muted mb-3 font-mono text-xs tracking-wide">
+    <div className="col gap-4">
+      <SearchSummary items={locations} matching={locations} search="">
         {locations.length} location{locations.length === 1 ? '' : 's'} &bull; shown to attendees in this order
-      </p>
+      </SearchSummary>
 
       <Table>
         <TableHeader>

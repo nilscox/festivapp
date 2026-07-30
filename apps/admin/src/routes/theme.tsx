@@ -82,7 +82,7 @@ function ThemeForm({ tenant, theme }: { tenant: TenantSummary; theme: TenantThem
   };
 
   return (
-    <Form onFormSubmit={handleSubmit} className="reveal col gap-8">
+    <Form onFormSubmit={handleSubmit} className="col gap-8">
       <Section
         title="Colors"
         description="Everything else — surfaces, text, borders — is shaded from the background, so these two are the whole palette."

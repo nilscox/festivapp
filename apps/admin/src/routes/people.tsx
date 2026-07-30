@@ -3,7 +3,7 @@ import type { Participant, ParticipantInput, TenantSummary } from '@festivapp/co
 import { has, matchesSearch } from '@festivapp/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
-import { Pencil, Plus, SearchX, Trash2, Users } from 'lucide-react';
+import { Pencil, Plus, Trash2, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Button, IconButton, LinkButton } from '../components/button.tsx';
@@ -15,10 +15,11 @@ import { FileInput } from '../components/file-input.tsx';
 import { Input } from '../components/input.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { QueryBoundary } from '../components/query-boundary.tsx';
-import { SearchInput } from '../components/search-input.tsx';
+import { NoMatch, SearchInput, SearchSummary } from '../components/search.tsx';
 import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
 import { Textarea } from '../components/textarea.tsx';
 import { Thumbnail } from '../components/thumbnail.tsx';
+import { useSearchParam } from '../hooks/use-search-param.ts';
 import { parseValidationError } from '../lib/errors.ts';
 import {
   createParticipantOptions,
@@ -49,22 +50,7 @@ export function People() {
       <QueryBoundary query={query}>
         {(participants) => (
           <>
-            {participants.length === 0 ? (
-              <EmptyState
-                icon={Users}
-                title="Nobody on the line-up yet"
-                description="People are the acts on your line-up — artists, speakers, facilitators. Add them here, then put them on sessions in the schedule."
-                cta={
-                  <LinkButton from={from} search={{ create: true }}>
-                    <Plus className="size-4" />
-                    Add people
-                  </LinkButton>
-                }
-              />
-            ) : (
-              <PeopleList tenant={tenant} participants={participants} />
-            )}
-
+            <PeopleList tenant={tenant} participants={participants} />
             <ParticipantDrawer tenant={tenant} participants={participants} />
           </>
         )}
@@ -109,52 +95,50 @@ function PeopleList({ tenant, participants }: { tenant: TenantSummary; participa
     });
   };
 
-  const { search = '' } = useSearch({ from });
-  const navigate = useNavigate({ from });
+  const [search, setSearch] = useSearchParam(from);
 
-  const onSearch = (value: string) => {
-    navigate({ search: (prev) => ({ ...prev, search: value || undefined }), replace: true });
-  };
+  const matching = participants.filter((participant) =>
+    matchesSearch(search, participant.name, participant.label, participant.origin, ...participant.styles),
+  );
 
-  const matching = useMemo(() => {
-    return participants.filter((participant) => {
-      return matchesSearch(search, participant.name, participant.label, participant.origin, ...participant.styles);
-    });
-  }, [participants, search]);
+  if (participants.length === 0) {
+    return (
+      <EmptyState
+        icon={Users}
+        title="Nobody on the line-up yet"
+        description="People are the acts on your line-up — artists, speakers, facilitators. Add them here, then put them on sessions in the schedule."
+        cta={
+          <LinkButton from={from} search={{ create: true }}>
+            <Plus className="size-4" />
+            Add people
+          </LinkButton>
+        }
+      />
+    );
+  }
 
   return (
-    <div className="reveal">
+    <div className="col gap-4">
       <SearchInput
         value={search}
-        onValueChange={onSearch}
+        onValueChange={setSearch}
         placeholder="Search by name, label, origin or style"
-        className="mb-4 md:max-w-96"
+        className="md:max-w-96"
       />
 
-      <p className="text-muted mb-3 font-mono text-xs tracking-wide">
-        {search === '' ? (
-          <>
-            {participants.length} {participants.length === 1 ? 'person' : 'people'} &bull; listed alphabetically
-          </>
-        ) : (
-          <>
-            {matching.length} of {participants.length} &bull; matching "{search}"
-          </>
-        )}
-      </p>
+      <SearchSummary search={search} items={participants} matching={matching}>
+        {participants.length} {participants.length === 1 ? 'person' : 'people'} &bull; listed alphabetically
+      </SearchSummary>
 
-      {matching.length === 0 ? (
-        <EmptyState
-          icon={SearchX}
+      {matching.length === 0 && (
+        <NoMatch
           title="Nobody matches that"
           description="No one on the line-up matches this search. Try a shorter or different term."
-          cta={
-            <Button variant="secondary" onClick={() => onSearch('')}>
-              Clear search
-            </Button>
-          }
+          onClear={() => setSearch('')}
         />
-      ) : (
+      )}
+
+      {matching.length > 0 && (
         <Table>
           <TableHeader>
             <TableHeaderCell className="flex-1">Name</TableHeaderCell>

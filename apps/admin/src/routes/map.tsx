@@ -189,7 +189,7 @@ function Board({ tenantId, mapUrl, locations }: { tenantId: string; mapUrl: stri
   const selectedLocation = locations.find(has('id', selected));
 
   return (
-    <div className="reveal col gap-4">
+    <div className="col gap-4">
       <p className="text-muted font-mono text-xs tracking-wide">
         {locations.length} pin{locations.length === 1 ? '' : 's'} &bull; drag one to move it, click one to label it
       </p>

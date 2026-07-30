@@ -1,12 +1,13 @@
 import type { UploadedFile } from '@festivapp/contracts';
 import { matchesSearch } from '@festivapp/utils';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { listFilesOptions } from '../lib/files.ts';
 import { Drawer } from './drawer.tsx';
+import { EmptyState } from './empty-state.tsx';
 import { QueryBoundary } from './query-boundary.tsx';
-import { SearchInput } from './search-input.tsx';
+import { NoMatch, SearchInput, SearchSummary } from './search.tsx';
 import { Thumbnail } from './thumbnail.tsx';
 import { UploadButton } from './upload-button.tsx';
 
@@ -52,34 +53,43 @@ function FileList({
   onSelect: (file: UploadedFile) => void;
 }) {
   const [search, setSearch] = useState('');
-
-  const matching = useMemo(() => {
-    return files.filter((file) => matchesSearch(search, file.name));
-  }, [files, search]);
+  const matching = files.filter((file) => matchesSearch(search, file.name));
 
   if (files.length === 0) {
-    return <p className="text-muted text-sm">Nothing uploaded yet. Upload an image to use it here.</p>;
+    return <EmptyState title="No files uploaded yet." description="Upload a file to use it here." />;
   }
 
   return (
     <>
       <SearchInput value={search} onValueChange={setSearch} placeholder="Search by file name" />
 
-      {matching.length === 0 && <p className="text-muted text-sm">No file name matches "{search}".</p>}
+      <SearchSummary search={search} items={files} matching={matching}>
+        {files.length} file{files.length === 1 ? '' : 's'}
+      </SearchSummary>
 
-      <div className="grid grid-cols-2 gap-3">
-        {matching.map((file) => (
-          <button
-            key={file.id}
-            type="button"
-            onClick={() => onSelect(file)}
-            className="hover:border-line-strong col cursor-pointer overflow-hidden rounded-lg border text-start"
-          >
-            <Thumbnail url={file.url} alt={file.name ?? 'Uploaded file'} background={background} className="h-24" />
-            <span className="text-muted truncate border-t p-2 text-xs font-medium">{file.name ?? 'Untitled'}</span>
-          </button>
-        ))}
-      </div>
+      {matching.length === 0 && (
+        <NoMatch
+          title="No file matches that"
+          description="No uploaded file has a name matching this search. Try a shorter or different term."
+          onClear={() => setSearch('')}
+        />
+      )}
+
+      {matching.length > 0 && (
+        <div className="grid grid-cols-2 gap-3">
+          {matching.map((file) => (
+            <button
+              key={file.id}
+              type="button"
+              onClick={() => onSelect(file)}
+              className="hover:border-line-strong col cursor-pointer overflow-hidden rounded-lg border text-start"
+            >
+              <Thumbnail url={file.url} alt={file.name ?? 'Uploaded file'} background={background} className="h-24" />
+              <span className="text-muted truncate border-t p-2 text-xs font-medium">{file.name ?? 'Untitled'}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </>
   );
 }

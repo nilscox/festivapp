@@ -165,6 +165,16 @@ packages/
   data, and hands its `children` render prop one typed argument per query. A query
   whose failure shouldn't take the page down (a theme color, a thumbnail) stays
   outside the boundary and keeps reading `query.data?.…`.
+- **A filterable list assembles the `search.tsx` primitives** rather than a single
+  list component: `SearchInput`, `SearchSummary` (the count line — its `children`
+  are the idle summary, the "n of m matching" form is built in) and `NoMatch` (the
+  no-match `EmptyState` with its clear button). The list keeps the filtering itself
+  (`items.filter((item) => matchesSearch(search, …))`, no `useMemo` — the lists are
+  small and the closure would break the deps) and renders its own rows. It holds the
+  search state too: a page in the URL through `useSearchParam(from)` (widen its route
+  union when a new route gains a `search` param), a drawer in a `useState`. The
+  "nothing at all yet" empty state is a separate early return — it belongs to the
+  resource, not to the search.
 - **Errors are thrown, and caught by two boundaries, both rendering `RouteError`**
   (message, retry through `router.invalidate()`, stack in dev). `Page` wraps its
   content — not its header — in a `CatchBoundary` keyed on the router's `loadedAt`,

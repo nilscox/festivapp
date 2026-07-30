@@ -36,7 +36,7 @@ export function Layout() {
         <div className="h-dvh md:pl-64">
           <Sidebar open={drawerOpen} onOpenChange={setDrawerOpen} />
 
-          <main className="bg-surface col h-full overflow-hidden">
+          <main className="reveal bg-surface col h-full overflow-hidden">
             <Outlet />
           </main>
         </div>

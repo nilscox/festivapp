@@ -75,7 +75,7 @@ function SettingsForm({ tenant }: { tenant: Tenant }) {
   };
 
   return (
-    <Form onFormSubmit={handleSubmit} className="reveal col gap-8">
+    <Form onFormSubmit={handleSubmit} className="col gap-8">
       <Section
         title="Festival"
         description="The name attendees see, and the time zone every start and end time in the schedule is read in."
