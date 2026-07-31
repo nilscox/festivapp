@@ -12,12 +12,13 @@ clientsClaim();
 // oxlint-disable-next-line no-underscore-dangle
 precacheAndRoute(self.__WB_MANIFEST);
 
-// every route is client-side, so an offline reload on one has to be answered with the shell
-registerRoute(
-  new NavigationRoute(createHandlerBoundToURL('/index.html'), {
-    denylist: [/^\/api\//, /^\/files\//],
-  }),
-);
+if (!import.meta.env.DEV) {
+  registerRoute(
+    new NavigationRoute(createHandlerBoundToURL('/index.html'), {
+      denylist: [/^\/api\//, /^\/files\//],
+    }),
+  );
+}
 
 registerRoute(
   ({ sameOrigin, url }) => sameOrigin && url.pathname.startsWith('/files/'),

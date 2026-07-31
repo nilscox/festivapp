@@ -7,6 +7,6 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ES2023", "WebWorker"],
-    "types": []
+    "types": ["vite/client"]
   }
 }

@@ -1,6 +1,7 @@
 import { defined } from '@festivapp/utils';
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
+import { useOnline } from '../hooks/use-online.ts';
 import { usePushPublicKey } from './bootstrap.ts';
 
 type PushState = {
@@ -17,7 +18,9 @@ let state: PushState = {
 
 export function usePushSubscription() {
   const publicKey = usePushPublicKey();
-  const supported = canPush() && publicKey !== null;
+  const online = useOnline();
+
+  const supported = [canPush(), publicKey, online].every(Boolean);
 
   const { permission, subscribed } = useSyncExternalStore(subscribe, getState);
 
