@@ -1,22 +1,22 @@
 import { createLink } from '@tanstack/react-router';
 import clsx from 'clsx';
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
-type Size = 'md' | 'sm';
+export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
+export type ButtonSize = 'md' | 'sm';
 
-const variants: Record<Variant, string> = {
+const variants: Record<ButtonVariant, string> = {
   primary: clsx('bg-accent text-white outline-offset-2 hover:brightness-110'),
   secondary: clsx('bg-surface text-ink/80 hover:text-ink hover:border-line-strong border'),
   danger: clsx('bg-danger text-white hover:brightness-110'),
   ghost: clsx('text-muted hover:bg-subtle'),
 };
 
-const sizes: Record<Size, string> = {
+const sizes: Record<ButtonSize, string> = {
   md: clsx('h-9 gap-2 px-4 text-sm'),
   sm: clsx('h-8 gap-1.5 px-3 text-sm'),
 };
 
-const buttonClassName = (variant: Variant, size: Size, className?: string) => {
+const buttonClassName = (variant: ButtonVariant, size: ButtonSize, className?: string) => {
   return clsx(
     'inline-flex cursor-pointer items-center justify-center truncate rounded-lg font-semibold transition disabled:cursor-not-allowed disabled:opacity-50',
     variants[variant],
@@ -26,8 +26,8 @@ const buttonClassName = (variant: Variant, size: Size, className?: string) => {
 };
 
 type ButtonProps = React.ComponentProps<'button'> & {
-  variant?: Variant;
-  size?: Size;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
 };
 
 export function Button({ variant = 'primary', size = 'md', type = 'button', className, ...props }: ButtonProps) {
@@ -35,8 +35,8 @@ export function Button({ variant = 'primary', size = 'md', type = 'button', clas
 }
 
 type LinkButtonProps = React.ComponentProps<'a'> & {
-  variant?: Variant;
-  size?: Size;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
 };
 
 export const LinkButton = createLink(function ({
@@ -51,7 +51,7 @@ export const LinkButton = createLink(function ({
 
 type IconButtonProps = React.ComponentProps<'button'> & {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  variant?: Variant;
+  variant?: ButtonVariant;
 };
 
 export function IconButton({ icon: Icon, variant = 'primary', className, ...props }: IconButtonProps) {

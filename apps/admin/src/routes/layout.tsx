@@ -3,7 +3,18 @@ import { Select } from '@base-ui/react/select';
 import type { Organizer, TenantSummary } from '@festivapp/contracts';
 import { Link, Outlet, useNavigate, useRouteContext } from '@tanstack/react-router';
 import clsx from 'clsx';
-import { CalendarDays, ChevronDown, Image, LogOut, Map, MapPin, Palette, Settings, Users } from 'lucide-react';
+import {
+  CalendarDays,
+  ChevronDown,
+  Image,
+  LogOut,
+  Map,
+  MapPin,
+  Megaphone,
+  Palette,
+  Settings,
+  Users,
+} from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '../components/button.tsx';
@@ -16,12 +27,13 @@ import { useLogout } from '../lib/auth.ts';
 const navigation: Array<{
   label: string;
   icon: React.ComponentType<React.ComponentProps<'svg'>>;
-  href: '/people' | '/schedule' | '/locations' | '/map' | '/theme' | '/files' | '/settings';
+  href: '/people' | '/schedule' | '/locations' | '/map' | '/messages' | '/theme' | '/files' | '/settings';
 }> = [
   { label: 'People', icon: Users, href: '/people' },
   { label: 'Schedule', icon: CalendarDays, href: '/schedule' },
   { label: 'Locations', icon: MapPin, href: '/locations' },
   { label: 'Map', icon: Map, href: '/map' },
+  { label: 'Messages', icon: Megaphone, href: '/messages' },
   { label: 'Theme', icon: Palette, href: '/theme' },
   { label: 'Files', icon: Image, href: '/files' },
   { label: 'Settings', icon: Settings, href: '/settings' },

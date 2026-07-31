@@ -193,6 +193,7 @@ export type Tenant = {
   timezone: string;
   /** Path of the map image (see `UploadedFile.url`), or null for no map. */
   mapUrl: string | null;
+  registeredSubscriptions: number;
 };
 
 export type TenantSummary = Pick<Tenant, 'id' | 'name' | 'domain'>;
@@ -269,7 +270,7 @@ export type ParticipantInput = {
 export type MessageInput = {
   title: string;
   body: string;
-  notify: boolean;
+  notify?: boolean;
 };
 
 /**

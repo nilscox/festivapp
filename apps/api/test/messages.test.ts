@@ -68,7 +68,7 @@ describe('messages', () => {
 
     assert.equal(res.status, 200);
     assert.equal(res.body.title, 'Gates are closed');
-    assert.equal(res.body.body, 'Come on in');
+    assert.equal(res.body.body, 'Come on in.');
   });
 
   it('deletes a message', async () => {

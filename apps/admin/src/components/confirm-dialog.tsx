@@ -2,7 +2,7 @@ import { AlertDialog } from '@base-ui/react/alert-dialog';
 import { assert, defined } from '@festivapp/utils';
 import { createContext, use, useCallback, useState } from 'react';
 
-import { Button } from './button.tsx';
+import { Button, type ButtonVariant } from './button.tsx';
 
 const ConfirmContext = createContext<((options: ConfirmOptions) => void) | null>(null);
 
@@ -10,6 +10,7 @@ type ConfirmOptions = {
   title: React.ReactNode;
   description: React.ReactNode;
   confirmLabel: string;
+  confirmVariant?: ButtonVariant;
   onConfirm: () => unknown;
 };
 
@@ -55,7 +56,12 @@ export function ConfirmDialogProvider({ children }: { children: React.ReactNode 
             </AlertDialog.Description>
             <div className="row mt-6 gap-4">
               <AlertDialog.Close render={<Button variant="secondary" className="flex-1" />}>Cancel</AlertDialog.Close>
-              <Button variant="danger" className="flex-1" disabled={pending} onClick={onConfirm}>
+              <Button
+                variant={options?.confirmVariant ?? 'danger'}
+                className="flex-1"
+                disabled={pending}
+                onClick={onConfirm}
+              >
                 {options?.confirmLabel}
               </Button>
             </div>

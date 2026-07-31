@@ -12,6 +12,7 @@ export function useBootstrapQuery() {
     queryKey: ['bootstrap'],
     queryFn: fetchBootstrap,
     select: selectBootstrap,
+    refetchOnWindowFocus: true,
   });
 }
 

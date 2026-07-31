@@ -5,25 +5,26 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { db } from '../../db/client.ts';
-import { type Tenant, tenants } from '../../db/schema.ts';
+import { pushSubscriptions, type Tenant, tenants } from '../../db/schema.ts';
 import { falsyToNull } from '../../utils.ts';
 
 export const tenantRouter = Router({ mergeParams: true });
 
-function toTenantDto(row: Tenant): TenantDto {
+function toTenantDto(row: Tenant, registeredSubscriptions: number): TenantDto {
   return {
     id: row.id,
     name: row.name,
     domain: row.domain,
     timezone: row.timezone,
     mapUrl: row.mapUrl,
+    registeredSubscriptions,
   };
 }
 
-tenantRouter.get('/', (req, res) => {
+tenantRouter.get('/', async (req, res) => {
   assert(req.tenant);
 
-  res.json(toTenantDto(req.tenant));
+  res.json(toTenantDto(req.tenant, await countPushSubscriptions(req.tenant.id)));
 });
 
 const timezones = new Set(Intl.supportedValuesOf('timeZone'));
@@ -57,5 +58,9 @@ tenantRouter.patch('/', async (req, res) => {
     .where(eq(tenants.id, req.tenant.id))
     .returning();
 
-  res.json(toTenantDto(defined(row)));
+  res.json(toTenantDto(defined(row), await countPushSubscriptions(req.tenant.id)));
 });
+
+function countPushSubscriptions(tenantId: string) {
+  return db.$count(pushSubscriptions, eq(pushSubscriptions.tenantId, tenantId));
+}

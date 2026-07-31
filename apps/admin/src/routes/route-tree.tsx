@@ -9,6 +9,7 @@ import { ApiError } from '../lib/api.ts';
 import { getMeOptions } from '../lib/auth.ts';
 import { listFilesOptions } from '../lib/files.ts';
 import { listLocationsOptions } from '../lib/locations.ts';
+import { listMessagesOptions } from '../lib/messages.ts';
 import { listParticipantsOptions } from '../lib/participants.ts';
 import { getTenantOptions } from '../lib/tenant.ts';
 import { getThemeOptions } from '../lib/theme.ts';
@@ -17,6 +18,7 @@ const Files = lazyRouteComponent(() => import('./files.tsx'), 'Files');
 const Layout = lazyRouteComponent(() => import('./layout.tsx'), 'Layout');
 const FestivalMap = lazyRouteComponent(() => import('./map.tsx'), 'FestivalMap');
 const Locations = lazyRouteComponent(() => import('./locations.tsx'), 'Locations');
+const Messages = lazyRouteComponent(() => import('./messages.tsx'), 'Messages');
 const Login = lazyRouteComponent(() => import('./login.tsx'), 'Login');
 const People = lazyRouteComponent(() => import('./people.tsx'), 'People');
 const Settings = lazyRouteComponent(() => import('./settings.tsx'), 'Settings');
@@ -147,6 +149,17 @@ const mapRoute = createRoute({
   },
 });
 
+const messagesRoute = createRoute({
+  getParentRoute: () => festivalRoute,
+  path: 'messages',
+  validateSearch: z.object({ create: z.optional(z.literal(true)), edit: z.optional(z.string()) }),
+  component: Messages,
+  loader: ({ context: { queryClient, tenant } }) => {
+    void queryClient.prefetchQuery(getTenantOptions(tenant.id));
+    void queryClient.prefetchQuery(listMessagesOptions(tenant.id));
+  },
+});
+
 const filesRoute = createRoute({
   getParentRoute: () => festivalRoute,
   path: 'files',
@@ -186,6 +199,7 @@ export const routeTree = rootRoute.addChildren([
     scheduleRoute,
     locationsRoute,
     mapRoute,
+    messagesRoute,
     filesRoute,
     themeRoute,
     settingsRoute,
