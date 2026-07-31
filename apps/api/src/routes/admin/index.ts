@@ -4,6 +4,7 @@ import { requireOrganizer, requireTenantMembership } from '../../middleware/admi
 import { authRouter } from './auth.ts';
 import { filesRouter } from './files.ts';
 import { locationsRouter } from './locations.ts';
+import { messagesRouter } from './messages.ts';
 import { participantsRouter } from './participants.ts';
 import { tenantRouter } from './tenant.ts';
 import { themeRouter } from './theme.ts';
@@ -17,5 +18,6 @@ adminRouter.use('/tenants/:tenantId', requireOrganizer, requireTenantMembership,
 router.use(tenantRouter);
 router.use('/files', filesRouter);
 router.use('/locations', locationsRouter);
+router.use('/messages', messagesRouter);
 router.use('/participants', participantsRouter);
 router.use('/theme', themeRouter);

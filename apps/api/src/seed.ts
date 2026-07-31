@@ -75,6 +75,13 @@ const dataSchema = z.strictObject({
       participants: z.array(z.string()).min(1),
     }),
   ),
+  messages: z.array(
+    z.strictObject({
+      title: z.string().min(1),
+      body: z.string().min(1),
+      date: z.iso.datetime(),
+    }),
+  ),
 });
 
 export async function seed(input: string, drop = false): Promise<void> {
@@ -87,6 +94,7 @@ export async function seed(input: string, drop = false): Promise<void> {
   const locations = new Array<typeof schema.locations.$inferInsert>();
   const sessions = new Array<typeof schema.sessions.$inferInsert>();
   const sessionParticipants = new Array<typeof schema.sessionParticipants.$inferInsert>();
+  const messages = new Array<typeof schema.messages.$inferInsert>();
 
   const locationsMap = new Map<string, string>();
   const participantsMap = new Map<string, string>();
@@ -170,6 +178,16 @@ export async function seed(input: string, drop = false): Promise<void> {
     }
   }
 
+  for (const message of data.messages) {
+    messages.push({
+      id: createId(),
+      tenantId,
+      title: message.title,
+      body: message.body,
+      createdAt: new Date(message.date),
+    });
+  }
+
   if (drop) {
     const [deleted] = await db.delete(schema.tenants).where(eq(schema.tenants.domain, tenant.domain)).returning();
 
@@ -202,6 +220,10 @@ export async function seed(input: string, drop = false): Promise<void> {
 
     if (sessionParticipants.length > 0) {
       await tx.insert(schema.sessionParticipants).values(sessionParticipants);
+    }
+
+    if (messages.length > 0) {
+      await tx.insert(schema.messages).values(messages);
     }
   });
 

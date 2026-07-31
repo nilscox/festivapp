@@ -10,6 +10,8 @@ export type Location = typeof locations.$inferSelect;
 export type Participant = typeof participants.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type SessionParticipant = typeof sessionParticipants.$inferSelect;
+export type Message = typeof messages.$inferSelect;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type Organizer = typeof organizers.$inferSelect;
 export type OrganizerTenant = typeof organizerTenants.$inferSelect;
 export type AuthSession = typeof authSessions.$inferSelect;
@@ -112,6 +114,30 @@ export const sessionParticipants = p.pgTable(
   ],
 );
 
+export const messages = p.pgTable('messages', {
+  id: p.text().primaryKey().$defaultFn(createId),
+  tenantId: p
+    .text()
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  title: p.text().notNull(),
+  body: p.text().notNull(),
+  createdAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
+export const pushSubscriptions = p.pgTable('push_subscriptions', {
+  id: p.text().primaryKey().$defaultFn(createId),
+  tenantId: p
+    .text()
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  endpoint: p.text().notNull().unique(),
+  p256dh: p.text().notNull(),
+  auth: p.text().notNull(),
+  createdAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
 export const organizers = p.pgTable('organizers', {
   id: p.text().primaryKey().$defaultFn(createId),
   email: p.text().notNull().unique(),
@@ -157,6 +183,8 @@ export const relations = defineRelations(
     participants,
     sessions,
     sessionParticipants,
+    messages,
+    pushSubscriptions,
   },
   (r) => ({
     organizers: {

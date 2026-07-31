@@ -1,11 +1,13 @@
 import type { TenantTheme } from '@festivapp/contracts';
 import { assert, defined } from '@festivapp/utils';
 import { Command } from 'commander';
+import webpush from 'web-push';
 import z from 'zod';
 
 import { hashPassword } from './auth/password.ts';
 import { closeDatabase, db } from './db/client.ts';
 import { organizers, organizerTenants, tenants } from './db/schema.ts';
+import { findSubscriptions, pushEnabled, sendToTenant } from './push.ts';
 import { seed } from './seed.ts';
 
 const program = new Command();
@@ -102,6 +104,47 @@ festival
     assert(tenant);
 
     console.log(`Festival ${name} created with id ${tenant.id}`);
+  });
+
+const push = new Command('push');
+program.addCommand(push);
+
+push
+  .command('keys')
+  .description('Generate a VAPID key pair to paste into .env')
+  .action(() => {
+    const { publicKey, privateKey } = webpush.generateVAPIDKeys();
+
+    console.log(`VAPID_PUBLIC_KEY=${publicKey}`);
+    console.log(`VAPID_PRIVATE_KEY=${privateKey}`);
+  });
+
+push
+  .command('test')
+  .description('Send a test notification to every device subscribed to a festival')
+  .argument('<domain>', 'festival domain')
+  .option('-t, --title <title>', 'notification title', 'Test notification')
+  .option('-b, --body <body>', 'notification body', 'If you can read this, push works.')
+  .option('-s, --subscription <id>', 'send to this subscription only, instead of every device')
+  .action(async (domain: string, options: { title: string; body: string; subscription?: string }) => {
+    const { title, body, subscription } = options;
+
+    if (!pushEnabled) {
+      throw new Error('No VAPID keys configured — run "cli push keys" and put the pair in .env');
+    }
+
+    const [tenant] = await findTenants([domain]);
+    assert(tenant);
+
+    const subscriptions = await findSubscriptions(tenant.id, subscription);
+
+    if (subscriptions.length === 0) {
+      console.log(subscription ? `No subscription ${subscription} on ${domain}` : `No device subscribed to ${domain}`);
+
+      return;
+    }
+
+    await sendToTenant(tenant.id, { title, body }, subscription);
   });
 
 async function findTenants(domains: string[]) {

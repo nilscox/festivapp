@@ -7,15 +7,19 @@ import { db } from '../../src/db/client.ts';
 import {
   authSessions,
   locations,
+  messages,
   organizers,
   organizerTenants,
   participants,
+  pushSubscriptions,
   sessionParticipants,
   sessions,
   tenants,
   type Location,
+  type Message,
   type Organizer,
   type Participant,
+  type PushSubscription,
   type Session,
   type Tenant,
 } from '../../src/db/schema.ts';
@@ -111,6 +115,42 @@ export async function createParticipant(tenant: Tenant, values: Values<Participa
     .values({
       tenantId: tenant.id,
       name: `Participant ${++counter}`,
+      ...values,
+    })
+    .returning();
+
+  return defined(row);
+}
+
+export async function createMessage(tenant: Tenant, values: Values<Message> = {}): Promise<Message> {
+  const index = ++counter;
+
+  const [row] = await db
+    .insert(messages)
+    .values({
+      tenantId: tenant.id,
+      title: `Message ${index}`,
+      body: `Body ${index}`,
+      ...values,
+    })
+    .returning();
+
+  return defined(row);
+}
+
+export async function createPushSubscription(
+  tenant: Tenant,
+  values: Values<PushSubscription> = {},
+): Promise<PushSubscription> {
+  const index = ++counter;
+
+  const [row] = await db
+    .insert(pushSubscriptions)
+    .values({
+      tenantId: tenant.id,
+      endpoint: `https://push.test.local/${index}`,
+      p256dh: `p256dh-${index}`,
+      auth: `auth-${index}`,
       ...values,
     })
     .returning();

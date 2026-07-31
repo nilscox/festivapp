@@ -1,9 +1,10 @@
 import type { BootstrapResponse } from '@festivapp/contracts';
+import { sub } from 'date-fns';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { useApi } from './helpers/api.ts';
-import { createLocation, createParticipant, createSession, createTenant } from './helpers/fixtures.ts';
+import { createLocation, createMessage, createParticipant, createSession, createTenant } from './helpers/fixtures.ts';
 
 const api = useApi();
 
@@ -19,6 +20,8 @@ describe('GET /bootstrap', () => {
       endsAt: new Date('2026-07-01T23:30:00Z'),
       participants: [artist],
     });
+
+    const message = await createMessage(tenant, { title: 'Gates are open', body: 'Come on in.' });
 
     const res = await api.get<BootstrapResponse>('/bootstrap', { host: 'coolfest.localhost' });
 
@@ -65,6 +68,15 @@ describe('GET /bootstrap', () => {
           participantIds: [artist.id],
         },
       ],
+      messages: [
+        {
+          id: message.id,
+          title: 'Gates are open',
+          body: 'Come on in.',
+          createdAt: message.createdAt.toISOString(),
+        },
+      ],
+      pushPublicKey: null,
     });
   });
 
@@ -77,6 +89,7 @@ describe('GET /bootstrap', () => {
 
     await createParticipant(other, { name: 'Other artist' });
     await createSession(other, otherStage);
+    await createMessage(other, { title: 'Other announcement' });
 
     const res = await api.get<BootstrapResponse>('/bootstrap', { host: 'coolfest.localhost' });
 
@@ -87,6 +100,21 @@ describe('GET /bootstrap', () => {
 
     assert.deepEqual(res.body.participants, []);
     assert.deepEqual(res.body.sessions, []);
+    assert.deepEqual(res.body.messages, []);
+  });
+
+  it('sorts messages newest first', async () => {
+    const tenant = await createTenant({ domain: 'coolfest.localhost' });
+
+    const older = await createMessage(tenant, { createdAt: sub(Date.now(), { hours: 1 }) });
+    const newer = await createMessage(tenant);
+
+    const res = await api.get<BootstrapResponse>('/bootstrap', { host: 'coolfest.localhost' });
+
+    assert.deepEqual(
+      res.body.messages.map(({ id }) => id),
+      [newer.id, older.id],
+    );
   });
 
   it('sorts locations by position, participants by name and sessions by start time', async () => {

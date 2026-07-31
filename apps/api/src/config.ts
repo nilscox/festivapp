@@ -10,4 +10,7 @@ export const config = {
   databaseUrl: env('DATABASE_URL'),
   storageDir: env('STORAGE_DIR'),
   uploadMaxBytes: env('UPLOAD_MAX_BYTES'),
+  vapidPublicKey: env('VAPID_PUBLIC_KEY'),
+  vapidPrivateKey: env('VAPID_PRIVATE_KEY'),
+  vapidSubject: env('VAPID_SUBJECT', 'mailto:admin@festivapp.local'),
 };

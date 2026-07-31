@@ -133,6 +133,27 @@ export type Session = {
   endsAt: string;
 };
 
+/** An announcement published by the organizers, shown on the app's info page. */
+export type Message = {
+  id: string;
+  title: string;
+  body: string;
+  /** ISO 8601 string. Also the publication time — a message is live on creation. */
+  createdAt: string;
+};
+
+/**
+ * Body of `POST` and `DELETE` on `/push/subscriptions`, matching what
+ * `PushSubscription.toJSON()` returns.
+ */
+export type PushSubscriptionInput = {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+};
+
 /**
  * Payload of `GET /bootstrap`: everything a freshly-loaded attendee SPA needs
  * to render the whole festival and keep it offline. There is no second read
@@ -143,6 +164,13 @@ export type BootstrapResponse = {
   locations: Location[];
   participants: Participant[];
   sessions: Session[];
+  /** Newest first. */
+  messages: Message[];
+  /**
+   * VAPID public key to subscribe a device with, or null when the deployment
+   * has no keys configured — push is off then, and the app must not offer it.
+   */
+  pushPublicKey: string | null;
 };
 
 /* Organizer backoffice (`/admin/*`) contracts. */
@@ -232,6 +260,24 @@ export type ParticipantInput = {
   styles: string[];
   socialLinks: string[];
 };
+
+/**
+ * Body of `POST /admin/tenants/:tenantId/messages`. The message is published as
+ * soon as it is created; `notify` decides whether that also pushes it to every
+ * subscribed device.
+ */
+export type MessageInput = {
+  title: string;
+  body: string;
+  notify: boolean;
+};
+
+/**
+ * Body of `PATCH /admin/tenants/:tenantId/messages/:id`. It may carry any
+ * subset of these keys; the ones it omits keep their value. Editing never
+ * notifies again — `notify` is not part of it.
+ */
+export type MessageUpdate = Partial<Omit<MessageInput, 'notify'>>;
 
 /**
  * An asset the organizer uploaded for a tenant. Uploads go to

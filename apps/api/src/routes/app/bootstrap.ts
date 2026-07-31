@@ -1,7 +1,8 @@
-import type { BootstrapResponse, Participant, Session } from '@festivapp/contracts';
+import type { BootstrapResponse, Message, Participant, Session } from '@festivapp/contracts';
 import { assert } from '@festivapp/utils';
 import { Router } from 'express';
 
+import { config } from '../../config.ts';
 import { db } from '../../db/client.ts';
 
 export const bootstrapRouter = Router();
@@ -10,7 +11,7 @@ bootstrapRouter.get('/bootstrap', async (req, res) => {
   const tenant = req.tenant;
   assert(tenant);
 
-  const [locationRows, participantRows, sessionRows, sessionParticipantRows] = await Promise.all([
+  const [locationRows, participantRows, sessionRows, sessionParticipantRows, messageRows] = await Promise.all([
     db.query.locations.findMany({
       where: { tenantId: tenant.id },
       orderBy: { position: 'asc' },
@@ -26,6 +27,10 @@ bootstrapRouter.get('/bootstrap', async (req, res) => {
     db.query.sessionParticipants.findMany({
       where: { session: { tenantId: tenant.id } },
       orderBy: { position: 'asc' },
+    }),
+    db.query.messages.findMany({
+      where: { tenantId: tenant.id },
+      orderBy: { createdAt: 'desc' },
     }),
   ]);
 
@@ -61,6 +66,13 @@ bootstrapRouter.get('/bootstrap', async (req, res) => {
     participantIds: Array.from(sessionParticipantIds.get(row.id) ?? []),
   }));
 
+  const messages: Message[] = messageRows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    body: row.body,
+    createdAt: row.createdAt.toISOString(),
+  }));
+
   res.json({
     tenant: {
       id: tenant.id,
@@ -83,5 +95,7 @@ bootstrapRouter.get('/bootstrap', async (req, res) => {
     })),
     participants,
     sessions,
+    messages,
+    pushPublicKey: config.vapidPublicKey ?? null,
   } satisfies BootstrapResponse);
 });
