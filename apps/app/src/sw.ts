@@ -1,7 +1,7 @@
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 import { clientsClaim } from 'workbox-core';
-import { precacheAndRoute, type PrecacheEntry } from 'workbox-precaching';
-import { registerRoute } from 'workbox-routing';
+import { createHandlerBoundToURL, precacheAndRoute, type PrecacheEntry } from 'workbox-precaching';
+import { NavigationRoute, registerRoute } from 'workbox-routing';
 import { CacheFirst } from 'workbox-strategies';
 
 declare let self: ServiceWorkerGlobalScope & { __WB_MANIFEST: Array<PrecacheEntry | string> };
@@ -11,6 +11,13 @@ clientsClaim();
 
 // oxlint-disable-next-line no-underscore-dangle
 precacheAndRoute(self.__WB_MANIFEST);
+
+// every route is client-side, so an offline reload on one has to be answered with the shell
+registerRoute(
+  new NavigationRoute(createHandlerBoundToURL('/index.html'), {
+    denylist: [/^\/api\//, /^\/files\//],
+  }),
+);
 
 registerRoute(
   ({ sameOrigin, url }) => sameOrigin && url.pathname.startsWith('/files/'),
