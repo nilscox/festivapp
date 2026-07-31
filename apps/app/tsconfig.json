@@ -1,6 +1,7 @@
 {
   "extends": "@festivapp/config/tsconfig.base.json",
   "include": ["src"],
+  "exclude": ["src/sw.ts"],
   "compilerOptions": {
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",

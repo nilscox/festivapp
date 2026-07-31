@@ -2,12 +2,16 @@ import type { Location, TenantConfig } from '@festivapp/contracts';
 import { has } from '@festivapp/utils';
 import { Link } from '@tanstack/react-router';
 import { isAfter, isWithinInterval } from 'date-fns';
+import { Bell } from 'lucide-react';
+import { useState } from 'react';
 
+import { Banner, BannerButton } from '../components/banner.tsx';
 import { PageHeader } from '../components/page-header.tsx';
 import { SessionCard } from '../components/session-card.tsx';
 import { useClock } from '../hooks/use-clock.ts';
 import { useBootstrap, useTenant, type ResolvedSession } from '../lib/bootstrap.ts';
 import { countdownLabel, formatNowHeading, formatTime } from '../lib/datetime.ts';
+import { usePushSubscription } from '../lib/push.ts';
 import { sessionTitle } from '../lib/session.ts';
 
 export function Now() {
@@ -25,6 +29,8 @@ export function Now() {
   return (
     <div className="col min-h-0 flex-1">
       <Header tenant={tenant} />
+
+      <PushPrompt />
 
       <div className="reveal min-h-0 flex-1 overflow-y-auto pb-6">
         <div className="row items-baseline justify-start gap-2 p-4">
@@ -73,6 +79,35 @@ function Header({ tenant }: { tenant: TenantConfig }) {
           <span className="bg-accent size-1.5 rounded-full" />
           Works offline &bull; Saved on device
         </div>
+      }
+    />
+  );
+}
+
+function PushPrompt() {
+  const { supported, permission, enable } = usePushSubscription();
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem('push-prompt-dismissed') === 'true');
+
+  const dismiss = () => {
+    localStorage.setItem('push-prompt-dismissed', 'true');
+    setDismissed(true);
+  };
+
+  if (!supported || permission !== 'default' || dismissed) {
+    return null;
+  }
+
+  return (
+    <Banner
+      variant="primary"
+      icon={Bell}
+      title="Enable notifications"
+      description="To set up reminders and get notified when the organizers post a message."
+      actions={
+        <>
+          <BannerButton onClick={dismiss}>No thanks</BannerButton>
+          <BannerButton onClick={() => void enable()}>Enable</BannerButton>
+        </>
       }
     />
   );

@@ -243,6 +243,19 @@ Deliberately simpler than the backoffice — no auth, no forms, no router contex
 - **Offline-first:** the query client is wrapped in `PersistQueryClientProvider`
   backed by `idb-keyval`, and `vite-plugin-pwa` precaches the shell. Anything that
   breaks a cold, offline start is a bug.
+- **The service worker is hand-written** (`src/sw.ts`, `injectManifest`), because a
+  generated one cannot carry a `push` handler. It owns what the plugin's `workbox`
+  options used to declare — the precache, `skipWaiting`/`clientsClaim` behind
+  `registerType: 'autoUpdate'`, and the `/files/` `CacheFirst` route, whose
+  `tenant-files` cache name `lib/cache.ts` also writes to by hand. It compiles under
+  its own `tsconfig.sw.json` (referenced from the root) since `WebWorker` and `DOM`
+  libs cannot share a program. Re-verify a cold offline boot after touching it.
+- **Push opt-in is asked for, never assumed** (`lib/push.ts`): a dismissible banner
+  in the shell plus a permanent toggle on the info page, both driven by one
+  `usePushSubscription()` over a module-level store so the two stay in sync.
+  `subscribe`/`requestPermission` must run from a click — Safari only grants on a
+  gesture. Feature-detect `PushManager`, which iOS exposes only to an installed PWA,
+  and treat a null `pushPublicKey` from `/bootstrap` as "push is off, hide it all".
 - **Theming is per-tenant at runtime** — `applyTenant` sets CSS variables from the
   bootstrap payload; don't hardcode brand colors. The organizer picks two colors
   (`backgroundColor`, `accentColor`, hex only); everything else is derived there

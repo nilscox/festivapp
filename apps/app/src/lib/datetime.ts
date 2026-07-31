@@ -12,6 +12,10 @@ export function formatNowHeading(now: Date, timeZone: string): string {
   return formatInTimeZone(now, timeZone, 'EEEE dd, HH:mm');
 }
 
+export function formatMessageDate(date: string, timeZone: string): string {
+  return formatInTimeZone(date, timeZone, 'EEEE dd MMM, HH:mm');
+}
+
 export function countdownLabel(from: Date, iso: string): string {
   const diffMs = new Date(iso).getTime() - from.getTime();
 

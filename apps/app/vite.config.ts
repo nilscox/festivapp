@@ -25,23 +25,14 @@ export default defineConfig({
     tailwindcss(),
     svgr(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
-      devOptions: { enabled: true },
+      devOptions: { enabled: true, type: 'module' },
       manifest: false,
-      workbox: {
-        // the default patterns miss woff2, so the fonts were absent offline
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: ({ sameOrigin, url }) => sameOrigin && url.pathname.startsWith('/files/'),
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'tenant-files',
-              expiration: { maxEntries: 60, purgeOnQuotaError: true },
-              cacheableResponse: { statuses: [200] },
-            },
-          },
-        ],
       },
     }),
   ],

@@ -3,6 +3,7 @@
   "references": [
     { "path": "apps/api" },
     { "path": "apps/app" },
+    { "path": "apps/app/tsconfig.sw.json" },
     { "path": "apps/admin" },
     { "path": "packages/contracts" },
     { "path": "packages/utils" }

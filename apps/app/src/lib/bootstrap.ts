@@ -35,13 +35,15 @@ async function fetchBootstrap(): Promise<BootstrapResponse> {
   return (await response.json()) as BootstrapResponse;
 }
 
-function selectBootstrap({ tenant, locations, participants, sessions }: BootstrapResponse) {
+function selectBootstrap({ tenant, locations, participants, sessions, messages, pushPublicKey }: BootstrapResponse) {
   const locationById = new Map(locations.map((location) => [location.id, location]));
 
   const participantsById = new Map(participants.map((participant) => [participant.id, participant]));
 
   return {
     tenant,
+    messages,
+    pushPublicKey,
     locations: locations.toSorted((a, b) => a.position - b.position),
     sessions: sessions
       .map(
@@ -57,4 +59,12 @@ function selectBootstrap({ tenant, locations, participants, sessions }: Bootstra
 
 export function useTenant() {
   return useBootstrap().tenant;
+}
+
+export function useMessages() {
+  return useBootstrap().messages;
+}
+
+export function usePushPublicKey() {
+  return useBootstrap().pushPublicKey;
 }
