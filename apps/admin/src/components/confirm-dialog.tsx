@@ -31,6 +31,7 @@ export function ConfirmDialogProvider({ children }: { children: React.ReactNode 
     try {
       await options.onConfirm();
       setOpen(false);
+    } catch {
     } finally {
       setPending(false);
     }

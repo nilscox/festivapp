@@ -1,21 +1,12 @@
-import { getTableName, sql } from 'drizzle-orm';
+import { getTableName, is, sql } from 'drizzle-orm';
+import { PgTable } from 'drizzle-orm/pg-core';
 
 import { closeDatabase, db } from '../../src/db/client.ts';
 import * as schema from '../../src/db/schema.ts';
 
 export { closeDatabase };
 
-const tables = [
-  schema.tenants,
-  schema.files,
-  schema.locations,
-  schema.participants,
-  schema.sessions,
-  schema.sessionParticipants,
-  schema.organizers,
-  schema.organizerTenants,
-  schema.authSessions,
-];
+const tables = Object.values(schema).filter((value) => is(value, PgTable));
 
 export async function resetDatabase(): Promise<void> {
   const names = tables.map((table) => sql.identifier(getTableName(table)));

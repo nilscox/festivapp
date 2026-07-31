@@ -171,7 +171,12 @@ export async function seed(input: string, drop = false): Promise<void> {
   }
 
   if (drop) {
-    await db.delete(schema.tenants).where(eq(schema.tenants.domain, tenant.domain));
+    const [deleted] = await db.delete(schema.tenants).where(eq(schema.tenants.domain, tenant.domain)).returning();
+
+    if (deleted) {
+      const files = await db.query.files.findMany({ where: { tenantId: deleted.id } });
+      await Promise.all(files.map((file) => storage.delete(file.storageKey)));
+    }
   } else if (await db.query.tenants.findFirst({ where: { domain: tenant.domain } })) {
     throw new Error(`Domain "${tenant.domain}" is already taken`);
   }

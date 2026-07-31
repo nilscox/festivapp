@@ -10,6 +10,7 @@ export function Range({ defaultValue, className, ...props }: React.ComponentProp
   return (
     <div className="row items-center gap-3">
       <Field.Control
+        {...props}
         type="range"
         value={value}
         onChange={(event) => {
@@ -20,7 +21,6 @@ export function Range({ defaultValue, className, ...props }: React.ComponentProp
           'accent-accent flex-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50',
           className,
         )}
-        {...props}
       />
 
       <span className={clsx('text-muted w-10 text-right font-mono text-xs', props.disabled && 'opacity-50')}>

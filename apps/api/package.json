@@ -4,13 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --watch --env-file=.env src/index.ts",
-    "start": "node --env-file=.env src/index.ts",
+    "dev": "node --watch --env-file-if-exists=.env src/index.ts",
+    "start": "node --env-file-if-exists=.env src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --test 'test/**/*.test.ts'",
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
-    "cli": "node --env-file=.env src/cli.ts"
+    "cli": "node --env-file-if-exists=.env src/cli.ts"
   },
   "dependencies": {
     "@festivapp/contracts": "workspace:*",
