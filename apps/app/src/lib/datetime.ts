@@ -1,29 +1,15 @@
-export function formatTime(iso: string, timeZone: string): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    timeZone,
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).format(new Date(iso));
+import { formatInTimeZone } from 'date-fns-tz';
+
+export function formatTime(date: string, timeZone: string): string {
+  return formatInTimeZone(date, timeZone, 'HH:mm');
 }
 
-export function formatDayLabel(iso: string, timeZone: string): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    timeZone,
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  }).format(new Date(iso));
+export function formatDayLabel(date: string, timeZone: string): string {
+  return formatInTimeZone(date, timeZone, 'EEEE dd');
 }
 
 export function formatNowHeading(now: Date, timeZone: string): string {
-  const iso = now.toISOString();
-  const weekday = new Intl.DateTimeFormat('en-GB', {
-    timeZone,
-    weekday: 'long',
-  }).format(now);
-
-  return `${weekday}, ${formatTime(iso, timeZone)}`;
+  return formatInTimeZone(now, timeZone, 'EEEE dd, HH:mm');
 }
 
 export function countdownLabel(from: Date, iso: string): string {
