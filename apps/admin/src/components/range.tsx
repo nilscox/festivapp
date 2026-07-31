@@ -2,9 +2,9 @@ import { Field } from '@base-ui/react/field';
 import clsx from 'clsx';
 import { useState } from 'react';
 
-export function Range({ className, ...props }: React.ComponentProps<'input'>) {
+export function Range({ defaultValue, className, ...props }: React.ComponentProps<'input'>) {
   const [value, setValue] = useState(
-    typeof props.value === 'number' ? props.value : typeof props.defaultValue === 'number' ? props.defaultValue : 0,
+    typeof props.value === 'number' ? props.value : typeof defaultValue === 'number' ? defaultValue : 0,
   );
 
   return (
