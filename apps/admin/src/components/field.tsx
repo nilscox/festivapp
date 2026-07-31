@@ -1,6 +1,8 @@
 import { Field as BaseField } from '@base-ui/react/field';
 
-const { Root, Label: BaseLabel, Error } = BaseField;
+const { Root, Label: BaseLabel, Error, Validity } = BaseField;
+
+const errorClassName = 'text-danger-ink mt-1 text-xs';
 
 type FieldError = { match: keyof ValidityState; message: React.ReactNode };
 
@@ -27,15 +29,17 @@ export function Field({
 
       {hint && <div className="text-muted mt-1 text-xs">{hint}</div>}
 
-      {error && <div className="text-danger-ink mt-1 text-xs">{error}</div>}
+      {error && <div className={errorClassName}>{error}</div>}
 
       {errors?.map((error) => (
-        <Error key={error.match} match={error.match} className="text-danger-ink mt-1 text-xs">
+        <Error key={error.match} match={error.match} className={errorClassName}>
           {error.message}
         </Error>
       ))}
 
-      {(!errors || errors.length === 0) && <Error className="text-danger-ink mt-1 text-xs" />}
+      <Validity>
+        {({ validity }) => !errors?.some(({ match }) => validity[match]) && <Error className={errorClassName} />}
+      </Validity>
     </Root>
   );
 }

@@ -15,15 +15,14 @@ const text = z
   .nullish()
   .transform((value) => value || null);
 
-// no zod defaults: they would still apply under `.partial()` and wipe what a PATCH omits
 const createSchema = z.object({
   name: z.string().trim().min(1).max(200),
   description: text,
   imageUrl: text,
   origin: text,
   label: text,
-  styles: z.array(z.string().trim().min(1)).optional(),
-  socialLinks: z.array(z.url().trim()).optional(),
+  styles: z.array(z.string().trim().min(1).max(30)).optional(),
+  socialLinks: z.array(z.url().trim().min(1).max(400)).optional(),
 });
 
 const updateSchema = createSchema.partial();

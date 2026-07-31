@@ -222,27 +222,17 @@ function LocationForm({
   };
 
   return (
-    <Form onFormSubmit={handleSubmit} className="col flex-1">
+    <Form errors={errors} onFormSubmit={handleSubmit} className="col flex-1">
       <div className="col flex-1 gap-6 overflow-y-auto p-4">
-        <Field
-          name="name"
-          label="Name"
-          errors={[{ match: 'valueMissing', message: 'A location name is required.' }]}
-          error={errors?.name?.errors[0]}
-        >
+        <Field name="name" label="Name" errors={[{ match: 'valueMissing', message: 'A location name is required.' }]}>
           <Input required defaultValue={defaultValue?.name} placeholder="e.g. Main Stage" />
         </Field>
 
-        <Field name="position" label="Position" error={errors?.position?.errors[0]}>
+        <Field name="position" label="Position">
           <Select defaultValue={defaultValue?.position ?? locations.length + 1} items={positionOptions} />
         </Field>
 
-        <Field
-          name="description"
-          label="Description"
-          hint="Shown to attendees on the map."
-          error={errors?.description?.errors[0]}
-        >
+        <Field name="description" label="Description" hint="Shown to attendees on the map.">
           <Textarea rows={4} defaultValue={defaultValue?.description ?? ''} />
         </Field>
       </div>

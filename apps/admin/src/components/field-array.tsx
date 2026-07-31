@@ -1,3 +1,4 @@
+import { Field } from '@base-ui/react/field';
 import { Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -5,23 +6,23 @@ import { Button, IconButton } from './button.tsx';
 
 export function FieldArray<T>({
   fields,
+  name,
   label,
-  error,
   add,
   onAdd,
   onRemove,
   children,
 }: {
   fields: Array<[key: React.Key, T]>;
+  name?: string;
   label: React.ReactNode;
-  error?: React.ReactNode;
   add?: React.ReactNode;
   onAdd: () => void;
   onRemove: (index: number) => void;
   children: (value: T, index: number) => React.ReactNode;
 }) {
   return (
-    <fieldset className="col gap-2">
+    <Field.Root name={name} render={<fieldset />} className="col gap-2">
       <legend className="text-muted text-label mb-1 font-medium">{label}</legend>
 
       {fields.map(([key, value], index) => (
@@ -38,13 +39,13 @@ export function FieldArray<T>({
         </div>
       ))}
 
-      {error && <div className="text-danger-ink text-xs">{error}</div>}
-
       <Button variant="secondary" size="sm" className="mr-auto" onClick={() => onAdd()}>
         <Plus className="size-3" />
         {add}
       </Button>
-    </fieldset>
+
+      <Field.Error className="text-danger-ink text-xs" />
+    </Field.Root>
   );
 }
 

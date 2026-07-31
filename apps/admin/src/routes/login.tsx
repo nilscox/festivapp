@@ -33,7 +33,11 @@ export function Login() {
           </div>
         )}
 
-        <Form onFormSubmit={(values: { email: string; password: string }) => mutate(values)} className="col gap-4">
+        <Form
+          errors={errors}
+          onFormSubmit={(values: { email: string; password: string }) => mutate(values)}
+          className="col gap-4"
+        >
           <Field
             name="email"
             label="Email"
@@ -41,7 +45,6 @@ export function Login() {
               { match: 'valueMissing', message: 'Enter your email address.' },
               { match: 'typeMismatch', message: 'Enter a valid email address.' },
             ]}
-            error={errors?.email?.errors[0]}
           >
             <Input type="email" required autoComplete="username" placeholder="your@email.org" tabIndex={1} />
           </Field>
@@ -60,7 +63,6 @@ export function Login() {
               </div>
             }
             errors={[{ match: 'valueMissing', message: 'Enter your password.' }]}
-            error={errors?.password?.errors[0]}
           >
             <Input type="password" required autoComplete="current-password" placeholder="••••••••" tabIndex={2} />
           </Field>

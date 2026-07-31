@@ -191,12 +191,24 @@ packages/
   400 and except a mutation that declares its own `onError`. **That opt-out only sees
   `useMutation` options** — a per-call `mutate(vars, { onError })` is invisible to the
   cache and still toasts, which is how a call site reverts an optimistic update
-  without silencing the message. Field-level 400s come from the API's zod tree via
-  `parseValidationError` (`lib/errors.ts`) and render in `<Field error=…>`.
+  without silencing the message.
+- **Server errors go to `<Form errors>`, not to a field.** `parseValidationError`
+  (`lib/errors.ts`) flattens the API's zod tree into the `{ [field name]: messages }`
+  shape Base UI expects — a path becomes a dotted name, so an error on one item of an
+  array lands on that item's input (`styles.0`) rather than on the array. A `useMemo`
+  on the mutation error keeps the object's reference stable (Base UI re-seeds its
+  internal copy whenever the prop changes, and clears a
+  message as soon as its field is edited). Anything else that isn't a zod tree is
+  mapped to the same shape at the call site (settings turns a 409 into a `domain`
+  message). `<Field error=…>` is left for messages computed on the client.
 - **Forms use Base UI `<Form onFormSubmit>`** — it yields typed values; don't read
   `FormData` or control inputs by hand. Keep inputs uncontrolled (`defaultValue`) and
   wrap every control (`Input`, `Select`) in `<Field name=…>` so it registers with the
-  form and surfaces validity (`errors` for native matches, `error` for the server message).
+  form and surfaces validity: `errors` declares a custom message per native match,
+  and the match-less `<Field.Error>` underneath renders the server message (and the
+  browser's for undeclared matches), skipped while a declared match shows its own.
+  `FieldArray` is a named field too, so an error on the array itself has a place to
+  render.
 - **Compose small primitives**, exported component first with sub-components below:
   `Field`, `Input`, `Select`, `Table`/`TableHeader`, `Page`/`PageHeader`,
   `EmptyState`, `Spinner`, `Drawer`, `ConfirmDialog`,

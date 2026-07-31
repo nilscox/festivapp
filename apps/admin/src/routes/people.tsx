@@ -274,14 +274,9 @@ function ParticipantForm({
   };
 
   return (
-    <Form onFormSubmit={handleSubmit} className="col min-h-0 flex-1">
+    <Form errors={errors} onFormSubmit={handleSubmit} className="col min-h-0 flex-1">
       <div className="col min-h-0 flex-1 gap-6 overflow-y-auto p-4">
-        <Field
-          name="name"
-          label="Name"
-          errors={[{ match: 'valueMissing', message: 'A name is required.' }]}
-          error={errors?.name?.errors[0]}
-        >
+        <Field name="name" label="Name" errors={[{ match: 'valueMissing', message: 'A name is required.' }]}>
           <Input required defaultValue={defaultValue?.name} placeholder="Johnny Purple" />
         </Field>
 
@@ -290,22 +285,22 @@ function ParticipantForm({
         </Field>
 
         <div className="grid gap-6 sm:grid-cols-2">
-          <Field name="label" label="Label" hint="Artists only." error={errors?.label?.errors[0]}>
+          <Field name="label" label="Label" hint="Artists only.">
             <Input defaultValue={defaultValue?.label ?? ''} placeholder="Trip Records" />
           </Field>
 
-          <Field name="origin" label="Origin" hint="Artists only." error={errors?.origin?.errors[0]}>
+          <Field name="origin" label="Origin" hint="Artists only.">
             <Input defaultValue={defaultValue?.origin ?? ''} placeholder="Berlin" />
           </Field>
         </div>
 
-        <StylesEditor styles={defaultValue?.styles} error={errors?.styles?.errors[0]} />
+        <StylesEditor styles={defaultValue?.styles} />
 
-        <Field name="description" label="Description" error={errors?.description?.errors[0]}>
+        <Field name="description" label="Description">
           <Textarea rows={6} defaultValue={defaultValue?.description ?? ''} />
         </Field>
 
-        <SocialLinksEditor links={defaultValue?.socialLinks} error={errors?.socialLinks?.errors[0]} />
+        <SocialLinksEditor links={defaultValue?.socialLinks} />
       </div>
 
       <div className="row gap-4 border-t p-4">
@@ -321,17 +316,17 @@ function ParticipantForm({
   );
 }
 
-function StylesEditor({ styles = [], error }: { styles?: string[]; error?: React.ReactNode }) {
+function StylesEditor({ styles = [] }: { styles?: string[] }) {
   const { fields, append, remove } = useFieldArray(styles);
 
   return (
     <FieldArray
       fields={fields}
+      name="styles"
       onAdd={() => append('')}
       onRemove={remove}
       label="Styles"
       add="Add a style"
-      error={error}
     >
       {(style, index) => (
         <Field>
@@ -342,11 +337,18 @@ function StylesEditor({ styles = [], error }: { styles?: string[]; error?: React
   );
 }
 
-function SocialLinksEditor({ links = [], error }: { links?: string[]; error?: React.ReactNode }) {
+function SocialLinksEditor({ links = [] }: { links?: string[] }) {
   const { fields, append, remove } = useFieldArray(links);
 
   return (
-    <FieldArray fields={fields} onAdd={() => append('')} onRemove={remove} label="Links" add="Add a link" error={error}>
+    <FieldArray
+      fields={fields}
+      name="socialLinks"
+      onAdd={() => append('')}
+      onRemove={remove}
+      label="Links"
+      add="Add a link"
+    >
       {(link, index) => (
         <Field errors={[{ match: 'typeMismatch', message: 'Enter a full URL, starting with https://' }]}>
           <Input type="url" name={`socialLinks.${index}`} defaultValue={link} placeholder="https://" />

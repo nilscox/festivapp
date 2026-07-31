@@ -55,7 +55,13 @@ function SettingsForm({ tenant }: { tenant: Tenant }) {
     },
   });
 
-  const errors = useMemo(() => parseValidationError(mutation.error), [mutation.error]);
+  const errors = useMemo(() => {
+    if (ApiError.is(mutation.error, 409)) {
+      return { domain: 'Another festival already uses this domain.' };
+    }
+
+    return parseValidationError(mutation.error);
+  }, [mutation.error]);
 
   const save = (values: FormValues) => {
     mutation.mutate(values, { onSuccess: () => toast.success('Settings saved') });
@@ -75,18 +81,13 @@ function SettingsForm({ tenant }: { tenant: Tenant }) {
   };
 
   return (
-    <Form onFormSubmit={handleSubmit} className="col gap-8">
+    <Form errors={errors} onFormSubmit={handleSubmit} className="col gap-8">
       <Section
         title="Festival"
         description="The name attendees see, and the time zone every start and end time in the schedule is read in."
       >
         <div className="col gap-4">
-          <Field
-            name="name"
-            label="Name"
-            errors={[{ match: 'valueMissing', message: 'A festival name is required.' }]}
-            error={errors?.name?.errors[0]}
-          >
+          <Field name="name" label="Name" errors={[{ match: 'valueMissing', message: 'A festival name is required.' }]}>
             <Input required maxLength={100} defaultValue={tenant.name} />
           </Field>
 
@@ -94,7 +95,6 @@ function SettingsForm({ tenant }: { tenant: Tenant }) {
             name="timezone"
             label="Time zone"
             hint="Times are entered and shown in this zone, whatever the attendee's device says."
-            error={errors?.timezone?.errors[0]}
           >
             <Combobox items={timezones} defaultValue={tenant.timezone} placeholder="e.g. Europe/Paris" />
           </Field>
@@ -120,9 +120,6 @@ function SettingsForm({ tenant }: { tenant: Tenant }) {
             </>
           }
           errors={[{ match: 'valueMissing', message: 'A domain is required.' }]}
-          error={
-            ApiError.is(mutation.error, 409) ? 'Another festival already uses this domain.' : errors?.domain?.errors[0]
-          }
         >
           <Input required maxLength={253} defaultValue={tenant.domain} className="font-mono" />
         </Field>
