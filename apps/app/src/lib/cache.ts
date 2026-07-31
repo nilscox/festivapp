@@ -1,10 +1,12 @@
 import type { Participant, TenantConfig } from '@festivapp/contracts';
-import { defined } from '@festivapp/utils';
 
-/** Same cache the service worker's `/files/` route writes to, so the two must not diverge. */
+declare global {
+  interface Navigator {
+    connection?: { saveData?: boolean };
+  }
+}
+
 const cacheName = 'tenant-files';
-
-/** A line-up runs to hundreds of images; fetching them all at once would starve the page's own requests. */
 const concurrency = 6;
 
 export async function warmTenantCache(tenant: TenantConfig, participants: Participant[]): Promise<void> {
@@ -13,16 +15,10 @@ export async function warmTenantCache(tenant: TenantConfig, participants: Partic
   }
 
   const { logo, backgroundImage } = tenant.theme;
+  const shell = [logo.wordmarkUrl, logo.iconUrl, backgroundImage?.url ?? null, tenant.mapUrl];
+  const participantImages = participants.map((participant) => participant.imageUrl);
 
-  const urls = [
-    logo.wordmarkUrl,
-    logo.iconUrl,
-    backgroundImage?.url ?? null,
-    tenant.mapUrl,
-    ...participants.map((participant) => participant.imageUrl),
-  ]
-    .filter((url) => url !== null)
-    .filter((url) => url.startsWith('/'));
+  const urls = [...shell, ...(navigator.connection?.saveData ? [] : participantImages)].filter((url) => url !== null);
 
   const cache = await caches.open(cacheName);
 
@@ -34,17 +30,13 @@ async function warmAll(cache: Cache, urls: string[]): Promise<void> {
 
   const worker = async () => {
     while (cursor < urls.length) {
-      const url = defined(urls[cursor++]);
+      const url = urls[cursor++];
 
-      try {
-        if (!(await cache.match(url))) {
-          await cache.add(url);
-        }
-      } catch {
-        // offline, or a file the tenant deleted: the next load tries again
+      if (url && !(await cache.match(url))) {
+        await cache.add(url).catch(() => {});
       }
     }
   };
 
-  await Promise.all(Array.from({ length: Math.min(concurrency, urls.length) }, worker));
+  await Promise.all(Array.from({ length: concurrency }, worker));
 }
