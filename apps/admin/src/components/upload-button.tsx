@@ -1,5 +1,5 @@
 import type { UploadedFile } from '@festivapp/contracts';
-import { assert, defined, has } from '@festivapp/utils';
+import { defined, has } from '@festivapp/utils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Upload } from 'lucide-react';
 import { useRef } from 'react';
@@ -42,8 +42,9 @@ export function UploadButton({
       onUploaded?.(results.filter(has('status', 'fulfilled')).map((result) => result.value));
     },
     onSettled: () => {
-      assert(inputRef.current);
-      inputRef.current.value = '';
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
     },
   });
 
@@ -77,24 +78,39 @@ function uploadErrorMessage(error: unknown, file: File): Renderable {
 
   if (ApiError.is(error, 415)) {
     return (
-      <div>
-        <div>{file.name} is not a supported image.</div>
-        <div className="text-muted text-sm">
-          Supported types:
-          <ul>
-            {acceptedTypes.map((type, index) => (
-              <li key={index}>{type}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      <Toast
+        message={`${file.name} is not a supported image.`}
+        description={
+          <>
+            Supported types:
+            <ul>
+              {acceptedTypes.map((type, index) => (
+                <li key={index}>{type}</li>
+              ))}
+            </ul>
+          </>
+        }
+      />
     );
   }
 
   return (
+    <Toast
+      message={`Could not upload ${file.name}.`}
+      description={error instanceof Error && <div className="text-muted text-sm">{error.message}</div>}
+    />
+  );
+}
+
+export function Toast({ message, description }: { message: React.ReactNode; description?: React.ReactNode }) {
+  if (!description) {
+    return message;
+  }
+
+  return (
     <div>
-      <div>Could not upload {file.name}.</div>
-      {error instanceof Error && <div className="text-muted text-sm">{error.message}</div>}
+      <div className="font-medium">{message}</div>
+      <div className="text-muted text-sm">{description}</div>
     </div>
   );
 }
