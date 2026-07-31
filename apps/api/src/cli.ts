@@ -1,7 +1,6 @@
 import type { TenantTheme } from '@festivapp/contracts';
 import { assert, defined } from '@festivapp/utils';
 import { Command } from 'commander';
-import { inArray } from 'drizzle-orm';
 import z from 'zod';
 
 import { hashPassword } from './auth/password.ts';
@@ -43,13 +42,7 @@ organizer
   .argument('<domains...>', 'one or more festival domains to grant access to')
   .option('-n, --name <name>', 'organizer display name')
   .action(async (email: string, password: string, domains: string[], options: { name?: string }) => {
-    const tenantRows = await db.select().from(tenants).where(inArray(tenants.domain, domains));
-    const foundDomains = new Set(tenantRows.map((row) => row.domain));
-    const missing = domains.filter((domain) => !foundDomains.has(domain));
-
-    if (missing.length > 0) {
-      throw new Error(`No festival found for domain(s): ${missing.join(', ')}`);
-    }
+    const tenantRows = await findTenants(domains);
 
     const [organizer] = await db
       .insert(organizers)
@@ -61,6 +54,28 @@ organizer
       .values(tenantRows.map((row) => ({ organizerId: defined(organizer).id, tenantId: row.id })));
 
     console.log(`Organizer ${email} ready with access to: ${tenantRows.map((r) => r.domain).join(', ')}`);
+  });
+
+organizer
+  .command('grant')
+  .description('Give an existing organizer access to one or more festivals')
+  .argument('<email>', 'organizer email', (email) => email.trim().toLowerCase())
+  .argument('<domains...>', 'one or more festival domains to grant access to')
+  .action(async (email: string, domains: string[]) => {
+    const organizer = await db.query.organizers.findFirst({ where: { email } });
+
+    if (!organizer) {
+      throw new Error(`No organizer found for email: ${email}`);
+    }
+
+    const tenantRows = await findTenants(domains);
+
+    await db
+      .insert(organizerTenants)
+      .values(tenantRows.map((row) => ({ organizerId: organizer.id, tenantId: row.id })))
+      .onConflictDoNothing();
+
+    console.log(`Organizer ${email} now has access to: ${tenantRows.map((r) => r.domain).join(', ')}`);
   });
 
 const festival = new Command('festival');
@@ -88,5 +103,17 @@ festival
 
     console.log(`Festival ${name} created with id ${tenant.id}`);
   });
+
+async function findTenants(domains: string[]) {
+  const rows = await db.query.tenants.findMany({ where: { domain: { in: domains } } });
+  const found = new Set(rows.map((row) => row.domain));
+  const missing = domains.filter((domain) => !found.has(domain));
+
+  if (missing.length > 0) {
+    throw new Error(`No festival found for domain(s): ${missing.join(', ')}`);
+  }
+
+  return rows;
+}
 
 await program.parseAsync(process.argv).finally(closeDatabase);
