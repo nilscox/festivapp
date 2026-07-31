@@ -7,7 +7,7 @@ import { db } from '../../db/client.ts';
 
 export const bootstrapRouter = Router();
 
-bootstrapRouter.get('/bootstrap', async (req, res) => {
+bootstrapRouter.get('/', async (req, res) => {
   const tenant = req.tenant;
   assert(tenant);
 

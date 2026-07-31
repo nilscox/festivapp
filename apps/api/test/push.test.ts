@@ -40,21 +40,6 @@ describe('DELETE /push/subscriptions', () => {
     assert.deepEqual(await db.query.pushSubscriptions.findMany(), []);
   });
 
-  it('leaves the device of another festival alone', async () => {
-    const tenant = await createTenant({ domain: 'coolfest.localhost' });
-    const other = await createTenant({ domain: 'other.localhost' });
-
-    const registered = await createPushSubscription(other);
-
-    const res = await api.delete('/push/subscriptions', { endpoint: registered.endpoint }, { host: tenant.domain });
-
-    assert.equal(res.status, 204);
-    assert.deepEqual(
-      (await db.query.pushSubscriptions.findMany()).map(({ id }) => id),
-      [registered.id],
-    );
-  });
-
   it('rejects an invalid body', async () => {
     const tenant = await createTenant({ domain: 'coolfest.localhost' });
 

@@ -8,6 +8,6 @@ import { pushRouter } from './push.ts';
 export const tenantRouter = Router();
 
 tenantRouter.use(requireTenant);
-tenantRouter.use(bootstrapRouter);
-tenantRouter.use(manifestRouter);
-tenantRouter.use(pushRouter);
+tenantRouter.use('/bootstrap', bootstrapRouter);
+tenantRouter.use('/manifest.webmanifest', manifestRouter);
+tenantRouter.use('/push/subscriptions', pushRouter);

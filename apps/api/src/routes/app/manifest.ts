@@ -3,7 +3,7 @@ import { Router } from 'express';
 
 export const manifestRouter = Router();
 
-manifestRouter.get('/manifest.webmanifest', (req, res) => {
+manifestRouter.get('/', (req, res) => {
   const tenant = req.tenant;
   assert(tenant);
 

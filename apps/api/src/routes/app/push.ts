@@ -17,7 +17,7 @@ const subscriptionSchema = z.strictObject({
   }),
 });
 
-pushRouter.post('/push/subscriptions', async (req, res) => {
+pushRouter.post('/', async (req, res) => {
   assert(req.tenant);
 
   if (!pushEnabled) {
@@ -37,7 +37,7 @@ pushRouter.post('/push/subscriptions', async (req, res) => {
   res.status(204).end();
 });
 
-pushRouter.delete('/push/subscriptions', async (req, res) => {
+pushRouter.delete('/', async (req, res) => {
   assert(req.tenant);
 
   const { endpoint } = subscriptionSchema.pick({ endpoint: true }).parse(req.body);

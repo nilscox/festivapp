@@ -1,3 +1,4 @@
+import { assert } from '@festivapp/utils';
 import { inArray } from 'drizzle-orm';
 import webpush, { WebPushError } from 'web-push';
 
@@ -7,7 +8,9 @@ import { pushSubscriptions, type PushSubscription } from './db/schema.ts';
 
 export const pushEnabled = Boolean(config.vapidPublicKey && config.vapidPrivateKey);
 
-if (config.vapidPublicKey && config.vapidPrivateKey) {
+if (pushEnabled) {
+  assert(config.vapidPublicKey);
+  assert(config.vapidPrivateKey);
   webpush.setVapidDetails(config.vapidSubject, config.vapidPublicKey, config.vapidPrivateKey);
 }
 

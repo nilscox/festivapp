@@ -1,5 +1,6 @@
 import { defined } from '@festivapp/utils';
 import { eq } from 'drizzle-orm';
+import type { PgInsertValue, PgTable } from 'drizzle-orm/pg-core';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import z from 'zod';
@@ -202,28 +203,17 @@ export async function seed(input: string, drop = false): Promise<void> {
   await db.transaction(async (tx) => {
     await tx.insert(schema.tenants).values(tenant);
 
-    if (files.length > 0) {
-      await tx.insert(schema.files).values(files);
-    }
+    await insertMany(schema.files, files);
+    await insertMany(schema.locations, locations);
+    await insertMany(schema.participants, participants);
+    await insertMany(schema.sessions, sessions);
+    await insertMany(schema.sessionParticipants, sessionParticipants);
+    await insertMany(schema.messages, messages);
 
-    if (locations.length > 0) {
-      await tx.insert(schema.locations).values(locations);
-    }
-
-    if (participants.length > 0) {
-      await tx.insert(schema.participants).values(participants);
-    }
-
-    if (sessions.length > 0) {
-      await tx.insert(schema.sessions).values(sessions);
-    }
-
-    if (sessionParticipants.length > 0) {
-      await tx.insert(schema.sessionParticipants).values(sessionParticipants);
-    }
-
-    if (messages.length > 0) {
-      await tx.insert(schema.messages).values(messages);
+    async function insertMany<Table extends PgTable>(table: Table, values: Array<PgInsertValue<Table>>) {
+      if (values.length > 0) {
+        await tx.insert(table).values(values);
+      }
     }
   });
 

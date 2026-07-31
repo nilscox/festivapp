@@ -41,12 +41,13 @@ messagesRouter.get('/', async (req, res) => {
 messagesRouter.post('/', async (req, res) => {
   assert(req.tenant);
 
+  const tenantId = req.tenant.id;
   const { notify, ...values } = createSchema.parse(req.body);
 
   const [row] = await db
     .insert(messages)
     .values({
-      tenantId: req.tenant.id,
+      tenantId,
       ...values,
     })
     .returning();
@@ -54,8 +55,6 @@ messagesRouter.post('/', async (req, res) => {
   res.status(201).json(toMessageDto(defined(row)));
 
   if (notify) {
-    const tenantId = req.tenant.id;
-
     void sendToTenant(tenantId, { title: values.title, body: values.body }).catch((error: unknown) => {
       console.error(`[api] failed to notify ${tenantId}:`, error);
     });
