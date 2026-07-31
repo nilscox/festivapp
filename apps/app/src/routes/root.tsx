@@ -10,14 +10,14 @@ import { applyTenant } from '../lib/theme.ts';
 
 export function RootLayout() {
   const query = useBootstrapQuery();
-  const tenant = query.data?.tenant;
+  const data = query.data;
 
   useEffect(() => {
-    if (tenant) {
-      applyTenant(tenant);
-      void warmTenantCache(tenant);
+    if (data) {
+      applyTenant(data.tenant);
+      void warmTenantCache(data.tenant, data.participants);
     }
-  }, [tenant]);
+  }, [data]);
 
   return (
     <div className="col border-line bg-app app-background mx-auto h-dvh w-full max-w-160 overflow-hidden sm:border-x">

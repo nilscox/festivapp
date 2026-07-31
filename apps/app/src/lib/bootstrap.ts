@@ -44,6 +44,7 @@ function selectBootstrap({ tenant, locations, participants, sessions, messages, 
     tenant,
     messages,
     pushPublicKey,
+    participants,
     locations: locations.toSorted((a, b) => a.position - b.position),
     sessions: sessions
       .map(
