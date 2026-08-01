@@ -1,11 +1,11 @@
 import { createRootRoute, createRoute } from '@tanstack/react-router';
 
-import { InfoPage } from './info.tsx';
-import { MapPage } from './map.tsx';
-import { Now } from './now.tsx';
-import { RootLayout } from './root.tsx';
-import { SessionDetail } from './session.tsx';
-import { Timetable } from './timetable.tsx';
+import { InfoPage } from './info/info.tsx';
+import { RootLayout } from './layout.tsx';
+import { MapPage } from './map/map.tsx';
+import { Now } from './now/now.tsx';
+import { SessionDetail } from './session/session.tsx';
+import { Timetable } from './timetable/timetable.tsx';
 
 const rootRoute = createRootRoute({
   component: RootLayout,

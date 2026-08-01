@@ -5,14 +5,14 @@ import { isAfter, isWithinInterval } from 'date-fns';
 import { Bell } from 'lucide-react';
 import { useState } from 'react';
 
-import { Banner, BannerButton } from '../components/banner.tsx';
-import { PageHeader } from '../components/page-header.tsx';
-import { SessionCard } from '../components/session-card.tsx';
-import { useClock } from '../hooks/use-clock.ts';
-import { useBootstrap, useTenant, type ResolvedSession } from '../lib/bootstrap.ts';
-import { countdownLabel, formatNowHeading, formatTime } from '../lib/datetime.ts';
-import { usePushSubscription } from '../lib/push.ts';
-import { sessionTitle } from '../lib/session.ts';
+import { Banner, BannerButton } from '../../components/banner.tsx';
+import { PageHeader } from '../../components/page-header.tsx';
+import { SessionCard } from '../../components/session-card.tsx';
+import { useClock } from '../../hooks/use-clock.ts';
+import { useBootstrap, useTenant, type ResolvedSession } from '../../lib/bootstrap.ts';
+import { countdownLabel, formatNowHeading, formatTime } from '../../lib/datetime.ts';
+import { usePushSubscription } from '../../lib/push.ts';
+import { sessionTitle } from '../../lib/session.ts';
 
 export function Now() {
   const data = useBootstrap();

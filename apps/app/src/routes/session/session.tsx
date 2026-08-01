@@ -3,11 +3,11 @@ import { defined, has } from '@festivapp/utils';
 import { Link, useParams } from '@tanstack/react-router';
 import { Calendar, ChevronLeft, Disc3, Map, MapPin } from 'lucide-react';
 
-import { Chip } from '../components/chip.tsx';
-import { SocialIcon } from '../components/social-icon.tsx';
-import { useBootstrap, useTenant, type ResolvedSession } from '../lib/bootstrap.ts';
-import { formatDayLabel, formatTime } from '../lib/datetime.ts';
-import { formatSessionType, isMusicSession, sessionSubhead, sessionTitle } from '../lib/session.ts';
+import { Chip } from '../../components/chip.tsx';
+import { SocialIcon } from '../../components/social-icon.tsx';
+import { useBootstrap, useTenant, type ResolvedSession } from '../../lib/bootstrap.ts';
+import { formatDayLabel, formatTime } from '../../lib/datetime.ts';
+import { formatSessionType, isMusicSession, sessionSubhead, sessionTitle } from '../../lib/session.ts';
 
 export function SessionDetail() {
   const { sessionId } = useParams({ from: '/session/$sessionId' });

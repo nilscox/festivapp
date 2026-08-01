@@ -1,11 +1,11 @@
 import type { Message } from '@festivapp/contracts';
 import { Bell, BellOff, Megaphone } from 'lucide-react';
 
-import { Banner, BannerButton } from '../components/banner.tsx';
-import { PageHeader } from '../components/page-header.tsx';
-import { useMessages, useTenant } from '../lib/bootstrap.ts';
-import { formatMessageDate } from '../lib/datetime.ts';
-import { usePushSubscription } from '../lib/push.ts';
+import { Banner, BannerButton } from '../../components/banner.tsx';
+import { PageHeader } from '../../components/page-header.tsx';
+import { useMessages, useTenant } from '../../lib/bootstrap.ts';
+import { formatMessageDate } from '../../lib/datetime.ts';
+import { usePushSubscription } from '../../lib/push.ts';
 
 export function InfoPage() {
   const messages = useMessages();

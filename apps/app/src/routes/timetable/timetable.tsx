@@ -1,10 +1,10 @@
 import { formatInTimeZone } from 'date-fns-tz';
 
-import { PageHeader } from '../components/page-header.tsx';
-import { SessionCard } from '../components/session-card.tsx';
-import { useClock } from '../hooks/use-clock.ts';
-import { useBootstrap, type ResolvedSession } from '../lib/bootstrap.ts';
-import { formatDayLabel } from '../lib/datetime.ts';
+import { PageHeader } from '../../components/page-header.tsx';
+import { SessionCard } from '../../components/session-card.tsx';
+import { useClock } from '../../hooks/use-clock.ts';
+import { useBootstrap, type ResolvedSession } from '../../lib/bootstrap.ts';
+import { formatDayLabel } from '../../lib/datetime.ts';
 
 type Day = {
   date: string;
