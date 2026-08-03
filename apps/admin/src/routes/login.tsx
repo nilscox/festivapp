@@ -1,18 +1,30 @@
 import { Form } from '@base-ui/react/form';
+import type { LoginRequest, MeResponse } from '@festivapp/contracts';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
 import { CircleAlert } from 'lucide-react';
 import { useMemo } from 'react';
 
 import { Button } from '../components/button.tsx';
 import { Field, Label } from '../components/field.tsx';
 import { Input } from '../components/input.tsx';
-import { ApiError } from '../lib/api.ts';
-import { useLogin } from '../lib/auth.ts';
+import { api, ApiError } from '../lib/api.ts';
 import { parseValidationError } from '../lib/errors.ts';
 
 // oxlint-disable jsx-a11y/tabindex-no-positive
 
 export function Login() {
-  const { mutate, isPending, error } = useLogin();
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  const { mutate, isPending, error } = useMutation({
+    mutationFn: (body: LoginRequest) => api.post<MeResponse>('/admin/auth/login', body),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['me'], data);
+      void router.invalidate();
+    },
+  });
+
   const errors = useMemo(() => parseValidationError(error), [error]);
 
   return (

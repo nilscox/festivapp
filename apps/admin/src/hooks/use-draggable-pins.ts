@@ -1,10 +1,11 @@
-import type { Location, MapPin } from '@festivapp/contracts';
+import type { Location, LocationUpdate, MapPin } from '@festivapp/contracts';
 import { assert } from '@festivapp/utils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { PointerEvent, RefObject } from 'react';
 import { useState } from 'react';
 
-import { listLocationsOptions, updateLocationOptions } from '../lib/locations.ts';
+import { api } from '../lib/api.ts';
+import { listLocationsOptions } from '../lib/queries.ts';
 
 export type PinHandlers = {
   onPointerDown: (event: PointerEvent) => void;
@@ -98,7 +99,8 @@ function useOptimisticPins(tenantId: string) {
   const [pins, setPins] = useState<Record<string, MapPin>>({});
 
   const mutation = useMutation({
-    ...updateLocationOptions(tenantId),
+    mutationFn: ([id, input]: [id: string, input: LocationUpdate]) =>
+      api.patch<Location>(`/admin/tenants/${tenantId}/locations/${id}`, input),
     onSuccess: async (location) => {
       await queryClient.invalidateQueries(listLocationsOptions(tenantId));
 

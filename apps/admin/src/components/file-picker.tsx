@@ -3,7 +3,7 @@ import { matchesSearch } from '@festivapp/utils';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { listFilesOptions } from '../lib/files.ts';
+import { listFilesOptions } from '../lib/queries.ts';
 import { Drawer } from './drawer.tsx';
 import { EmptyState } from './empty-state.tsx';
 import { QueryBoundary } from './query-boundary.tsx';

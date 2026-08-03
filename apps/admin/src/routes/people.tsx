@@ -22,15 +22,9 @@ import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
 import { Textarea } from '../components/textarea.tsx';
 import { Thumbnail } from '../components/thumbnail.tsx';
 import { useSearchParam } from '../hooks/use-search-param.ts';
+import { api } from '../lib/api.ts';
 import { parseValidationError } from '../lib/errors.ts';
-import {
-  createParticipantOptions,
-  deleteParticipantOptions,
-  listParticipantsOptions,
-  updateParticipantOptions,
-} from '../lib/participants.ts';
-import { listSessionsOptions } from '../lib/sessions.ts';
-import { getThemeOptions } from '../lib/theme.ts';
+import { getThemeOptions, listParticipantsOptions, listSessionsOptions } from '../lib/queries.ts';
 
 const from = '/festivals/$tenantId/people';
 
@@ -81,7 +75,7 @@ function PeopleList({ tenant, participants }: { tenant: TenantSummary; participa
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
-    ...deleteParticipantOptions(tenant.id),
+    mutationFn: (id: string) => api.delete<void>(`/admin/tenants/${tenant.id}/participants/${id}`),
     onSuccess: async () => {
       await queryClient.invalidateQueries(listParticipantsOptions(tenant.id));
       await queryClient.invalidateQueries(listSessionsOptions(tenant.id));
@@ -247,8 +241,16 @@ function ParticipantForm({
 
   const invalidate = () => queryClient.invalidateQueries(listParticipantsOptions(tenant.id));
 
-  const createMutation = useMutation({ ...createParticipantOptions(tenant.id), onSuccess: invalidate });
-  const updateMutation = useMutation({ ...updateParticipantOptions(tenant.id), onSuccess: invalidate });
+  const createMutation = useMutation({
+    mutationFn: (input: ParticipantInput) => api.post<Participant>(`/admin/tenants/${tenant.id}/participants`, input),
+    onSuccess: invalidate,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ([id, input]: [id: string, participant: ParticipantInput]) =>
+      api.patch<Participant>(`/admin/tenants/${tenant.id}/participants/${id}`, input),
+    onSuccess: invalidate,
+  });
 
   const [imageUrl, setImageUrl] = useState(defaultValue?.imageUrl ?? null);
 

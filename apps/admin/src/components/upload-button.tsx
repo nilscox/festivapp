@@ -5,8 +5,8 @@ import { Upload } from 'lucide-react';
 import { useRef } from 'react';
 import { toast, type Renderable } from 'react-hot-toast';
 
-import { ApiError } from '../lib/api.ts';
-import { listFilesOptions, uploadFilesOptions } from '../lib/files.ts';
+import { api, ApiError } from '../lib/api.ts';
+import { listFilesOptions } from '../lib/queries.ts';
 import { Button } from './button.tsx';
 import { Spinner } from './spinner.tsx';
 
@@ -29,7 +29,16 @@ export function UploadButton({
   const queryClient = useQueryClient();
 
   const upload = useMutation({
-    ...uploadFilesOptions(tenantId),
+    mutationFn: (files: File[]) => {
+      const upload = (file: File) => {
+        const search = new URLSearchParams({ name: file.name });
+        const url = `/admin/tenants/${tenantId}/files?${search}`;
+
+        return api.post<UploadedFile>(url, file);
+      };
+
+      return Promise.allSettled(files.map(upload));
+    },
     onSuccess: async (results, files) => {
       for (const [index, result] of results.entries()) {
         if (result.status === 'rejected') {

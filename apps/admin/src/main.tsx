@@ -11,7 +11,7 @@ import { toast, Toaster } from 'react-hot-toast';
 
 import { RouteError } from './components/route-error.tsx';
 import { ApiError } from './lib/api.ts';
-import { getMeOptions } from './lib/auth.ts';
+import { getMeOptions } from './lib/queries.ts';
 import { routeTree } from './routes/route-tree.tsx';
 import './styles.css';
 

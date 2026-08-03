@@ -14,12 +14,15 @@ import { QueryBoundary } from '../components/query-boundary.tsx';
 import { NoMatch, SearchInput, SearchSummary } from '../components/search.tsx';
 import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
 import { useSearchParam } from '../hooks/use-search-param.ts';
+import { api } from '../lib/api.ts';
 import { formatTime } from '../lib/datetime.ts';
-import { listLocationsOptions } from '../lib/locations.ts';
-import { listParticipantsOptions } from '../lib/participants.ts';
+import {
+  getTenantOptions,
+  listLocationsOptions,
+  listParticipantsOptions,
+  listSessionsOptions,
+} from '../lib/queries.ts';
 import { getScheduleSessions, groupByDay, type ScheduleSession } from '../lib/schedule.ts';
-import { deleteSessionOptions, listSessionsOptions } from '../lib/sessions.ts';
-import { getTenantOptions } from '../lib/tenant.ts';
 
 const from = '/festivals/$tenantId/schedule';
 
@@ -117,7 +120,7 @@ function SessionsList({
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
-    ...deleteSessionOptions(tenant.id),
+    mutationFn: (id: string) => api.delete<void>(`/admin/tenants/${tenant.id}/sessions/${id}`),
     onSuccess: () => queryClient.invalidateQueries(listSessionsOptions(tenant.id)),
   });
 

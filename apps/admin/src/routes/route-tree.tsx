@@ -6,14 +6,16 @@ import * as z from 'zod/mini';
 import { RouteError } from '../components/route-error.tsx';
 import { Spinner } from '../components/spinner.tsx';
 import { ApiError } from '../lib/api.ts';
-import { getMeOptions } from '../lib/auth.ts';
-import { listFilesOptions } from '../lib/files.ts';
-import { listLocationsOptions } from '../lib/locations.ts';
-import { listMessagesOptions } from '../lib/messages.ts';
-import { listParticipantsOptions } from '../lib/participants.ts';
-import { listSessionsOptions } from '../lib/sessions.ts';
-import { getTenantOptions } from '../lib/tenant.ts';
-import { getThemeOptions } from '../lib/theme.ts';
+import {
+  getMeOptions,
+  getTenantOptions,
+  getThemeOptions,
+  listFilesOptions,
+  listLocationsOptions,
+  listMessagesOptions,
+  listParticipantsOptions,
+  listSessionsOptions,
+} from '../lib/queries.ts';
 
 const Files = lazyRouteComponent(() => import('./files.tsx'), 'Files');
 const Layout = lazyRouteComponent(() => import('./layout.tsx'), 'Layout');

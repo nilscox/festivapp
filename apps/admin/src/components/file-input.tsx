@@ -4,8 +4,7 @@ import { has } from '@festivapp/utils';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { listFilesOptions } from '../lib/files.ts';
-import { getThemeOptions } from '../lib/theme.ts';
+import { getThemeOptions, listFilesOptions } from '../lib/queries.ts';
 import { Button } from './button.tsx';
 import { FilePicker } from './file-picker.tsx';
 import { Thumbnail } from './thumbnail.tsx';

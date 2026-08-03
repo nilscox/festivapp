@@ -16,7 +16,8 @@ import { QueryBoundary } from '../components/query-boundary.tsx';
 import { Range } from '../components/range.tsx';
 import { Section } from '../components/section.tsx';
 import { Textarea } from '../components/textarea.tsx';
-import { getThemeOptions, updateThemeOptions } from '../lib/theme.ts';
+import { api } from '../lib/api.ts';
+import { getThemeOptions } from '../lib/queries.ts';
 
 const from = '/festivals/$tenantId/theme';
 const minimumContrast = 4.5;
@@ -54,7 +55,7 @@ function ThemeForm({ tenant, theme }: { tenant: TenantSummary; theme: TenantThem
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    ...updateThemeOptions(tenant.id),
+    mutationFn: (theme: TenantTheme) => api.put<TenantTheme>(`/admin/tenants/${tenant.id}/theme`, theme),
     onSuccess: () => queryClient.invalidateQueries(getThemeOptions(tenant.id)),
   });
 

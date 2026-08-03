@@ -1,6 +1,7 @@
 import { Dialog } from '@base-ui/react/dialog';
 import { Select } from '@base-ui/react/select';
 import type { Organizer, TenantSummary } from '@festivapp/contracts';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, Outlet, useNavigate, useRouteContext } from '@tanstack/react-router';
 import clsx from 'clsx';
 import {
@@ -22,7 +23,7 @@ import { ConfirmDialogProvider } from '../components/confirm-dialog.tsx';
 import { Eyebrow } from '../components/eyebrow.tsx';
 import { OpenDrawerProvider } from '../components/page.tsx';
 import { useMediaQuery } from '../hooks/use-media-query.ts';
-import { useLogout } from '../lib/auth.ts';
+import { api } from '../lib/api.ts';
 
 const navigation: Array<{
   label: string;
@@ -213,7 +214,15 @@ function OrganizerInfo({ organizer }: { organizer: Organizer }) {
 }
 
 function LogoutButton() {
-  const logout = useLogout();
+  const queryClient = useQueryClient();
+
+  const logout = useMutation({
+    mutationFn: () => api.post<void>('/admin/auth/logout'),
+    onSuccess: () => {
+      queryClient.clear();
+    },
+  });
+
   const navigate = useNavigate();
 
   return (

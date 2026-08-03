@@ -1,5 +1,5 @@
 import { Form } from '@base-ui/react/form';
-import type { Message, TenantSummary } from '@festivapp/contracts';
+import type { Message, MessageInput, MessageUpdate, TenantSummary } from '@festivapp/contracts';
 import { has } from '@festivapp/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
@@ -19,14 +19,9 @@ import { QueryBoundary } from '../components/query-boundary.tsx';
 import { SearchSummary } from '../components/search.tsx';
 import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
 import { Textarea } from '../components/textarea.tsx';
+import { api } from '../lib/api.ts';
 import { parseValidationError } from '../lib/errors.ts';
-import {
-  createMessageOptions,
-  deleteMessageOptions,
-  listMessagesOptions,
-  updateMessageOptions,
-} from '../lib/messages.ts';
-import { getTenantOptions } from '../lib/tenant.ts';
+import { getTenantOptions, listMessagesOptions } from '../lib/queries.ts';
 
 const from = '/festivals/$tenantId/messages';
 
@@ -91,7 +86,7 @@ function MessagesList({ tenant, messages }: { tenant: TenantSummary; messages: M
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
-    ...deleteMessageOptions(tenant.id),
+    mutationFn: (id: string) => api.delete<void>(`/admin/tenants/${tenant.id}/messages/${id}`),
     onSuccess: () => queryClient.invalidateQueries(listMessagesOptions(tenant.id)),
   });
 
@@ -189,12 +184,13 @@ function MessageForm({
   const invalidate = () => queryClient.invalidateQueries(listMessagesOptions(tenantId));
 
   const createMutation = useMutation({
-    ...createMessageOptions(tenantId),
+    mutationFn: (input: MessageInput) => api.post<Message>(`/admin/tenants/${tenantId}/messages`, input),
     onSuccess: invalidate,
   });
 
   const updateMutation = useMutation({
-    ...updateMessageOptions(tenantId),
+    mutationFn: ([id, input]: [id: string, input: MessageUpdate]) =>
+      api.patch<Message>(`/admin/tenants/${tenantId}/messages/${id}`, input),
     onSuccess: invalidate,
   });
 

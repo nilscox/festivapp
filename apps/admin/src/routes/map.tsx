@@ -1,4 +1,4 @@
-import type { Location, MapPin, MapPinLabelPosition } from '@festivapp/contracts';
+import type { Location, MapPin, MapPinLabelPosition, Tenant, TenantInput } from '@festivapp/contracts';
 import { has } from '@festivapp/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouteContext } from '@tanstack/react-router';
@@ -13,9 +13,8 @@ import { FilePicker } from '../components/file-picker.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { QueryBoundary } from '../components/query-boundary.tsx';
 import { useDraggablePins, type PinHandlers } from '../hooks/use-draggable-pins.ts';
-import { listLocationsOptions } from '../lib/locations.ts';
-import { getTenantOptions, updateTenantOptions } from '../lib/tenant.ts';
-import { getThemeOptions } from '../lib/theme.ts';
+import { api } from '../lib/api.ts';
+import { getTenantOptions, getThemeOptions, listLocationsOptions } from '../lib/queries.ts';
 
 const from = '/festivals/$tenantId/map';
 
@@ -243,7 +242,7 @@ function useSetMapUrl(tenantId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    ...updateTenantOptions(tenantId),
+    mutationFn: (input: Partial<TenantInput>) => api.patch<Tenant>(`/admin/tenants/${tenantId}`, input),
     onSuccess: () => queryClient.invalidateQueries(getTenantOptions(tenantId)),
   });
 }

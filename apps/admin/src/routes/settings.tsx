@@ -1,5 +1,5 @@
 import { Form } from '@base-ui/react/form';
-import type { Tenant } from '@festivapp/contracts';
+import type { Tenant, TenantInput } from '@festivapp/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouteContext, useRouter } from '@tanstack/react-router';
 import { useMemo } from 'react';
@@ -13,10 +13,9 @@ import { Input } from '../components/input.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { QueryBoundary } from '../components/query-boundary.tsx';
 import { Section } from '../components/section.tsx';
-import { ApiError } from '../lib/api.ts';
-import { getMeOptions } from '../lib/auth.ts';
+import { api, ApiError } from '../lib/api.ts';
 import { parseValidationError } from '../lib/errors.ts';
-import { getTenantOptions, updateTenantOptions } from '../lib/tenant.ts';
+import { getMeOptions, getTenantOptions } from '../lib/queries.ts';
 
 const from = '/festivals/$tenantId/settings';
 
@@ -45,7 +44,7 @@ function SettingsForm({ tenant }: { tenant: Tenant }) {
   const confirm = useConfirmDialog();
 
   const mutation = useMutation({
-    ...updateTenantOptions(tenant.id),
+    mutationFn: (input: Partial<TenantInput>) => api.patch<Tenant>(`/admin/tenants/${tenant.id}`, input),
     onSuccess: async () => {
       await Promise.all([
         queryClient.refetchQueries(getTenantOptions(tenant.id)),

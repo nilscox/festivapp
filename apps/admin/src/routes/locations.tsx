@@ -1,5 +1,5 @@
 import { Form } from '@base-ui/react/form';
-import type { Location, TenantSummary } from '@festivapp/contracts';
+import type { Location, LocationInput, LocationUpdate, TenantSummary } from '@festivapp/contracts';
 import { has } from '@festivapp/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
@@ -18,14 +18,9 @@ import { SearchSummary } from '../components/search.tsx';
 import { Select } from '../components/select.tsx';
 import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
 import { Textarea } from '../components/textarea.tsx';
+import { api } from '../lib/api.ts';
 import { parseValidationError } from '../lib/errors.ts';
-import {
-  createLocationOptions,
-  deleteLocationOptions,
-  listLocationsOptions,
-  updateLocationOptions,
-} from '../lib/locations.ts';
-import { listSessionsOptions } from '../lib/sessions.ts';
+import { listLocationsOptions, listSessionsOptions } from '../lib/queries.ts';
 
 const from = '/festivals/$tenantId/locations';
 
@@ -90,7 +85,7 @@ function LocationsList({ tenant, locations }: { tenant: TenantSummary; locations
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
-    ...deleteLocationOptions(tenant.id),
+    mutationFn: (id: string) => api.delete<void>(`/admin/tenants/${tenant.id}/locations/${id}`),
     onSuccess: async () => {
       await queryClient.invalidateQueries(listLocationsOptions(tenant.id));
       await queryClient.invalidateQueries(listSessionsOptions(tenant.id));
@@ -191,12 +186,13 @@ function LocationForm({
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    ...createLocationOptions(tenant.id),
+    mutationFn: (input: LocationInput) => api.post<Location>(`/admin/tenants/${tenant.id}/locations`, input),
     onSuccess: () => queryClient.invalidateQueries(listLocationsOptions(tenant.id)),
   });
 
   const updateMutation = useMutation({
-    ...updateLocationOptions(tenant.id),
+    mutationFn: ([id, input]: [id: string, input: LocationUpdate]) =>
+      api.patch<Location>(`/admin/tenants/${tenant.id}/locations/${id}`, input),
     onSuccess: () => queryClient.invalidateQueries(listLocationsOptions(tenant.id)),
   });
 

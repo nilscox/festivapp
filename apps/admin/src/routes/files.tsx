@@ -15,9 +15,8 @@ import { NoMatch, SearchInput, SearchSummary } from '../components/search.tsx';
 import { Thumbnail } from '../components/thumbnail.tsx';
 import { UploadButton } from '../components/upload-button.tsx';
 import { useSearchParam } from '../hooks/use-search-param.ts';
-import { ApiError } from '../lib/api.ts';
-import { deleteFileOptions, listFilesOptions } from '../lib/files.ts';
-import { getThemeOptions } from '../lib/theme.ts';
+import { api, ApiError } from '../lib/api.ts';
+import { getThemeOptions, listFilesOptions } from '../lib/queries.ts';
 
 const from = '/festivals/$tenantId/files';
 
@@ -58,7 +57,7 @@ function FilesList({
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
-    ...deleteFileOptions(tenant.id),
+    mutationFn: (id: string) => api.delete<void>(`/admin/tenants/${tenant.id}/files/${id}`),
     onSuccess: () => queryClient.invalidateQueries(listFilesOptions(tenant.id)),
     onError: (error) => {
       if (ApiError.is(error, 409)) {
