@@ -6,21 +6,16 @@ import { z } from 'zod';
 
 import { db } from '../../db/client.ts';
 import { participants, type Participant } from '../../db/schema.ts';
+import { falsyToNull } from '../../utils.ts';
 
 export const participantsRouter = Router({ mergeParams: true });
 
-const text = z
-  .string()
-  .trim()
-  .nullish()
-  .transform((value) => value || null);
-
 const createSchema = z.object({
   name: z.string().trim().min(1).max(200),
-  description: text,
-  imageUrl: text,
-  origin: text,
-  label: text,
+  description: z.string().trim().nullish().transform(falsyToNull),
+  imageUrl: z.string().trim().nullish().transform(falsyToNull),
+  origin: z.string().trim().nullish().transform(falsyToNull),
+  label: z.string().trim().nullish().transform(falsyToNull),
   styles: z.array(z.string().trim().min(1).max(30)).optional(),
   socialLinks: z.array(z.url().trim().min(1).max(400)).optional(),
 });

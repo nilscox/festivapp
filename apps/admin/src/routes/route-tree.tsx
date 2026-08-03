@@ -11,6 +11,7 @@ import { listFilesOptions } from '../lib/files.ts';
 import { listLocationsOptions } from '../lib/locations.ts';
 import { listMessagesOptions } from '../lib/messages.ts';
 import { listParticipantsOptions } from '../lib/participants.ts';
+import { listSessionsOptions } from '../lib/sessions.ts';
 import { getTenantOptions } from '../lib/tenant.ts';
 import { getThemeOptions } from '../lib/theme.ts';
 
@@ -21,6 +22,7 @@ const Locations = lazyRouteComponent(() => import('./locations.tsx'), 'Locations
 const Messages = lazyRouteComponent(() => import('./messages.tsx'), 'Messages');
 const Login = lazyRouteComponent(() => import('./login.tsx'), 'Login');
 const People = lazyRouteComponent(() => import('./people.tsx'), 'People');
+const Schedule = lazyRouteComponent(() => import('./schedule.tsx'), 'Schedule');
 const Settings = lazyRouteComponent(() => import('./settings.tsx'), 'Settings');
 const Theme = lazyRouteComponent(() => import('./theme.tsx'), 'Theme');
 
@@ -124,7 +126,14 @@ const peopleRoute = createRoute({
 const scheduleRoute = createRoute({
   getParentRoute: () => festivalRoute,
   path: 'schedule',
-  component: () => null,
+  validateSearch: z.object({ search: z.optional(z.string()) }),
+  component: Schedule,
+  loader: ({ context: { queryClient, tenant } }) => {
+    void queryClient.prefetchQuery(getTenantOptions(tenant.id));
+    void queryClient.prefetchQuery(listSessionsOptions(tenant.id));
+    void queryClient.prefetchQuery(listLocationsOptions(tenant.id));
+    void queryClient.prefetchQuery(listParticipantsOptions(tenant.id));
+  },
 });
 
 const locationsRoute = createRoute({

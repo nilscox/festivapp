@@ -6,16 +6,13 @@ import { z } from 'zod';
 
 import { db } from '../../db/client.ts';
 import { locations, type Location } from '../../db/schema.ts';
+import { falsyToNull } from '../../utils.ts';
 
 export const locationsRouter = Router({ mergeParams: true });
 
 const createSchema = z.strictObject({
   name: z.string().trim().min(1),
-  description: z
-    .string()
-    .trim()
-    .nullish()
-    .transform((value) => value || null),
+  description: z.string().trim().nullish().transform(falsyToNull),
   position: z.number().int().min(0),
 });
 

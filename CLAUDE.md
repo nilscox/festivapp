@@ -83,6 +83,12 @@ packages/
   Other failures respond `{ error: '<snake_code>' }`.
 - **Guard clauses are one-liners:** `return res.status(x).json(...)` (Express 5
   ignores the return value) — no separate `return;`.
+- **`PATCH` for a flat resource, `PUT` for one with children.** Locations,
+  participants and messages take a partial `PATCH` (`createSchema.partial()`).
+  Sessions take a whole-body `PUT`: they own their `session_participants` rows,
+  which a patch would have to merge before validating (a session needs a title
+  _or_ a line-up, so the rule is a property of the result, not of the body) and
+  then reconcile. Replacing outright keeps one schema and one write.
 - **Compose routers by mounting shared middleware on a parent segment.**
   `/admin/tenants/:tenantId` carries `requireOrganizer, requireTenantMembership`
   once, then nests resource routers (`tenantRouter.use('/locations', locationsRouter)`).
@@ -175,9 +181,11 @@ packages/
 - **A filterable list assembles the `search.tsx` primitives** rather than a single
   list component: `SearchInput`, `SearchSummary` (the count line — its `children`
   are the idle summary, the "n of m matching" form is built in) and `NoMatch` (the
-  no-match `EmptyState` with its clear button). The list keeps the filtering itself
-  (`items.filter((item) => matchesSearch(search, …))`, no `useMemo` — the lists are
-  small and the closure would break the deps) and renders its own rows. It holds the
+  no-match `EmptyState` with its clear button). Filter wherever it reads best —
+  inline in the list (`items.filter((item) => matchesSearch(search, …))`) or through
+  a predicate the derived row carries (`ScheduleSession.matches`, `lib/schedule.ts`)
+  — but never behind a `useMemo`: the lists are small and the closure would break the
+  deps. The list renders its own rows, and holds the
   search state too: a page in the URL through `useSearchParam(from)` (widen its route
   union when a new route gains a `search` param), a drawer in a `useState`. The
   "nothing at all yet" empty state is a separate early return — it belongs to the
@@ -218,9 +226,16 @@ packages/
   render.
 - **Compose small primitives**, exported component first with sub-components below:
   `Field`, `Input`, `Select`, `Table`/`TableHeader`, `Page`/`PageHeader`,
-  `EmptyState`, `Spinner`, `Drawer`, `ConfirmDialog`,
+  `EmptyState`, `Spinner`, `Drawer`, `ConfirmDialog`, `Chip`,
   `Button`/`LinkButton`/`IconButton`. Use `createLink` to make a styled anchor
   router-aware.
+- **Every inline tag, badge or pill is a `<Chip>`** (`components/chip.tsx`), sized
+  `sm`/`md`/`lg` with a `neutral`/`warning` variant and an optional `mono`. A chip
+  whose colors are computed elsewhere (the schedule's per-session-type palette)
+  takes `variant="custom"` and passes them in `className` — a variant's own
+  `bg-*`/`text-*` would otherwise collide with them, since Tailwind, not the class
+  string, decides which wins. Chips are flex rows, so a label that can overflow
+  needs its own `<span className="truncate">`.
 - **Keep the first-paint bundle small.** Lazy-load heavy route components with
   `lazyRouteComponent(() => import('./x.tsx'), 'X')` (route definitions, loaders and
   `validateSearch` stay eager so they can still prefetch) — this defers Base UI's

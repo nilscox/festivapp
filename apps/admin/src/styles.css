@@ -29,6 +29,10 @@
   --color-danger: #dc2626;
   --color-danger-ink: #b91c1c;
   --color-danger-line: #fecaca;
+
+  --color-warning: #ea580c;
+  --color-warning-ink: #c2410c;
+  --color-warning-line: #fed7aa;
 }
 
 @layer base {

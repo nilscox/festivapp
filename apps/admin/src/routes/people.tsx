@@ -7,6 +7,7 @@ import { Pencil, Plus, Trash2, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Button, IconButton, LinkButton } from '../components/button.tsx';
+import { Chip } from '../components/chip.tsx';
 import { useConfirmDialog } from '../components/confirm-dialog.tsx';
 import { Drawer } from '../components/drawer.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
@@ -28,6 +29,7 @@ import {
   listParticipantsOptions,
   updateParticipantOptions,
 } from '../lib/participants.ts';
+import { listSessionsOptions } from '../lib/sessions.ts';
 import { getThemeOptions } from '../lib/theme.ts';
 
 const from = '/festivals/$tenantId/people';
@@ -80,7 +82,10 @@ function PeopleList({ tenant, participants }: { tenant: TenantSummary; participa
 
   const deleteMutation = useMutation({
     ...deleteParticipantOptions(tenant.id),
-    onSuccess: () => queryClient.invalidateQueries(listParticipantsOptions(tenant.id)),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries(listParticipantsOptions(tenant.id));
+      await queryClient.invalidateQueries(listSessionsOptions(tenant.id));
+    },
   });
 
   const confirm = useConfirmDialog();
@@ -186,9 +191,7 @@ function ParticipantItem({
 
       <div className="row min-w-0 flex-1 flex-wrap gap-1 max-md:hidden">
         {participant.styles.map((style) => (
-          <span key={style} className="bg-subtle text-muted truncate rounded-md px-2 py-1 font-mono text-xs">
-            {style}
-          </span>
+          <Chip key={style}>{style}</Chip>
         ))}
       </div>
 

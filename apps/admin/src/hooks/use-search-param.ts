@@ -1,6 +1,6 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 
-type SearchableRoute = '/festivals/$tenantId/people' | '/festivals/$tenantId/files';
+type SearchableRoute = '/festivals/$tenantId/people' | '/festivals/$tenantId/files' | '/festivals/$tenantId/schedule';
 
 export function useSearchParam(from: SearchableRoute) {
   const { search = '' } = useSearch({ from });

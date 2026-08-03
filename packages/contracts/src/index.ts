@@ -263,6 +263,26 @@ export type ParticipantInput = {
 };
 
 /**
+ * Body of `POST /admin/tenants/:tenantId/sessions` and of the `PUT` on one of
+ * them, which replaces the session whole — there is no partial update. A session
+ * with no participants must carry a title: the attendee app only falls back to
+ * the artist's name for a single-artist`dj_set`/`live`, so anything else would
+ * render as a blank card.
+ */
+export type SessionInput = {
+  locationId: string;
+  type: SessionType;
+  title: string | null;
+  description: string | null;
+  /** Participants on this session, in presentation order. */
+  participantIds: string[];
+  /** ISO 8601 string. */
+  startsAt: string;
+  /** ISO 8601 string. Must be after `startsAt`. */
+  endsAt: string;
+};
+
+/**
  * Body of `POST /admin/tenants/:tenantId/messages`. The message is published as
  * soon as it is created; `notify` decides whether that also pushes it to every
  * subscribed device.

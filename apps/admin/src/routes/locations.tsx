@@ -25,6 +25,7 @@ import {
   listLocationsOptions,
   updateLocationOptions,
 } from '../lib/locations.ts';
+import { listSessionsOptions } from '../lib/sessions.ts';
 
 const from = '/festivals/$tenantId/locations';
 
@@ -90,7 +91,10 @@ function LocationsList({ tenant, locations }: { tenant: TenantSummary; locations
 
   const deleteMutation = useMutation({
     ...deleteLocationOptions(tenant.id),
-    onSuccess: () => queryClient.invalidateQueries(listLocationsOptions(tenant.id)),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries(listLocationsOptions(tenant.id));
+      await queryClient.invalidateQueries(listSessionsOptions(tenant.id));
+    },
   });
 
   const confirm = useConfirmDialog();
@@ -98,7 +102,7 @@ function LocationsList({ tenant, locations }: { tenant: TenantSummary; locations
   const onDelete = (location: Location) => {
     confirm({
       title: `Delete "${location.name}"?`,
-      description: `This removes the location from ${tenant.name}. Sessions assigned to it will need a new location. This can't be undone.`,
+      description: `This removes the location from ${tenant.name}, along with every session scheduled there. This can't be undone.`,
       confirmLabel: 'Delete',
       onConfirm: () => deleteMutation.mutateAsync(location.id),
     });

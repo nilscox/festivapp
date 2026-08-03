@@ -6,6 +6,7 @@ import { filesRouter } from './files.ts';
 import { locationsRouter } from './locations.ts';
 import { messagesRouter } from './messages.ts';
 import { participantsRouter } from './participants.ts';
+import { sessionsRouter } from './sessions.ts';
 import { tenantRouter } from './tenant.ts';
 import { themeRouter } from './theme.ts';
 
@@ -20,4 +21,5 @@ router.use('/files', filesRouter);
 router.use('/locations', locationsRouter);
 router.use('/messages', messagesRouter);
 router.use('/participants', participantsRouter);
+router.use('/sessions', sessionsRouter);
 router.use('/theme', themeRouter);
