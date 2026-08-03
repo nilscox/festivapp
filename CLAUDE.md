@@ -309,6 +309,31 @@ Deliberately simpler than the backoffice — no auth, no forms, no router contex
   local sub-components and helpers it uses below it. Constants and type
   declarations stay at the top.
 
+## Deployment
+
+Each app ships as its own image, built and pushed to GHCR by
+`.github/workflows/deploy.yml` (triggered by a successful CI run on `master`),
+then redeployed by a Coolify webhook per service.
+
+- **The API image keeps the pnpm workspace layout, symlinks included.** `packages/utils`
+  exports TypeScript sources, and node refuses to strip types under `node_modules` —
+  the symlink's realpath is what saves it. `pnpm deploy` (or a hoisted node-linker)
+  copies the package in as a real directory and the image dies at startup on
+  `ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`.
+- **The frontends are same-origin — nginx in each image proxies to the API.** They
+  call `/api/*`, `/files/*` (and the app `/manifest.webmanifest`), which in dev is
+  Vite's proxy and in production is `nginx.conf.template` in each app. It **must
+  forward `Host`**, since that is how the API resolves the tenant. The upstream is
+  `${API_URL}`, held in a variable with a `resolver` so nginx still starts when the
+  API container is not up yet — a literal `proxy_pass` resolves at startup and
+  hard-fails.
+- **The build stages must not copy the root `tsconfig.json`.** It is a solution file
+  referencing every workspace project, so a build context holding only one app fails
+  on the missing references.
+- Production needs `DATABASE_URL` set — unset, the API silently boots on in-process
+  pglite and loses everything on restart. `STORAGE_DIR` defaults to `/data/files` in
+  the image and wants a volume. See the README for the full variable list.
+
 ## Commands
 
 - Root: `pnpm typecheck`, `pnpm lint`, `pnpm format`
