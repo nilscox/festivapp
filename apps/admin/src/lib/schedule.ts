@@ -1,5 +1,5 @@
 import type { Location, Participant, Session } from '@festivapp/contracts';
-import { matchesSearch } from '@festivapp/utils';
+import { get, matchesSearch } from '@festivapp/utils';
 
 import { formatDayKey, formatDayLabel } from './datetime.ts';
 
@@ -55,7 +55,7 @@ export function getScheduleSessions(
       .map((participantId) => participantsById.get(participantId))
       .filter((participant) => participant !== undefined);
 
-    const participantNames = participants.map((participant) => participant.name);
+    const participantNames = participants.map(get('name'));
 
     const matchItems = [session.title, location.name, ...participantNames];
 

@@ -1,4 +1,5 @@
 import type { BootstrapResponse } from '@festivapp/contracts';
+import { get } from '@festivapp/utils';
 import { sub } from 'date-fns';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -93,11 +94,7 @@ describe('GET /bootstrap', () => {
 
     const res = await api.get<BootstrapResponse>('/bootstrap', { host: 'coolfest.localhost' });
 
-    assert.deepEqual(
-      res.body.locations.map(({ id }) => id),
-      [stage.id],
-    );
-
+    assert.deepEqual(res.body.locations.map(get('id')), [stage.id]);
     assert.deepEqual(res.body.participants, []);
     assert.deepEqual(res.body.sessions, []);
     assert.deepEqual(res.body.messages, []);
@@ -111,10 +108,7 @@ describe('GET /bootstrap', () => {
 
     const res = await api.get<BootstrapResponse>('/bootstrap', { host: 'coolfest.localhost' });
 
-    assert.deepEqual(
-      res.body.messages.map(({ id }) => id),
-      [newer.id, older.id],
-    );
+    assert.deepEqual(res.body.messages.map(get('id')), [newer.id, older.id]);
   });
 
   it('sorts locations by position, participants by name and sessions by start time', async () => {
@@ -131,20 +125,9 @@ describe('GET /bootstrap', () => {
 
     const res = await api.get<BootstrapResponse>('/bootstrap', { host: 'coolfest.localhost' });
 
-    assert.deepEqual(
-      res.body.locations.map(({ id }) => id),
-      [first.id, second.id],
-    );
-
-    assert.deepEqual(
-      res.body.participants.map(({ name }) => name),
-      ['Amir', 'Zoe'],
-    );
-
-    assert.deepEqual(
-      res.body.sessions.map(({ id }) => id),
-      [early.id, late.id],
-    );
+    assert.deepEqual(res.body.locations.map(get('id')), [first.id, second.id]);
+    assert.deepEqual(res.body.participants.map(get('name')), ['Amir', 'Zoe']);
+    assert.deepEqual(res.body.sessions.map(get('id')), [early.id, late.id]);
   });
 
   it('lists the participants of a session in their line-up order', async () => {

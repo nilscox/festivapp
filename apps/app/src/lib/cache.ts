@@ -1,4 +1,5 @@
 import type { Participant, TenantConfig } from '@festivapp/contracts';
+import { get } from '@festivapp/utils';
 
 declare global {
   interface Navigator {
@@ -16,7 +17,7 @@ export async function warmTenantCache(tenant: TenantConfig, participants: Partic
 
   const { logo, backgroundImage } = tenant.theme;
   const shell = [logo.wordmarkUrl, logo.iconUrl, backgroundImage?.url ?? null, tenant.mapUrl];
-  const participantImages = participants.map((participant) => participant.imageUrl);
+  const participantImages = participants.map(get('imageUrl'));
 
   const urls = [...shell, ...(navigator.connection?.saveData ? [] : participantImages)].filter((url) => url !== null);
 

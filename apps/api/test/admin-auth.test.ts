@@ -1,4 +1,5 @@
 import type { MeResponse } from '@festivapp/contracts';
+import { get } from '@festivapp/utils';
 import { sub } from 'date-fns';
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
@@ -82,10 +83,7 @@ describe('GET /admin/auth/me', () => {
 
     assert.equal(res.status, 200);
     assert.equal(res.body.organizer.id, organizer.id);
-    assert.deepEqual(
-      res.body.tenants.map(({ id }) => id),
-      [tenant.id],
-    );
+    assert.deepEqual(res.body.tenants.map(get('id')), [tenant.id]);
   });
 
   it('responds 401 without a session cookie', async () => {

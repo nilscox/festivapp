@@ -1,3 +1,4 @@
+import { get } from '@festivapp/utils';
 import type { UseQueryResult } from '@tanstack/react-query';
 
 import { Spinner } from './spinner.tsx';
@@ -30,5 +31,5 @@ export function QueryBoundary<const T extends Queries>({
     return <Spinner className="mx-auto my-8 size-6" />;
   }
 
-  return children(...(queries.map((query) => query.data) as Data<T>));
+  return children(...(queries.map(get('data')) as Data<T>));
 }

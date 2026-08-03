@@ -1,4 +1,5 @@
 import type { Location, Participant, Session, SessionType, Tenant, TenantSummary } from '@festivapp/contracts';
+import { get } from '@festivapp/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouteContext } from '@tanstack/react-router';
 import clsx from 'clsx';
@@ -258,7 +259,7 @@ function SessionRow({
       </div>
 
       <span className="text-muted min-w-0 flex-[1.3] truncate text-sm max-lg:hidden">
-        {session.participants.map((participant) => participant.name).join(' · ') || '—'}
+        {session.participants.map(get('name')).join(' · ') || '—'}
       </span>
 
       <div className="row w-16 shrink-0 justify-end">

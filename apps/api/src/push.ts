@@ -1,4 +1,4 @@
-import { assert } from '@festivapp/utils';
+import { assert, get } from '@festivapp/utils';
 import { inArray } from 'drizzle-orm';
 import webpush, { WebPushError } from 'web-push';
 
@@ -41,7 +41,7 @@ export async function sendToTenant(tenantId: string, payload: PushPayload, subsc
     }),
   );
 
-  const gone = rows.filter((_, index) => isGone(results[index])).map((row) => row.endpoint);
+  const gone = rows.filter((_, index) => isGone(results[index])).map(get('endpoint'));
   const failed = results.filter((result) => result.status === 'rejected');
 
   if (gone.length > 0) {

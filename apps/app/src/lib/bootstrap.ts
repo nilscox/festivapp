@@ -1,5 +1,5 @@
 import type { BootstrapResponse, Location, Participant, Session } from '@festivapp/contracts';
-import { defined, unique } from '@festivapp/utils';
+import { defined, get, unique } from '@festivapp/utils';
 import { useQuery } from '@tanstack/react-query';
 
 import { formatDayKey, formatDayLabel, formatTime } from './datetime.ts';
@@ -103,7 +103,7 @@ function selectStyles(sessions: ResolvedSession[]): string[] {
 
   return Array.from(counts)
     .toSorted(([, a], [, b]) => b - a)
-    .map(([style]) => style);
+    .map(get(0));
 }
 
 export function useTenant() {

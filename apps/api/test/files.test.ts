@@ -1,4 +1,5 @@
 import type { UploadedFile } from '@festivapp/contracts';
+import { get } from '@festivapp/utils';
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 
@@ -60,10 +61,7 @@ describe('file upload', () => {
 
     const res = await api.get<UploadedFile[]>(`/admin/tenants/${tenant.id}/files`);
 
-    assert.deepEqual(
-      res.body.map(({ id }) => id),
-      [second.body.id, first.body.id],
-    );
+    assert.deepEqual(res.body.map(get('id')), [second.body.id, first.body.id]);
   });
 
   it('rejects an unsupported content type', async () => {

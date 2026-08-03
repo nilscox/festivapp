@@ -1,5 +1,5 @@
 import type { Location } from '@festivapp/contracts';
-import { has, matchesSearch } from '@festivapp/utils';
+import { get, has, matchesSearch } from '@festivapp/utils';
 import { useReducer } from 'react';
 
 import { sessionStyles, sessionTitle } from '../../lib/session.ts';
@@ -119,7 +119,7 @@ function matchesFilters(session: ResolvedSession, filters: Filters): boolean {
       search,
       sessionTitle(session),
       session.location.name,
-      ...session.participants.map((participant) => participant.name),
+      ...session.participants.map(get('name')),
       ...ownStyles,
     )
   ) {

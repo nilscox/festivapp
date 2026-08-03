@@ -1,5 +1,5 @@
 import type { SessionType } from '@festivapp/contracts';
-import { defined } from '@festivapp/utils';
+import { defined, get } from '@festivapp/utils';
 
 import type { ResolvedSession } from './bootstrap';
 
@@ -54,7 +54,7 @@ export function sessionListMeta(session: ResolvedSession): string | null {
 }
 
 export function sessionSubhead(session: ResolvedSession): string | null {
-  const names = session.participants.map((participant) => participant.name).join(', ');
+  const names = session.participants.map(get('name')).join(', ');
 
   if (session.type === 'talk') {
     return `Talk by ${names}`;

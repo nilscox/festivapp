@@ -1,4 +1,5 @@
 import type { Message as MessageDto } from '@festivapp/contracts';
+import { get } from '@festivapp/utils';
 import { sub } from 'date-fns';
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
@@ -53,10 +54,7 @@ describe('messages', () => {
     const res = await api.get<MessageDto[]>(`/admin/tenants/${tenant.id}/messages`);
 
     assert.equal(res.status, 200);
-    assert.deepEqual(
-      res.body.map(({ id }) => id),
-      [newer.id, older.id],
-    );
+    assert.deepEqual(res.body.map(get('id')), [newer.id, older.id]);
   });
 
   it('updates a message', async () => {

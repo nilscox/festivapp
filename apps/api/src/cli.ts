@@ -1,5 +1,5 @@
 import type { TenantTheme } from '@festivapp/contracts';
-import { assert, defined } from '@festivapp/utils';
+import { assert, defined, get } from '@festivapp/utils';
 import { Command } from 'commander';
 import { eq } from 'drizzle-orm';
 import webpush from 'web-push';
@@ -57,7 +57,7 @@ organizer
       .insert(organizerTenants)
       .values(tenantRows.map((row) => ({ organizerId: defined(organizer).id, tenantId: row.id })));
 
-    console.log(`Organizer ${email} ready with access to: ${tenantRows.map((r) => r.domain).join(', ')}`);
+    console.log(`Organizer ${email} ready with access to: ${tenantRows.map(get('domain')).join(', ')}`);
   });
 
 organizer
@@ -79,7 +79,7 @@ organizer
       .values(tenantRows.map((row) => ({ organizerId: organizer.id, tenantId: row.id })))
       .onConflictDoNothing();
 
-    console.log(`Organizer ${email} now has access to: ${tenantRows.map((r) => r.domain).join(', ')}`);
+    console.log(`Organizer ${email} now has access to: ${tenantRows.map(get('domain')).join(', ')}`);
   });
 
 const festival = new Command('festival');
@@ -174,7 +174,7 @@ push
 
 async function findTenants(domains: string[]) {
   const rows = await db.query.tenants.findMany({ where: { domain: { in: domains } } });
-  const found = new Set(rows.map((row) => row.domain));
+  const found = new Set(rows.map(get('domain')));
   const missing = domains.filter((domain) => !found.has(domain));
 
   if (missing.length > 0) {

@@ -1,4 +1,5 @@
 import type { Location as LocationDto } from '@festivapp/contracts';
+import { get } from '@festivapp/utils';
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 
@@ -45,10 +46,7 @@ describe('locations', () => {
     const res = await api.get<LocationDto[]>(`/admin/tenants/${tenant.id}/locations`);
 
     assert.equal(res.status, 200);
-    assert.deepEqual(
-      res.body.map(({ id }) => id),
-      [first.id, second.id],
-    );
+    assert.deepEqual(res.body.map(get('id')), [first.id, second.id]);
   });
 
   it('updates a location, flattening the map pin', async () => {
