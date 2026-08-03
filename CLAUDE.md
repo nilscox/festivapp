@@ -40,23 +40,17 @@ packages/
   rather than a statement, use `defined(value)`. `!` is a lint error
   (`typescript/no-non-null-assertion`).
 - **`packages/utils` holds only pure, dependency-free helpers** that could serve any
-  of the three apps (`assert`/`defined`, `has`, color math, `formatBytes`, `matchesSearch`).
-  It has no runtime dependencies and touches neither the DOM nor Node built-ins —
-  anything app-specific stays in that app's `src/lib/`.
+  of the three apps (`assert`/`defined`, `has`, `matchesSearch`, color math). It has
+  no runtime dependencies and touches neither the DOM nor Node built-ins — anything
+  app-specific stays in that app's `src/lib/`.
 - **Every environment variable is optional**, read through `env(name, default?)`
   (`apps/api/src/config.ts`). `HOST`, `PORT` and `VAPID_SUBJECT` fall back to a
-  value; the rest switch behaviour when unset, rather than standing in for one: no
-  `DATABASE_URL` runs an in-process wasm Postgres, no `STORAGE_DIR` keeps uploads
-  in memory, no `UPLOAD_MAX_BYTES` leaves body-parser its own 100kb limit, and no
-  `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` turns push off everywhere — the API skips
-  sending and `/bootstrap` reports a null `pushPublicKey` so the app hides the
-  opt-in. That is also the state the tests run in, so none of them push. Nothing
-  crashes at startup any more, so `pnpm dev` and `pnpm test` work on a machine with
-  nothing installed — the flip side being that a deployment which forgets
-  `DATABASE_URL` boots on a throwaway database instead of failing loudly. Each app
-  has its own `.env` (git-ignored), never a shared root one.
-- `UPLOAD_MAX_BYTES` is passed straight to body-parser, so it takes its size
-  strings (`5mb`, `1kb`) as well as a plain byte count.
+  value; the rest switch behaviour when unset rather than standing in for one — no
+  `DATABASE_URL` runs an in-process wasm Postgres, no `STORAGE_DIR` keeps uploads in
+  memory, no VAPID keys turn push off everywhere (`/bootstrap` reports a null
+  `pushPublicKey` and the app hides the opt-in). Nothing crashes at startup, so
+  `pnpm dev` and `pnpm test` work on a machine with nothing installed — which is also
+  the state the tests run in. Each app has its own `.env`, never a shared root one.
 
 ## API conventions
 
@@ -257,24 +251,17 @@ Deliberately simpler than the backoffice — no auth, no forms, no router contex
   gesture. Feature-detect `PushManager`, which iOS exposes only to an installed PWA,
   and treat a null `pushPublicKey` from `/bootstrap` as "push is off, hide it all".
 - **Timetable filters are route-local `useReducer`** (`routes/timetable/use-timetable-filters.ts`)
-  — text query, day, locations and styles, deliberately not in the URL. The hook holds
-  the state, so **the route calls it once and passes `filters` and the togglers down**;
-  a second call site gets its own independent copy and silently shows stale filters.
-  **Every transition lives in the reducer**, one action per filter, and the hook's methods
-  do nothing but `dispatch` — so a toggle reads the current filters from the reducer's own
-  argument rather than closing over the render's, which is what keeps two dispatches
-  batched into one render (a bulk action like "select all styles") from dropping all but
-  the last.
-  Everything the filters offer is derived **once in the bootstrap `select`**, not in the
-  components: a session carries its own `day` key (`yyyy-MM-dd` in the tenant's timezone),
-  `startTime`/`endTime`, and the payload carries the labelled `days` and the unique
-  `styles`, ordered by how many sessions carry each one (a style counts once per session,
-  however many of its artists are tagged with it) so the sheet's clamped chip list leads
-  with the ones worth filtering on. The day list doubles as the timetable's grouping, so
-  the route filters and buckets against it rather than re-deriving days of its own. **Never format a day key back
-  through `formatDayLabel`** — parsed as UTC midnight it lands on the previous day west of
-  Greenwich; label a day from one of its sessions' `startsAt` (which is why `selectDays`
-  runs over the already-sorted sessions).
+  — text query, day, locations and styles, deliberately not in the URL. **The route calls
+  the hook once and passes the filters object down**; a second call site gets its own
+  independent copy and silently shows stale filters. **Every transition lives in the
+  reducer**, one action per filter, so a toggle reads the current state from the reducer's
+  argument instead of closing over the render's.
+- **A session carries its own `day` key** (`yyyy-MM-dd` in the tenant's timezone) from the
+  bootstrap `select`, which also derives the labelled `days` — the timetable groups against
+  that list rather than re-deriving days — and the `styles` list ordered by how many sessions
+  use each. **Never format a day key back through `formatDayLabel`**: parsed as UTC midnight
+  it lands on the previous day west of Greenwich. Label a day from one of its sessions'
+  `startsAt`.
 - **Overlays go through `<Sheet>`** (`components/sheet.tsx`), a `<dialog>` portalled
   into `#root` that animates in and out — `starting:` for the enter, an `open`/`closed`
   flag for the exit, and `onTransitionEnd` to unmount once the exit has played.
@@ -329,7 +316,12 @@ Deliberately simpler than the backoffice — no auth, no forms, no router contex
   (e.g. `pnpm cli organizer create <email> <password> <domain…>` to get a
   backoffice login, `pnpm cli seed <file>` to load a festival).
 - `apps/app` / `apps/admin`: `pnpm dev`, `pnpm build`, `pnpm preview`.
-- Local Postgres runs in a container — see the README for the `docker run` command.
+- Local Postgres runs in a container — see the README.
+
+**Typecheck and lint passing do not prove the app runs.** An import with the wrong
+extension (`./x.tsx` for a file named `x.ts`) satisfies both and still fails at bundle
+time, taking the whole app down — so run the app's `pnpm build` as well, and load the
+page before calling a UI change done.
 
 To verify API behavior, run `pnpm dev` from `apps/api` and exercise the endpoints
 with `curl`, setting `Host` (or `?__tenant=`) to pick the tenant.

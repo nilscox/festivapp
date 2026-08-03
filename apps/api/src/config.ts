@@ -5,7 +5,7 @@ function env(name: string, defaultValue?: string) {
 }
 
 export const config = {
-  host: env('HOST', 'localhost'),
+  host: env('HOST', '127.0.0.1'),
   port: Number(env('PORT', '3000')),
   databaseUrl: env('DATABASE_URL'),
   storageDir: env('STORAGE_DIR'),
