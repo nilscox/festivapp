@@ -37,6 +37,10 @@ export function sessionImageUrl(session: ResolvedSession): string | null {
   return null;
 }
 
+export function sessionStyles(session: ResolvedSession): string[] {
+  return session.participants.flatMap((participant) => participant.styles);
+}
+
 export function sessionListMeta(session: ResolvedSession): string | null {
   if (isMusicSession(session.type) && session.participants.length === 1) {
     return defined(session.participants[0]).styles.join(' / ');

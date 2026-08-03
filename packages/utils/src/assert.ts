@@ -1,6 +1,6 @@
-export function assert<T>(value: T, error = new Error('Assertion failed')): asserts value {
+export function assert<T>(value: T, error?: Error): asserts value {
   if (!value) {
-    throw error;
+    throw error ?? new Error('Assertion failed');
   }
 }
 

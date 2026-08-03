@@ -72,7 +72,7 @@ body {
   }
 
   .ping {
-    animation: ping 1.9s ease-out infinite;
+    animation: ping 2s ease-out infinite;
   }
 }
 

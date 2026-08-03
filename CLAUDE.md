@@ -256,6 +256,37 @@ Deliberately simpler than the backoffice — no auth, no forms, no router contex
   `subscribe`/`requestPermission` must run from a click — Safari only grants on a
   gesture. Feature-detect `PushManager`, which iOS exposes only to an installed PWA,
   and treat a null `pushPublicKey` from `/bootstrap` as "push is off, hide it all".
+- **Timetable filters are route-local `useReducer`** (`routes/timetable/use-timetable-filters.ts`)
+  — text query, day, locations and styles, deliberately not in the URL. The hook holds
+  the state, so **the route calls it once and passes `filters` and the togglers down**;
+  a second call site gets its own independent copy and silently shows stale filters.
+  **Every transition lives in the reducer**, one action per filter, and the hook's methods
+  do nothing but `dispatch` — so a toggle reads the current filters from the reducer's own
+  argument rather than closing over the render's, which is what keeps two dispatches
+  batched into one render (a bulk action like "select all styles") from dropping all but
+  the last.
+  Everything the filters offer is derived **once in the bootstrap `select`**, not in the
+  components: a session carries its own `day` key (`yyyy-MM-dd` in the tenant's timezone),
+  `startTime`/`endTime`, and the payload carries the labelled `days` and the unique
+  `styles`, ordered by how many sessions carry each one (a style counts once per session,
+  however many of its artists are tagged with it) so the sheet's clamped chip list leads
+  with the ones worth filtering on. The day list doubles as the timetable's grouping, so
+  the route filters and buckets against it rather than re-deriving days of its own. **Never format a day key back
+  through `formatDayLabel`** — parsed as UTC midnight it lands on the previous day west of
+  Greenwich; label a day from one of its sessions' `startsAt` (which is why `selectDays`
+  runs over the already-sorted sessions).
+- **Overlays go through `<Sheet>`** (`components/sheet.tsx`), a `<dialog>` portalled
+  into `#root` that animates in and out — `starting:` for the enter, an `open`/`closed`
+  flag for the exit, and `onTransitionEnd` to unmount once the exit has played.
+  **Open it with `showModal()` from an effect, never with the `open` attribute**: the
+  attribute renders the dialog inline, which silently costs the focus trap, the scroll
+  lock and Escape (`onCancel` only fires for a modal dialog) while still looking
+  right. Promoting it to the top layer does not break the enter transition. Style it to
+  stand on its own regardless: **`fixed inset-0 z-50`** (the tab bar is `static`, so its
+  own `z-50` is inert and would otherwise paint over an inline dialog) and **a real
+  scrim element inside the dialog**, never `backdrop:*`. Give the element an explicit
+  `text-ink` too: the UA stylesheet sets `color: CanvasText` on `dialog`, which breaks
+  inheritance and paints black text on a dark tenant's panel.
 - **Theming is per-tenant at runtime** — `applyTenant` sets CSS variables from the
   bootstrap payload; don't hardcode brand colors. The organizer picks two colors
   (`backgroundColor`, `accentColor`, hex only); everything else is derived there

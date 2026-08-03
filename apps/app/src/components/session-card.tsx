@@ -2,8 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { isWithinInterval } from 'date-fns';
 import { Radio } from 'lucide-react';
 
-import { useTenant, type ResolvedSession } from '../lib/bootstrap.ts';
-import { formatTime } from '../lib/datetime.ts';
+import { type ResolvedSession } from '../lib/bootstrap.ts';
 import { formatSessionType, sessionImageUrl, sessionListMeta, sessionTitle } from '../lib/session.ts';
 import { Chip } from './chip.tsx';
 
@@ -40,16 +39,12 @@ export function SessionCard({
 }
 
 function Thumbnail({ session }: { session: ResolvedSession }) {
-  const { timezone } = useTenant();
-
-  const start = formatTime(session.startsAt, timezone);
-  const end = formatTime(session.endsAt, timezone);
   const imageUrl = sessionImageUrl(session);
 
   const times = (
     <div className="col absolute inset-x-0 bottom-0 rounded-lg bg-linear-to-t from-black/80 via-black/50 via-60% to-transparent px-2 pt-2 pb-0.5 font-mono leading-tight tabular-nums">
-      <span className="text-xs font-semibold text-white text-shadow-sm">{start}</span>
-      <span className="text-xs text-white text-shadow-sm">{end}</span>
+      <span className="text-xs font-semibold text-white text-shadow-sm">{session.startTime}</span>
+      <span className="text-xs text-white text-shadow-sm">{session.endTime}</span>
     </div>
   );
 

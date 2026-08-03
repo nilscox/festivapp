@@ -9,8 +9,8 @@ import { Banner, BannerButton } from '../../components/banner.tsx';
 import { PageHeader } from '../../components/page-header.tsx';
 import { SessionCard } from '../../components/session-card.tsx';
 import { useClock } from '../../hooks/use-clock.ts';
-import { useBootstrap, useTenant, type ResolvedSession } from '../../lib/bootstrap.ts';
-import { countdownLabel, formatNowHeading, formatTime } from '../../lib/datetime.ts';
+import { useBootstrap, type ResolvedSession } from '../../lib/bootstrap.ts';
+import { countdownLabel, formatNowHeading } from '../../lib/datetime.ts';
 import { usePushSubscription } from '../../lib/push.ts';
 import { sessionTitle } from '../../lib/session.ts';
 
@@ -152,14 +152,12 @@ function Break() {
 }
 
 function Next({ session, now }: { session: ResolvedSession; now: Date }) {
-  const { timezone } = useTenant();
-
   return (
     <Link to="/session/$sessionId" params={{ sessionId: session.id }} className="row items-baseline gap-2">
       <span className="text-muted text-sm">Next:</span>
       <span className="text-sm font-medium">{sessionTitle(session)}</span>
       <span className="text-muted font-mono text-xs">
-        at {formatTime(session.startsAt, timezone)} ({countdownLabel(now, session.startsAt)})
+        at {session.startTime} ({countdownLabel(now, session.startsAt)})
       </span>
     </Link>
   );

@@ -1,4 +1,4 @@
-import type { Location, Participant, Session } from '@festivapp/contracts';
+import type { Location, Participant } from '@festivapp/contracts';
 import { defined, has } from '@festivapp/utils';
 import { Link, useParams } from '@tanstack/react-router';
 import { Calendar, ChevronLeft, Disc3, Map, MapPin } from 'lucide-react';
@@ -6,7 +6,7 @@ import { Calendar, ChevronLeft, Disc3, Map, MapPin } from 'lucide-react';
 import { Chip } from '../../components/chip.tsx';
 import { SocialIcon } from '../../components/social-icon.tsx';
 import { useBootstrap, useTenant, type ResolvedSession } from '../../lib/bootstrap.ts';
-import { formatDayLabel, formatTime } from '../../lib/datetime.ts';
+import { formatDayLabel } from '../../lib/datetime.ts';
 import { formatSessionType, isMusicSession, sessionSubhead, sessionTitle } from '../../lib/session.ts';
 
 export function SessionDetail() {
@@ -80,13 +80,7 @@ function MainInfo({ session }: { session: ResolvedSession }) {
   );
 }
 
-function SingleArtistDetails({
-  session,
-  artist,
-}: {
-  session: Session & { location: Location; participants: Participant[] };
-  artist: Participant;
-}) {
+function SingleArtistDetails({ session, artist }: { session: ResolvedSession; artist: Participant }) {
   return (
     <>
       <ArtistImage artist={artist} />
@@ -120,7 +114,7 @@ function ArtistImage({ artist }: { artist: Participant }) {
   );
 }
 
-function MetaWhen({ session }: { session: Session }) {
+function MetaWhen({ session }: { session: ResolvedSession }) {
   const { timezone } = useTenant();
 
   return (
@@ -131,9 +125,7 @@ function MetaWhen({ session }: { session: Session }) {
         <span className="flex items-center gap-2">
           <span>{formatDayLabel(session.startsAt, timezone)}</span>
           <span>&bull;</span>
-          <span className="flex items-center gap-2">
-            {[formatTime(session.startsAt, timezone), formatTime(session.endsAt, timezone)].join(' - ')}
-          </span>
+          <span className="flex items-center gap-2">{[session.startTime, session.endTime].join(' - ')}</span>
         </span>
       }
     />
@@ -236,11 +228,7 @@ function SocialLinks({ links }: { links: string[] }) {
   );
 }
 
-function DefaultSessionDetails({
-  session,
-}: {
-  session: Session & { location: Location; participants: Participant[] };
-}) {
+function DefaultSessionDetails({ session }: { session: ResolvedSession }) {
   return (
     <>
       <MainInfo session={session} />
