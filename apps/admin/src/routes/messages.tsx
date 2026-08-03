@@ -17,7 +17,7 @@ import { Input } from '../components/input.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { QueryBoundary } from '../components/query-boundary.tsx';
 import { SearchSummary } from '../components/search.tsx';
-import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
+import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '../components/table.tsx';
 import { Textarea } from '../components/textarea.tsx';
 import { api } from '../lib/api.ts';
 import { parseValidationError } from '../lib/errors.ts';
@@ -110,14 +110,16 @@ function MessagesList({ tenant, messages }: { tenant: TenantSummary; messages: M
 
       <Table>
         <TableHeader>
-          <TableHeaderCell className="w-36 max-md:hidden">Published</TableHeaderCell>
-          <TableHeaderCell className="flex-1">Message</TableHeaderCell>
-          <TableHeaderCell>Actions</TableHeaderCell>
+          <TableHeaderCell className="w-44 max-md:hidden">Published</TableHeaderCell>
+          <TableHeaderCell>Message</TableHeaderCell>
+          <TableHeaderCell className="w-32 text-end!">Actions</TableHeaderCell>
         </TableHeader>
 
-        {messages.map((message) => (
-          <MessageItem key={message.id} message={message} onDelete={() => onDelete(message)} />
-        ))}
+        <TableBody>
+          {messages.map((message) => (
+            <MessageItem key={message.id} message={message} onDelete={() => onDelete(message)} />
+          ))}
+        </TableBody>
       </Table>
     </div>
   );
@@ -125,30 +127,32 @@ function MessagesList({ tenant, messages }: { tenant: TenantSummary; messages: M
 
 function MessageItem({ message, onDelete }: { message: Message; onDelete: () => void }) {
   return (
-    <div className="hover:bg-subtle row items-center gap-3 p-3 md:gap-4 md:px-4">
-      <span className="text-faint w-36 shrink-0 font-mono text-xs whitespace-nowrap max-md:hidden">
+    <TableRow>
+      <TableCell className="text-faint font-mono text-xs whitespace-nowrap max-md:hidden">
         {format(new Date(message.createdAt), 'd MMM yyyy, HH:mm')}
-      </span>
+      </TableCell>
 
-      <div className="min-w-0 flex-1">
+      <TableCell>
         <div className="truncate font-medium">{message.title}</div>
         <div className="text-muted max-w-lg truncate text-xs">{message.body}</div>
-      </div>
+      </TableCell>
 
-      <div className="row shrink-0 items-center gap-1">
-        <LinkButton variant="secondary" size="sm" from={from} search={{ edit: message.id }}>
-          <Pencil className="size-3" />
-          Edit
-        </LinkButton>
-        <IconButton
-          icon={Trash2}
-          variant="ghost"
-          aria-label={`Delete ${message.title}`}
-          onClick={onDelete}
-          className="hover:text-danger"
-        />
-      </div>
-    </div>
+      <TableCell>
+        <div className="row items-center justify-end gap-1">
+          <LinkButton variant="secondary" size="sm" from={from} search={{ edit: message.id }}>
+            <Pencil className="size-3" />
+            Edit
+          </LinkButton>
+          <IconButton
+            icon={Trash2}
+            variant="ghost"
+            aria-label={`Delete ${message.title}`}
+            onClick={onDelete}
+            className="hover:text-danger"
+          />
+        </div>
+      </TableCell>
+    </TableRow>
   );
 }
 

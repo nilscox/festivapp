@@ -12,7 +12,7 @@ import { EmptyState } from '../components/empty-state.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { QueryBoundary } from '../components/query-boundary.tsx';
 import { NoMatch, SearchInput, SearchSummary } from '../components/search.tsx';
-import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
+import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '../components/table.tsx';
 import { useSearchParam } from '../hooks/use-search-param.ts';
 import { api } from '../lib/api.ts';
 import { formatTime } from '../lib/datetime.ts';
@@ -189,21 +189,23 @@ function SessionsList({
 
           <Table>
             <TableHeader>
-              <TableHeaderCell className="w-28 shrink-0">Time</TableHeaderCell>
-              <TableHeaderCell className="flex-[1.4]">Session</TableHeaderCell>
-              <TableHeaderCell className="flex-1 max-md:hidden">Location</TableHeaderCell>
-              <TableHeaderCell className="flex-[1.3] max-lg:hidden">Participants</TableHeaderCell>
-              <TableHeaderCell className="w-16 shrink-0 text-right">Actions</TableHeaderCell>
+              <TableHeaderCell className="w-36">Time</TableHeaderCell>
+              <TableHeaderCell className="md:w-1/3">Session</TableHeaderCell>
+              <TableHeaderCell className="max-md:hidden">Location</TableHeaderCell>
+              <TableHeaderCell className="max-lg:hidden">Participants</TableHeaderCell>
+              <TableHeaderCell className="w-24 text-end!">Actions</TableHeaderCell>
             </TableHeader>
 
-            {day.sessions.map((session) => (
-              <SessionRow
-                key={session.id}
-                session={session}
-                timezone={festival.timezone}
-                onDelete={() => onDelete(session)}
-              />
-            ))}
+            <TableBody>
+              {day.sessions.map((session) => (
+                <SessionRow
+                  key={session.id}
+                  session={session}
+                  timezone={festival.timezone}
+                  onDelete={() => onDelete(session)}
+                />
+              ))}
+            </TableBody>
           </Table>
         </section>
       ))}
@@ -227,53 +229,57 @@ function SessionRow({
   };
 
   return (
-    <div className="hover:bg-subtle row items-center gap-3 p-3 md:gap-4 md:px-4">
-      <div className="w-28 font-mono text-sm font-semibold">
+    <TableRow>
+      <TableCell className="font-mono text-sm font-semibold whitespace-nowrap">
         {formatTime(session.startsAt, timezone)} &ndash; {formatTime(session.endsAt, timezone)}
-      </div>
+      </TableCell>
 
-      <div className="col min-w-0 flex-[1.4] gap-1">
-        <div className="row items-center gap-2">
-          <Chip size="sm" variant="custom" className={type.badge}>
-            {type.label}
-          </Chip>
-
-          {session.overlaps.length > 0 && (
-            <Chip
-              size="sm"
-              title={`Overlaps ${session.overlaps.map(overlapTitle).join(', ')}`}
-              className="bg-warning/5 text-warning-ink"
-            >
-              <TriangleAlert className="size-2.5" />
-              OVERLAP
+      <TableCell>
+        <div className="col gap-1">
+          <div className="row items-center gap-2">
+            <Chip size="sm" variant="custom" className={type.badge}>
+              {type.label}
             </Chip>
-          )}
+
+            {session.overlaps.length > 0 && (
+              <Chip
+                size="sm"
+                title={`Overlaps ${session.overlaps.map(overlapTitle).join(', ')}`}
+                className="bg-warning/5 text-warning-ink"
+              >
+                <TriangleAlert className="size-2.5" />
+                OVERLAP
+              </Chip>
+            )}
+          </div>
+
+          <span className="truncate font-medium">{session.displayName}</span>
+          <span className="text-faint truncate text-xs md:hidden">{session.location.name}</span>
         </div>
+      </TableCell>
 
-        <span className="truncate font-medium">{session.displayName}</span>
-        <span className="text-faint truncate text-xs md:hidden">{session.location.name}</span>
-      </div>
-
-      <div className="row min-w-0 flex-1 max-md:hidden">
+      <TableCell className="max-md:hidden">
         <Chip size="lg">
           <MapPin className="text-faint size-3 shrink-0" />
           <span className="truncate">{session.location.name}</span>
         </Chip>
-      </div>
+      </TableCell>
 
-      <span className="text-muted min-w-0 flex-[1.3] truncate text-sm max-lg:hidden">
-        {session.participants.map(get('name')).join(' · ') || '—'}
-      </span>
+      <TableCell className="max-lg:hidden">
+        <div className="text-muted truncate text-sm">{session.participants.map(get('name')).join(' · ') || '—'}</div>
+      </TableCell>
 
-      <div className="row w-16 shrink-0 justify-end">
-        <IconButton
-          icon={Trash2}
-          variant="ghost"
-          aria-label={`Delete ${session.displayName}`}
-          onClick={onDelete}
-          className="hover:text-danger"
-        />
-      </div>
-    </div>
+      <TableCell>
+        <div className="row justify-end">
+          <IconButton
+            icon={Trash2}
+            variant="ghost"
+            aria-label={`Delete ${session.displayName}`}
+            onClick={onDelete}
+            className="hover:text-danger"
+          />
+        </div>
+      </TableCell>
+    </TableRow>
   );
 }

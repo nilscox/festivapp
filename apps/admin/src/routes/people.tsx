@@ -18,7 +18,7 @@ import { Input } from '../components/input.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { QueryBoundary } from '../components/query-boundary.tsx';
 import { NoMatch, SearchInput, SearchSummary } from '../components/search.tsx';
-import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
+import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '../components/table.tsx';
 import { Textarea } from '../components/textarea.tsx';
 import { Thumbnail } from '../components/thumbnail.tsx';
 import { useSearchParam } from '../hooks/use-search-param.ts';
@@ -139,19 +139,21 @@ function PeopleList({ tenant, participants }: { tenant: TenantSummary; participa
       {matching.length > 0 && (
         <Table>
           <TableHeader>
-            <TableHeaderCell className="flex-1">Name</TableHeaderCell>
-            <TableHeaderCell className="flex-1 max-md:hidden">Styles</TableHeaderCell>
-            <TableHeaderCell>Actions</TableHeaderCell>
+            <TableHeaderCell>Name</TableHeaderCell>
+            <TableHeaderCell className="max-md:hidden">Styles</TableHeaderCell>
+            <TableHeaderCell className="w-32 text-end!">Actions</TableHeaderCell>
           </TableHeader>
 
-          {matching.map((participant) => (
-            <ParticipantItem
-              key={participant.id}
-              tenant={tenant}
-              participant={participant}
-              onDelete={() => onDelete(participant)}
-            />
-          ))}
+          <TableBody>
+            {matching.map((participant) => (
+              <ParticipantItem
+                key={participant.id}
+                tenant={tenant}
+                participant={participant}
+                onDelete={() => onDelete(participant)}
+              />
+            ))}
+          </TableBody>
         </Table>
       )}
     </div>
@@ -170,39 +172,47 @@ function ParticipantItem({
   const { data: theme } = useQuery(getThemeOptions(tenant.id));
 
   return (
-    <div className="hover:bg-subtle row items-center gap-3 p-3 md:gap-4 md:px-4">
-      <Thumbnail
-        background={theme?.backgroundColor}
-        url={participant.imageUrl}
-        alt={participant.name}
-        className="size-10"
-      />
+    <TableRow>
+      <TableCell>
+        <div className="row items-center gap-3 md:gap-4">
+          <Thumbnail
+            background={theme?.backgroundColor}
+            url={participant.imageUrl}
+            alt={participant.name}
+            className="size-10 shrink-0"
+          />
 
-      <div className="col min-w-0 flex-1 gap-0.5">
-        <span className="truncate font-medium">{participant.name}</span>
-        {participant.label && <span className="text-faint text-xxs truncate font-mono">{participant.label}</span>}
-      </div>
+          <div className="col min-w-0 gap-0.5">
+            <span className="truncate font-medium">{participant.name}</span>
+            {participant.label && <span className="text-faint text-xxs truncate font-mono">{participant.label}</span>}
+          </div>
+        </div>
+      </TableCell>
 
-      <div className="row min-w-0 flex-1 flex-wrap gap-1 max-md:hidden">
-        {participant.styles.map((style) => (
-          <Chip key={style}>{style}</Chip>
-        ))}
-      </div>
+      <TableCell className="max-md:hidden">
+        <div className="row flex-wrap gap-1">
+          {participant.styles.map((style) => (
+            <Chip key={style}>{style}</Chip>
+          ))}
+        </div>
+      </TableCell>
 
-      <div className="row shrink-0 items-center gap-1">
-        <LinkButton variant="secondary" size="sm" from={from} search={(prev) => ({ ...prev, edit: participant.id })}>
-          <Pencil className="size-3" />
-          Edit
-        </LinkButton>
-        <IconButton
-          icon={Trash2}
-          variant="ghost"
-          aria-label={`Delete ${participant.name}`}
-          onClick={onDelete}
-          className="hover:text-danger"
-        />
-      </div>
-    </div>
+      <TableCell>
+        <div className="row items-center justify-end gap-1">
+          <LinkButton variant="secondary" size="sm" from={from} search={(prev) => ({ ...prev, edit: participant.id })}>
+            <Pencil className="size-3" />
+            Edit
+          </LinkButton>
+          <IconButton
+            icon={Trash2}
+            variant="ghost"
+            aria-label={`Delete ${participant.name}`}
+            onClick={onDelete}
+            className="hover:text-danger"
+          />
+        </div>
+      </TableCell>
+    </TableRow>
   );
 }
 

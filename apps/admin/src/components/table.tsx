@@ -1,13 +1,46 @@
 import clsx from 'clsx';
 
+const cell = clsx('px-1.5 py-3 align-middle first:ps-3 last:pe-3 md:px-2 md:first:ps-4 md:last:pe-4');
+
 export function Table({ children }: { children: React.ReactNode }) {
-  return <div className="divide-line/60 divide-y overflow-hidden rounded-xl border">{children}</div>;
+  return (
+    <div className="overflow-hidden rounded-xl border">
+      <table className="w-full table-fixed border-collapse">{children}</table>
+    </div>
+  );
 }
 
 export function TableHeader({ children }: { children: React.ReactNode }) {
-  return <div className="bg-subtle row items-center gap-3 border-b p-3 md:gap-4 md:px-4">{children}</div>;
+  return (
+    <thead className="bg-subtle border-b">
+      <tr>{children}</tr>
+    </thead>
+  );
 }
 
 export function TableHeaderCell({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <span className={clsx('text-xxs text-faint font-mono tracking-widest uppercase', className)}>{children}</span>;
+  return (
+    <th
+      scope="col"
+      className={clsx(
+        cell,
+        'text-xxs text-faint text-start font-mono font-normal tracking-widest uppercase',
+        className,
+      )}
+    >
+      {children}
+    </th>
+  );
+}
+
+export function TableBody({ children }: { children: React.ReactNode }) {
+  return <tbody className="divide-line/60 divide-y">{children}</tbody>;
+}
+
+export function TableRow({ children }: { children: React.ReactNode }) {
+  return <tr className="hover:bg-subtle">{children}</tr>;
+}
+
+export function TableCell({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <td className={clsx(cell, className)}>{children}</td>;
 }

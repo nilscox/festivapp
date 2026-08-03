@@ -227,17 +227,25 @@ packages/
   `FieldArray` is a named field too, so an error on the array itself has a place to
   render.
 - **Compose small primitives**, exported component first with sub-components below:
-  `Field`, `Input`, `Select`, `Table`/`TableHeader`, `Page`/`PageHeader`,
+  `Field`, `Input`, `Select`, `Table`/`TableHeader`/`TableBody`, `Page`/`PageHeader`,
   `EmptyState`, `Spinner`, `Drawer`, `ConfirmDialog`, `Chip`,
   `Button`/`LinkButton`/`IconButton`. Use `createLink` to make a styled anchor
   router-aware.
 - **Every inline tag, badge or pill is a `<Chip>`** (`components/chip.tsx`), sized
-  `sm`/`md`/`lg` with a `neutral`/`warning` variant and an optional `mono`. A chip
-  whose colors are computed elsewhere (the schedule's per-session-type palette)
-  takes `variant="custom"` and passes them in `className` — a variant's own
-  `bg-*`/`text-*` would otherwise collide with them, since Tailwind, not the class
-  string, decides which wins. Chips are flex rows, so a label that can overflow
-  needs its own `<span className="truncate">`.
+  `sm`/`md`/`lg`. A chip whose colors are computed elsewhere (the schedule's
+  per-session-type palette) takes `variant="custom"` and passes them in `className`
+  — the `solid` variant's own `bg-*`/`text-*` would otherwise collide with them,
+  since Tailwind, not the class string, decides which wins.
+- **Lists are a real `<table>`** (`components/table.tsx`): `Table` (the rounded,
+  clipping wrapper + `table-fixed border-collapse`), `TableHeader`/`TableHeaderCell`
+  = `thead`/`th`, `TableBody`/`TableRow`/`TableCell` = `tbody`/`tr`/`td`, with the
+  cell padding and the row hover living in the primitives. **Declare each column's
+  width once, on its `TableHeaderCell`** — `table-fixed` hands it to the body rows,
+  which is what keeps a row from drifting out of its header. Columns with no width
+  split what is left, so a `w-*` on the wrong cell silently squeezes the flexible
+  one (`md:w-1/3` for a column that must stay widest on desktop but absorb the slack
+  on mobile). Responsively hiding a column is the one thing that stays on both cells:
+  `<col>` cannot carry `display: none`.
 - **Keep the first-paint bundle small.** Lazy-load heavy route components with
   `lazyRouteComponent(() => import('./x.tsx'), 'X')` (route definitions, loaders and
   `validateSearch` stay eager so they can still prefetch) — this defers Base UI's

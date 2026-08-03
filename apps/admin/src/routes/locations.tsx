@@ -16,7 +16,7 @@ import { Page, PageHeader } from '../components/page.tsx';
 import { QueryBoundary } from '../components/query-boundary.tsx';
 import { SearchSummary } from '../components/search.tsx';
 import { Select } from '../components/select.tsx';
-import { Table, TableHeader, TableHeaderCell } from '../components/table.tsx';
+import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '../components/table.tsx';
 import { Textarea } from '../components/textarea.tsx';
 import { api } from '../lib/api.ts';
 import { parseValidationError } from '../lib/errors.ts';
@@ -111,14 +111,16 @@ function LocationsList({ tenant, locations }: { tenant: TenantSummary; locations
 
       <Table>
         <TableHeader>
-          <TableHeaderCell className="w-6 text-center md:w-10">#</TableHeaderCell>
-          <TableHeaderCell className="flex-1">Name</TableHeaderCell>
-          <TableHeaderCell>Actions</TableHeaderCell>
+          <TableHeaderCell className="w-12 text-center md:w-16">#</TableHeaderCell>
+          <TableHeaderCell>Name</TableHeaderCell>
+          <TableHeaderCell className="w-32 text-end!">Actions</TableHeaderCell>
         </TableHeader>
 
-        {locations.map((location) => (
-          <LocationItem key={location.id} location={location} onDelete={() => onDelete(location)} />
-        ))}
+        <TableBody>
+          {locations.map((location) => (
+            <LocationItem key={location.id} location={location} onDelete={() => onDelete(location)} />
+          ))}
+        </TableBody>
       </Table>
     </div>
   );
@@ -126,30 +128,30 @@ function LocationsList({ tenant, locations }: { tenant: TenantSummary; locations
 
 function LocationItem({ location, onDelete }: { location: Location; onDelete: () => void }) {
   return (
-    <div className="hover:bg-subtle row items-center gap-3 p-3 md:gap-4 md:px-4">
-      <span className="text-accent w-6 shrink-0 text-center font-mono text-sm font-semibold md:w-10">
-        {location.position}
-      </span>
+    <TableRow>
+      <TableCell className="text-accent text-center font-mono text-sm font-semibold">{location.position}</TableCell>
 
-      <div className="min-w-0 flex-1">
+      <TableCell>
         <div className="truncate font-medium">{location.name}</div>
         {location.description && <div className="text-muted max-w-lg truncate text-xs">{location.description}</div>}
-      </div>
+      </TableCell>
 
-      <div className="row shrink-0 items-center gap-1">
-        <LinkButton variant="secondary" size="sm" from={from} search={{ edit: location.id }}>
-          <Pencil className="size-3" />
-          Edit
-        </LinkButton>
-        <IconButton
-          icon={Trash2}
-          variant="ghost"
-          aria-label={`Delete ${location.name}`}
-          onClick={onDelete}
-          className="hover:text-danger"
-        />
-      </div>
-    </div>
+      <TableCell>
+        <div className="row items-center justify-end gap-1">
+          <LinkButton variant="secondary" size="sm" from={from} search={{ edit: location.id }}>
+            <Pencil className="size-3" />
+            Edit
+          </LinkButton>
+          <IconButton
+            icon={Trash2}
+            variant="ghost"
+            aria-label={`Delete ${location.name}`}
+            onClick={onDelete}
+            className="hover:text-danger"
+          />
+        </div>
+      </TableCell>
+    </TableRow>
   );
 }
 
