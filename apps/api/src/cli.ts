@@ -1,6 +1,7 @@
 import type { TenantTheme } from '@festivapp/contracts';
 import { assert, defined } from '@festivapp/utils';
 import { Command } from 'commander';
+import { eq } from 'drizzle-orm';
 import webpush from 'web-push';
 import z from 'zod';
 
@@ -9,6 +10,7 @@ import { closeDatabase, db } from './db/client.ts';
 import { organizers, organizerTenants, tenants } from './db/schema.ts';
 import { findSubscriptions, pushEnabled, sendToTenant } from './push.ts';
 import { seed } from './seed.ts';
+import { storage } from './storage.ts';
 
 const program = new Command();
 
@@ -104,6 +106,29 @@ festival
     assert(tenant);
 
     console.log(`Festival ${name} created with id ${tenant.id}`);
+  });
+
+festival
+  .command('delete')
+  .description('Delete an existing festival')
+  .argument('<domain>', "festival's app domain")
+  .action(async (domain: string) => {
+    const tenant = await db.query.tenants.findFirst({ where: { domain } });
+
+    if (!tenant) {
+      console.error(`Festival ${domain} not found`);
+      process.exitCode = 1;
+    } else {
+      const files = await db.query.files.findMany({ where: { tenantId: tenant.id } });
+
+      await db.delete(tenants).where(eq(tenants.domain, domain));
+
+      for (const file of files) {
+        await storage.delete(file.storageKey);
+      }
+
+      console.log(`Festival ${tenant.name} (${tenant.id}) deleted`);
+    }
   });
 
 const push = new Command('push');
