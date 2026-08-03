@@ -3,7 +3,7 @@ name: Deploy
 on:
   workflow_run:
     workflows: [CI]
-    branches: [next]
+    branches: [master]
     types: [completed]
 
 concurrency:
