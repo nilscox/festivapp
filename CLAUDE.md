@@ -173,7 +173,7 @@ packages/
   components (`useQuery`) — a shared key is what makes prefetching and invalidation
   line up. A mutation has no such second caller, so it is written inline in the
   component that fires it (`useMutation({ mutationFn: (id: string) => api.delete(…),
-  onSuccess: … })`), invalidating by the query factory's key.
+onSuccess: … })`), invalidating by the query factory's key.
 - **Gate on data with `<QueryBoundary>`**, never a hand-rolled
   `isPending`/`isError`/`isSuccess` triplet. It takes one query result or a tuple
   (`query={[tenantQuery, locationsQuery]}`), renders a spinner until every one has
