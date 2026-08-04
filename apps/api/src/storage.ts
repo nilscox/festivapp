@@ -1,6 +1,6 @@
 import { assert } from '@festivapp/utils';
 import { createReadStream } from 'node:fs';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, rm, rmdir, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 
@@ -40,6 +40,7 @@ class DiskStorage implements Storage {
 
   async delete(key: string) {
     await rm(this.pathOf(key), { force: true });
+    await rmdir(dirname(this.pathOf(key))).catch(() => {});
   }
 }
 

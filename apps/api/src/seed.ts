@@ -1,8 +1,8 @@
-import { defined } from '@festivapp/utils';
+import { defined, get } from '@festivapp/utils';
 import { eq } from 'drizzle-orm';
 import type { PgInsertValue, PgTable } from 'drizzle-orm/pg-core';
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { basename, dirname, extname, resolve } from 'node:path';
 import z from 'zod';
 
 import { db } from './db/client.ts';
@@ -86,13 +86,13 @@ const dataSchema = z.strictObject({
 });
 
 export async function seed(input: string, drop = false): Promise<void> {
-  const data = dataSchema.parse(JSON.parse(await fs.readFile(input, 'utf8')));
+  const data = dataSchema.parse(JSON.parse(await readFile(input, 'utf8')));
 
   const tenantId = createId();
 
   const files = new Array<typeof schema.files.$inferInsert>();
-  const participants = new Array<typeof schema.participants.$inferInsert>();
   const locations = new Array<typeof schema.locations.$inferInsert>();
+  const participants = new Array<typeof schema.participants.$inferInsert>();
   const sessions = new Array<typeof schema.sessions.$inferInsert>();
   const sessionParticipants = new Array<typeof schema.sessionParticipants.$inferInsert>();
   const messages = new Array<typeof schema.messages.$inferInsert>();
@@ -100,155 +100,165 @@ export async function seed(input: string, drop = false): Promise<void> {
   const locationsMap = new Map<string, string>();
   const participantsMap = new Map<string, string>();
 
-  const filesToUpload = new Map<string, Buffer>();
-
-  const theme = data.tenant.theme;
-
-  const tenant: typeof schema.tenants.$inferInsert = {
-    id: tenantId,
-    name: data.tenant.name,
-    domain: data.tenant.domain,
-    timezone: data.tenant.timezone,
-    mapUrl: await upload(data.tenant.map),
-    theme: {
-      ...theme,
-      logo: {
-        iconUrl: await upload(theme.logo?.icon),
-        wordmarkUrl: await upload(theme.logo?.wordmark),
-      },
-      backgroundImage: theme.backgroundImage
-        ? {
-            url: defined(await upload(theme.backgroundImage.path)),
-            opacity: theme.backgroundImage.opacity,
-          }
-        : null,
-    },
-  };
-
-  for (const [index, location] of data.locations.entries()) {
-    const id = createId();
-
-    locationsMap.set(location.name, id);
-
-    locations.push({
-      id,
-      tenantId,
-      name: location.name,
-      description: location.description,
-      position: index + 1,
-      mapX: location.mapPin?.x,
-      mapY: location.mapPin?.y,
-    });
-  }
-
-  for (const { image, ...participant } of data.participants) {
-    const id = createId();
-
-    participantsMap.set(participant.name, id);
-
-    participants.push({
-      id,
-      tenantId,
-      imageUrl: await upload(image),
-      ...participant,
-    });
-  }
-
-  for (const session of data.sessions) {
-    const id = createId();
-
-    sessions.push({
-      id,
-      tenantId,
-      locationId: defined(locationsMap.get(session.location)),
-      type: session.type,
-      title: session.title,
-      startsAt: new Date(session.start),
-      endsAt: new Date(session.end),
-      description: session.description,
-    });
-
-    let position = 1;
-
-    for (const participant of session.participants) {
-      sessionParticipants.push({
-        sessionId: id,
-        participantId: defined(participantsMap.get(participant)),
-        position: position++,
-      });
-    }
-  }
-
-  for (const message of data.messages) {
-    messages.push({
-      id: createId(),
-      tenantId,
-      title: message.title,
-      body: message.body,
-      createdAt: new Date(message.date),
-    });
-  }
-
-  if (drop) {
-    const [deleted] = await db.delete(schema.tenants).where(eq(schema.tenants.domain, tenant.domain)).returning();
-
-    if (deleted) {
-      const files = await db.query.files.findMany({ where: { tenantId: deleted.id } });
-      await Promise.all(files.map((file) => storage.delete(file.storageKey)));
-    }
-  } else if (await db.query.tenants.findFirst({ where: { domain: tenant.domain } })) {
-    throw new Error(`Domain "${tenant.domain}" is already taken`);
-  }
-
-  await db.transaction(async (tx) => {
-    await tx.insert(schema.tenants).values(tenant);
-
-    await insertMany(schema.files, files);
-    await insertMany(schema.locations, locations);
-    await insertMany(schema.participants, participants);
-    await insertMany(schema.sessions, sessions);
-    await insertMany(schema.sessionParticipants, sessionParticipants);
-    await insertMany(schema.messages, messages);
-
-    async function insertMany<Table extends PgTable>(table: Table, values: Array<PgInsertValue<Table>>) {
-      if (values.length > 0) {
-        await tx.insert(table).values(values);
-      }
-    }
+  const existing = await db.query.tenants.findFirst({
+    where: { domain: data.tenant.domain },
   });
 
-  for (const [key, content] of filesToUpload.entries()) {
-    await storage.put(key, content);
+  if (existing) {
+    if (!drop) {
+      throw new Error(`Domain "${data.tenant.domain}" is already taken`);
+    }
+
+    const files = await db.query.files.findMany({
+      where: { tenantId: existing.id },
+    });
+
+    await db.delete(schema.tenants).where(eq(schema.tenants.domain, data.tenant.domain));
+
+    await Promise.all(files.map(get('storageKey')).map(deleteFile));
   }
 
-  async function upload(image: string | null | undefined) {
-    if (!image) {
+  try {
+    const tenant = {
+      id: tenantId,
+      name: data.tenant.name,
+      domain: data.tenant.domain,
+      timezone: data.tenant.timezone,
+      mapUrl: await uploadFile(data.tenant.map),
+      theme: {
+        ...data.tenant.theme,
+        logo: {
+          iconUrl: await uploadFile(data.tenant.theme.logo?.icon),
+          wordmarkUrl: await uploadFile(data.tenant.theme.logo?.wordmark),
+        },
+        backgroundImage: data.tenant.theme.backgroundImage
+          ? {
+              url: await uploadFile(data.tenant.theme.backgroundImage.path),
+              opacity: data.tenant.theme.backgroundImage.opacity,
+            }
+          : null,
+      },
+    };
+
+    for (const [index, location] of data.locations.entries()) {
+      const id = createId();
+
+      locationsMap.set(location.name, id);
+
+      locations.push({
+        id,
+        tenantId,
+        name: location.name,
+        description: location.description,
+        position: index + 1,
+        mapX: location.mapPin?.x,
+        mapY: location.mapPin?.y,
+      });
+    }
+
+    for (const { image, ...participant } of data.participants) {
+      const id = createId();
+
+      participantsMap.set(participant.name, id);
+
+      participants.push({
+        id,
+        tenantId,
+        imageUrl: await uploadFile(image),
+        ...participant,
+      });
+    }
+
+    for (const session of data.sessions) {
+      const id = createId();
+
+      sessions.push({
+        id,
+        tenantId,
+        locationId: defined(locationsMap.get(session.location)),
+        type: session.type,
+        title: session.title,
+        startsAt: new Date(session.start),
+        endsAt: new Date(session.end),
+        description: session.description,
+      });
+
+      let position = 1;
+
+      for (const participant of session.participants) {
+        sessionParticipants.push({
+          sessionId: id,
+          participantId: defined(participantsMap.get(participant)),
+          position: position++,
+        });
+      }
+    }
+
+    for (const message of data.messages) {
+      messages.push({
+        id: createId(),
+        tenantId,
+        title: message.title,
+        body: message.body,
+        createdAt: new Date(message.date),
+      });
+    }
+
+    await db.transaction(async (tx) => {
+      await tx.insert(schema.tenants).values(tenant);
+
+      await insertMany(schema.files, files);
+      await insertMany(schema.locations, locations);
+      await insertMany(schema.participants, participants);
+      await insertMany(schema.sessions, sessions);
+      await insertMany(schema.sessionParticipants, sessionParticipants);
+      await insertMany(schema.messages, messages);
+
+      async function insertMany<Table extends PgTable>(table: Table, values: Array<PgInsertValue<Table>>) {
+        if (values.length > 0) {
+          await tx.insert(table).values(values);
+        }
+      }
+    });
+  } catch (error) {
+    await Promise.all(files.map(get('storageKey')).map(deleteFile));
+    await db.delete(schema.tenants).where(eq(schema.tenants.id, tenantId));
+    throw error;
+  }
+
+  async function uploadFile(path: string): Promise<string>;
+  async function uploadFile(path: string | null | undefined): Promise<string | null>;
+  async function uploadFile(path: string | null | undefined) {
+    if (path == null) {
       return null;
     }
 
-    const file = path.resolve(path.dirname(input), image);
-    const extension = path.extname(file).toLowerCase();
+    const extension = extname(path).toLowerCase();
     const contentType = contentTypes[extension];
 
     if (contentType === undefined) {
-      throw new Error(`Unsupported image type: ${image}`);
+      throw new Error(`Unsupported image type: ${path}`);
     }
 
-    const content = await fs.readFile(file);
     const id = createId();
     const storageKey = `${tenantId}/${id}${extension}`;
+    const content = await readFile(resolve(dirname(input), path));
 
-    filesToUpload.set(storageKey, content);
+    await storage.put(storageKey, content);
 
     files.push({
       id,
       tenantId,
       storageKey,
-      name: path.basename(file),
+      name: basename(path),
       contentType,
       size: content.length,
     });
 
     return `/files/${id}`;
   }
+}
+
+async function deleteFile(storageKey: string) {
+  await storage.delete(storageKey).catch(console.error);
 }
