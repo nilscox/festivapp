@@ -7,7 +7,7 @@ import z from 'zod';
 
 import { hashPassword } from './auth/password.ts';
 import { closeDatabase, db } from './db/client.ts';
-import { organizers, organizerTenants, tenants } from './db/schema.ts';
+import { organizers, organizerTenants, tenants, type Tenant } from './db/schema.ts';
 import { findSubscriptions, pushEnabled, sendToTenant } from './push.ts';
 import { seed } from './seed.ts';
 import { storage } from './storage.ts';
@@ -106,6 +106,26 @@ festival
     assert(tenant);
 
     console.log(`Festival ${name} created with id ${tenant.id}`);
+  });
+
+festival
+  .command('list')
+  .description('List all festivals')
+  .option('-j, --json', 'Output in JSON format')
+  .action(async ({ json }: { json: boolean }) => {
+    const tenants = await db.query.tenants.findMany();
+
+    if (json) {
+      console.log(JSON.stringify(tenants));
+    } else if (tenants.length === 0) {
+      console.log('No festivals.');
+    } else {
+      console.table(Object.fromEntries(tenants.map((tenant) => [tenant.id, tenant])), [
+        'name',
+        'domain',
+        'createdAt',
+      ] satisfies Array<keyof Tenant>);
+    }
   });
 
 festival
