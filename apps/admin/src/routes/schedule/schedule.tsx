@@ -141,6 +141,7 @@ function SessionDrawer({
     <Drawer open={open} onOpenChange={(open) => !open && onClose()} title={create ? 'New session' : 'Edit session'}>
       <SessionForm
         session={editId ? sessions.find(has('id', editId)) : undefined}
+        tenantId={festival.id}
         locations={locations}
         participants={participants}
         timezone={festival.timezone}
@@ -325,7 +326,13 @@ function SessionRow({
 
       <TableCell>
         <div className="row items-center justify-end gap-1">
-          <LinkButton variant="secondary" size="sm" from={from} search={(prev) => ({ ...prev, edit: session.id })}>
+          <LinkButton
+            variant="secondary"
+            size="sm"
+            from={from}
+            search={(prev) => ({ ...prev, edit: session.id })}
+            aria-label={`Edit ${session.displayName}`}
+          >
             <Pencil className="size-3" />
             Edit
           </LinkButton>

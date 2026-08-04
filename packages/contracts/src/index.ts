@@ -268,9 +268,9 @@ export type ParticipantInput = {
 /**
  * Body of `POST /admin/tenants/:tenantId/sessions` and of the `PUT` on one of
  * them, which replaces the session whole — there is no partial update. A session
- * with no participants must carry a title: the attendee app only titles a
- * session after a participant when it has exactly one, so with nobody there is
- * nothing left to fall back to and the card renders blank.
+ * must carry a title unless it has exactly one participant: that is the only
+ * case the attendee app titles a session after somebody, so with nobody — or
+ * with several — there is nothing to fall back to and the card renders blank.
  */
 export type SessionInput = {
   locationId: string;

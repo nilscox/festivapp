@@ -30,12 +30,12 @@ const sessionSchema = z
       });
     }
 
-    if (!ctx.value.title && ctx.value.participantIds.length === 0) {
+    if (!ctx.value.title && ctx.value.participantIds.length !== 1) {
       ctx.issues.push({
         code: 'custom',
         input: ctx.value.title,
         path: ['title'],
-        message: 'A session with nobody on it needs a title.',
+        message: 'A session needs a title unless exactly one person is on it.',
       });
     }
 

@@ -76,7 +76,7 @@ describe('sessions', () => {
     const res = await api.post<SessionDto>(`/admin/tenants/${tenant.id}/sessions`, {
       locationId: location.id,
       type: 'dj_set',
-      title: '  ',
+      title: 'Nova b2b Johnny',
       description: null,
       participantIds: [nova.id, johnny.id],
       startsAt: '2026-07-01T20:00:00.000Z',
@@ -87,7 +87,7 @@ describe('sessions', () => {
     assert.partialDeepStrictEqual(res.body, {
       locationId: location.id,
       type: 'dj_set',
-      title: null,
+      title: 'Nova b2b Johnny',
       description: null,
       participantIds: [nova.id, johnny.id],
       startsAt: '2026-07-01T20:00:00.000Z',
@@ -96,6 +96,20 @@ describe('sessions', () => {
 
     const list = await api.get<SessionDto[]>(`/admin/tenants/${tenant.id}/sessions`);
     assert.deepEqual(list.body[0]?.participantIds, [nova.id, johnny.id]);
+  });
+
+  it('creates a titleless session for the one person on it', async () => {
+    const res = await api.post<SessionDto>(`/admin/tenants/${tenant.id}/sessions`, {
+      locationId: location.id,
+      type: 'dj_set',
+      title: '  ',
+      participantIds: [johnny.id],
+      startsAt: '2026-07-01T20:00:00.000Z',
+      endsAt: '2026-07-01T21:30:00.000Z',
+    });
+
+    assert.equal(res.status, 201);
+    assert.equal(res.body.title, null);
   });
 
   it('creates a session with no line-up when it has a title', async () => {
@@ -191,6 +205,20 @@ describe('session validation', () => {
       type: 'live',
       title: null,
       participantIds: [],
+      startsAt: '2026-07-01T20:00:00.000Z',
+      endsAt: '2026-07-01T21:00:00.000Z',
+    });
+
+    assert.equal(res.status, 400);
+    assert.ok(res.body.properties?.title);
+  });
+
+  it('rejects a session with several people and no title', async () => {
+    const res = await api.post<{ properties: Record<string, unknown> }>(`/admin/tenants/${tenant.id}/sessions`, {
+      locationId: location.id,
+      type: 'live',
+      title: null,
+      participantIds: [johnny.id, nova.id],
       startsAt: '2026-07-01T20:00:00.000Z',
       endsAt: '2026-07-01T21:00:00.000Z',
     });
