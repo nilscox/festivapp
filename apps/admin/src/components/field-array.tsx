@@ -49,6 +49,8 @@ export function FieldArray<T>({
   );
 }
 
+export type FieldArray<T> = ReturnType<typeof useFieldArray<T>>;
+
 export function useFieldArray<T>(items: T[]) {
   const [fields, setFields] = useState<Array<[React.Key, T]>>(() => items.map((item) => [createKey(), item]));
 
@@ -56,6 +58,8 @@ export function useFieldArray<T>(items: T[]) {
     fields,
     append: (item: T) => setFields((fields) => [...fields, [createKey(), item]]),
     remove: (index: number) => setFields((fields) => [...fields.slice(0, index), ...fields.slice(index + 1)]),
+    update: (index: number, item: T) =>
+      setFields((fields) => fields.map((field, at) => (at === index ? [field[0], item] : field))),
   };
 }
 

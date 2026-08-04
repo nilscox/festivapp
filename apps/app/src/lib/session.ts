@@ -22,7 +22,7 @@ export function sessionTitle(session: ResolvedSession): string | null {
     return session.title;
   }
 
-  if (isMusicSession(session.type) && session.participants.length === 1) {
+  if (session.participants.length === 1) {
     return defined(session.participants[0]).name;
   }
 

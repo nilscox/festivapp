@@ -1,39 +1,33 @@
-import type { Location, Participant, Session, SessionType, Tenant, TenantSummary } from '@festivapp/contracts';
-import { get } from '@festivapp/utils';
+import type { Location, Participant, Tenant, TenantSummary } from '@festivapp/contracts';
+import { get, has } from '@festivapp/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouteContext } from '@tanstack/react-router';
+import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import clsx from 'clsx';
-import { CalendarDays, MapPin, Trash2, TriangleAlert } from 'lucide-react';
+import { CalendarDays, MapPin, Pencil, Plus, Trash2, TriangleAlert } from 'lucide-react';
 
-import { IconButton, LinkButton } from '../components/button.tsx';
-import { Chip } from '../components/chip.tsx';
-import { useConfirmDialog } from '../components/confirm-dialog.tsx';
-import { EmptyState } from '../components/empty-state.tsx';
-import { Page, PageHeader } from '../components/page.tsx';
-import { QueryBoundary } from '../components/query-boundary.tsx';
-import { NoMatch, SearchInput, SearchSummary } from '../components/search.tsx';
-import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '../components/table.tsx';
-import { useSearchParam } from '../hooks/use-search-param.ts';
-import { api } from '../lib/api.ts';
-import { formatTime } from '../lib/datetime.ts';
+import { IconButton, LinkButton } from '../../components/button.tsx';
+import { Chip } from '../../components/chip.tsx';
+import { useConfirmDialog } from '../../components/confirm-dialog.tsx';
+import { Drawer } from '../../components/drawer.tsx';
+import { EmptyState } from '../../components/empty-state.tsx';
+import { Page, PageHeader } from '../../components/page.tsx';
+import { QueryBoundary } from '../../components/query-boundary.tsx';
+import { NoMatch, SearchInput, SearchSummary } from '../../components/search.tsx';
+import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '../../components/table.tsx';
+import { useSearchParam } from '../../hooks/use-search-param.ts';
+import { api } from '../../lib/api.ts';
+import { formatTime } from '../../lib/datetime.ts';
 import {
   getTenantOptions,
   listLocationsOptions,
   listParticipantsOptions,
   listSessionsOptions,
-} from '../lib/queries.ts';
-import { getScheduleSessions, groupByDay, type ScheduleSession } from '../lib/schedule.ts';
+} from '../../lib/queries.ts';
+import { getScheduleSessions, groupByDay, type ScheduleSession } from '../../lib/schedule.ts';
+import { SessionForm } from './session-form.tsx';
+import { sessionTypes } from './session-types.ts';
 
 const from = '/festivals/$tenantId/schedule';
-
-// prettier-ignore
-const sessionTypes: Record<SessionType, { label: string; badge: string; dot: string }> = {
-  live:     { label: 'LIVE',      badge:  'text-[#36b30c] bg-[#36b30c]/10', dot: 'bg-[#36b30c]' },
-  dj_set:   { label: 'DJ SET',    badge:  'text-[#2563eb] bg-[#2563eb]/10', dot: 'bg-[#2563eb]' },
-  talk:     { label: 'TALK',      badge:  'text-[#b208af] bg-[#b208af]/10', dot: 'bg-[#b208af]' },
-  workshop: { label: 'WORKSHOP',  badge:  'text-[#d97706] bg-[#d97706]/10', dot: 'bg-[#d97706]' },
-  other:    { label: 'OTHER',     badge:  'text-[#424242] bg-[#424242]/10', dot: 'bg-[#424242]' },
-};
 
 export function Schedule() {
   const { tenant } = useRouteContext({ from });
@@ -43,30 +37,54 @@ export function Schedule() {
   const locationsQuery = useQuery(listLocationsOptions(tenant.id));
   const participantsQuery = useQuery(listParticipantsOptions(tenant.id));
 
+  const showCreate = Boolean(locationsQuery.data?.length && sessionsQuery.data?.length);
+
   return (
-    <Page header={<PageHeader eyebrow={tenant.name} title="Schedule" />}>
+    <Page header={<Header tenant={tenant} showCreate={showCreate} />}>
       <QueryBoundary query={[tenantQuery, sessionsQuery, locationsQuery, participantsQuery]}>
         {(festival, sessions, locations, participants) => {
           if (locations.length === 0) {
             return <NoLocations tenant={tenant} />;
           }
 
-          if (sessions.length === 0) {
-            return <NoSessions />;
-          }
+          const scheduleSessions = getScheduleSessions(sessions, locations, participants);
 
           return (
-            <SessionsList
-              tenant={tenant}
-              festival={festival}
-              sessions={sessions}
-              locations={locations}
-              participants={participants}
-            />
+            <>
+              {sessions.length === 0 ? (
+                <NoSessions />
+              ) : (
+                <SessionsList tenant={tenant} festival={festival} sessions={scheduleSessions} locations={locations} />
+              )}
+
+              <SessionDrawer
+                festival={festival}
+                sessions={scheduleSessions}
+                locations={locations}
+                participants={participants}
+              />
+            </>
           );
         }}
       </QueryBoundary>
     </Page>
+  );
+}
+
+function Header({ tenant, showCreate }: { tenant: TenantSummary; showCreate: boolean }) {
+  return (
+    <PageHeader
+      eyebrow={tenant.name}
+      title="Schedule"
+      end={
+        showCreate && (
+          <LinkButton from={from} search={(prev) => ({ ...prev, create: true })} className="mt-auto">
+            <Plus className="size-4" />
+            <span className="max-md:hidden">Add session</span>
+          </LinkButton>
+        )
+      }
+    />
   );
 }
 
@@ -92,24 +110,57 @@ function NoSessions() {
       icon={CalendarDays}
       title="No sessions scheduled yet"
       description="This is where the festival timetable takes shape. Sessions you add show up here, grouped by day."
+      cta={
+        <LinkButton from={from} search={{ create: true }}>
+          <Plus className="size-4" />
+          Add session
+        </LinkButton>
+      }
     />
+  );
+}
+
+function SessionDrawer({
+  festival,
+  sessions,
+  locations,
+  participants,
+}: {
+  festival: Tenant;
+  sessions: ScheduleSession[];
+  locations: Location[];
+  participants: Participant[];
+}) {
+  const { create, edit: editId } = useSearch({ from });
+  const open = create !== undefined || editId !== undefined;
+
+  const navigate = useNavigate({ from });
+  const onClose = () => navigate({ search: (prev) => ({ search: prev.search }) });
+
+  return (
+    <Drawer open={open} onOpenChange={(open) => !open && onClose()} title={create ? 'New session' : 'Edit session'}>
+      <SessionForm
+        session={editId ? sessions.find(has('id', editId)) : undefined}
+        locations={locations}
+        participants={participants}
+        timezone={festival.timezone}
+        onClose={onClose}
+      />
+    </Drawer>
   );
 }
 
 function SessionsList({
   tenant,
   festival,
-  sessions: sessionsProp,
+  sessions,
   locations,
-  participants,
 }: {
   tenant: TenantSummary;
   festival: Tenant;
-  sessions: Session[];
+  sessions: ScheduleSession[];
   locations: Location[];
-  participants: Participant[];
 }) {
-  const sessions = getScheduleSessions(sessionsProp, locations, participants);
   const overlapping = sessions.filter((session) => session.overlaps.length > 0);
 
   const [search, setSearch] = useSearchParam(from);
@@ -161,7 +212,10 @@ function SessionsList({
 
         <div className="row flex-wrap items-center gap-3">
           {Object.values(sessionTypes).map(({ label, dot }) => (
-            <span key={label} className="text-xxs text-muted row items-center gap-1.5 font-mono tracking-widest">
+            <span
+              key={label}
+              className="text-xxs text-muted row items-center gap-1.5 font-mono tracking-widest uppercase"
+            >
               <span className={clsx('size-2 rounded-xs', dot)} />
               {label}
             </span>
@@ -193,7 +247,7 @@ function SessionsList({
               <TableHeaderCell className="md:w-1/3">Session</TableHeaderCell>
               <TableHeaderCell className="max-md:hidden">Location</TableHeaderCell>
               <TableHeaderCell className="max-lg:hidden">Participants</TableHeaderCell>
-              <TableHeaderCell className="w-24 text-end!">Actions</TableHeaderCell>
+              <TableHeaderCell className="w-32 text-end!">Actions</TableHeaderCell>
             </TableHeader>
 
             <TableBody>
@@ -237,7 +291,7 @@ function SessionRow({
       <TableCell>
         <div className="col gap-1">
           <div className="row items-center gap-2">
-            <Chip size="sm" variant="custom" className={type.badge}>
+            <Chip size="sm" variant="custom" className={clsx('uppercase', type.badge)}>
               {type.label}
             </Chip>
 
@@ -270,7 +324,11 @@ function SessionRow({
       </TableCell>
 
       <TableCell>
-        <div className="row justify-end">
+        <div className="row items-center justify-end gap-1">
+          <LinkButton variant="secondary" size="sm" from={from} search={(prev) => ({ ...prev, edit: session.id })}>
+            <Pencil className="size-3" />
+            Edit
+          </LinkButton>
           <IconButton
             icon={Trash2}
             variant="ghost"

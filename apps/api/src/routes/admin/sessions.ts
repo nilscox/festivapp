@@ -35,7 +35,7 @@ const sessionSchema = z
         code: 'custom',
         input: ctx.value.title,
         path: ['title'],
-        message: 'A session with nobody on the line-up needs a title.',
+        message: 'A session with nobody on it needs a title.',
       });
     }
 

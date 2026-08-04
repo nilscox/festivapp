@@ -118,12 +118,15 @@ export type Session = {
   locationId: string;
   type: SessionType;
   /**
-   * Explicit title, or null when the session has none. For a single-artist
-   * `dj_set`/`live` the attendee app falls back to the artist's name — the
-   * server never fills this in.
+   * Explicit title, or null when the session has none. The attendee app then
+   * falls back to the participant's name, but only for a session with exactly
+   * one of them — the server never fills this in.
    */
   title: string | null;
-  /** Same single-artist fallback as `title`, onto the artist's description. */
+  /**
+   * Null falls back to the participant's own description, but only for a
+   * session with exactly one of them; with several the app shows nothing.
+   */
   description: string | null;
   /** Participants on this session, in presentation order. */
   participantIds: string[];
@@ -265,9 +268,9 @@ export type ParticipantInput = {
 /**
  * Body of `POST /admin/tenants/:tenantId/sessions` and of the `PUT` on one of
  * them, which replaces the session whole — there is no partial update. A session
- * with no participants must carry a title: the attendee app only falls back to
- * the artist's name for a single-artist`dj_set`/`live`, so anything else would
- * render as a blank card.
+ * with no participants must carry a title: the attendee app only titles a
+ * session after a participant when it has exactly one, so with nobody there is
+ * nothing left to fall back to and the card renders blank.
  */
 export type SessionInput = {
   locationId: string;

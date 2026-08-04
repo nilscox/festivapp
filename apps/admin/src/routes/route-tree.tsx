@@ -24,7 +24,7 @@ const Locations = lazyRouteComponent(() => import('./locations.tsx'), 'Locations
 const Messages = lazyRouteComponent(() => import('./messages.tsx'), 'Messages');
 const Login = lazyRouteComponent(() => import('./login.tsx'), 'Login');
 const People = lazyRouteComponent(() => import('./people.tsx'), 'People');
-const Schedule = lazyRouteComponent(() => import('./schedule.tsx'), 'Schedule');
+const Schedule = lazyRouteComponent(() => import('./schedule/schedule.tsx'), 'Schedule');
 const Settings = lazyRouteComponent(() => import('./settings.tsx'), 'Settings');
 const Theme = lazyRouteComponent(() => import('./theme.tsx'), 'Theme');
 
@@ -128,7 +128,11 @@ const peopleRoute = createRoute({
 const scheduleRoute = createRoute({
   getParentRoute: () => festivalRoute,
   path: 'schedule',
-  validateSearch: z.object({ search: z.optional(z.string()) }),
+  validateSearch: z.object({
+    search: z.optional(z.string()),
+    create: z.optional(z.literal(true)),
+    edit: z.optional(z.string()),
+  }),
   component: Schedule,
   loader: ({ context: { queryClient, tenant } }) => {
     void queryClient.prefetchQuery(getTenantOptions(tenant.id));

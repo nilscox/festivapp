@@ -19,7 +19,7 @@ export function Drawer({ open, onOpenChange, eyebrow, title, children }: DrawerP
         <Dialog.Backdrop className="base-ui-fade bg-ink/40 fixed inset-0 transition-opacity" />
         <Dialog.Popup
           className={clsx(
-            'base-ui-fade col bg-surface fixed inset-y-0 right-0 flex w-full shadow-2xl md:max-w-lg',
+            'base-ui-fade col bg-surface fixed inset-y-0 right-0 flex w-full shadow-2xl md:max-w-xl',
             'md:transition-all md:duration-300 md:data-ending-style:translate-x-1/4 md:data-starting-style:translate-x-1/4',
           )}
         >
