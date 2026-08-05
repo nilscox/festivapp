@@ -12,8 +12,14 @@ export const payloadErrorHandler: ErrorRequestHandler = (err, _req, res, _next) 
 };
 
 export const zodErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+  const { logger } = deps();
+
   if (err instanceof z.ZodError) {
-    return res.status(400).json(z.treeifyError(err));
+    const issues = z.treeifyError(err);
+
+    logger.warn('rejected an invalid body', { issues });
+
+    return res.status(400).json(issues);
   }
 
   throw err;

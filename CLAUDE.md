@@ -67,6 +67,14 @@ push, close }` once per entrypoint, and `provideContainer(container)` — the fi
   from config at module level (an upload limit, a VAPID check) has to move into the
   request or into a factory, because the container does not exist when the module
   loads.
+- **Log through `deps().logger`, never `console`** (`src/logger.ts`: `debug`/`info`/
+  `warn`/`error`/`child`, colors auto-disabled off a TTY, `warn`/`error` to stderr).
+  Pass context as the second argument (`logger.warn('…', { domain })`) rather than
+  interpolating it, and put an `Error` in there under any key — the logger prints its
+  stack indented instead of inlining it. `requestLogger` already emits one line per
+  request with status, duration and tenant, at a level derived from the status, so a
+  route only logs what that line cannot say. The CLI keeps `console.log`: its output
+  is a result, not a log.
 - **With no `DATABASE_URL`, `createDatabase(config)` swaps the driver for an
   in-process wasm Postgres** (`@electric-sql/pglite`), created empty, schema-pushed at
   boot with `pushSchema` from `drizzle-kit/api-postgres`, and dropped with the process.
@@ -76,7 +84,8 @@ push, close }` once per entrypoint, and `provideContainer(container)` — the fi
   Both drivers are reached through the same `Database` type and the handle's
   `close()`; never touch `db.$client` directly, since its two clients have
   different shutdown methods. Keep pglite a devDependency behind the dynamic
-  `import()` it sits in — the Postgres path must not load it.
+  `import()` it sits in — the Postgres path must not load it. Drizzle's own query
+  logging is wired to `debug`, through the request's logger when there is one.
 - **Read with the Drizzle relational query API** — prefer
   `db.query.<table>.findMany/findFirst({ where, orderBy })` over hand-written
   `select().from().innerJoin()`; declare cross-table `relations` (`defineRelations`

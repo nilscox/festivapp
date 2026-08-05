@@ -21,12 +21,13 @@ const store = new AsyncLocalStorage<Container>();
 export async function createContainer(overrides: Partial<Container> = {}): Promise<Container> {
   const config = overrides.config ?? envConfig();
   const logger = overrides.logger ?? consoleLogger({ level: config.logLevel });
+  const scoped = scopedLogger(logger);
 
-  const handle = await createDatabase(config);
+  const handle = await createDatabase(config, scoped);
 
   const db = overrides.db ?? handle.db;
   const storage = overrides.storage ?? createStorage(config);
-  const push = overrides.push ?? createPush({ config, db, logger });
+  const push = overrides.push ?? createPush({ config, db, logger: scoped });
 
   return { config, logger, db, storage, push, close: () => handle.close(), ...overrides };
 }
@@ -37,4 +38,17 @@ export function runWithContainer<T>(container: Container, fn: () => T): T {
 
 export function deps(): Container {
   return defined(store.getStore(), new Error('deps() was called outside of runWithContainer()'));
+}
+
+function scopedLogger(fallback: Logger): Logger {
+  const current = () => store.getStore()?.logger ?? fallback;
+
+  return {
+    level: fallback.level,
+    debug: (message, context) => current().debug(message, context),
+    info: (message, context) => current().info(message, context),
+    warn: (message, context) => current().warn(message, context),
+    error: (message, context) => current().error(message, context),
+    child: (context) => current().child(context),
+  };
 }

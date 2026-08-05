@@ -12,7 +12,7 @@ declare global {
 }
 
 export const requireTenant: RequestHandler = async (req, res, next) => {
-  const { db } = deps();
+  const { db, logger } = deps();
 
   const domain =
     // oxlint-disable-next-line no-underscore-dangle
@@ -23,6 +23,7 @@ export const requireTenant: RequestHandler = async (req, res, next) => {
   const tenant = await db.query.tenants.findFirst({ where: { domain } });
 
   if (!tenant) {
+    logger.warn('no tenant for this domain', { domain });
     return res.status(404).json({ error: 'tenant_not_found', domain });
   }
 

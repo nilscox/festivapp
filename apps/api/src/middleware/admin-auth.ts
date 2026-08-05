@@ -14,11 +14,12 @@ declare global {
 }
 
 export const requireOrganizer: RequestHandler = async (req, res, next) => {
-  const { db } = deps();
+  const { db, logger } = deps();
 
   const token = readSessionToken(req);
 
   if (token === undefined) {
+    logger.debug('rejected a request carrying no session cookie');
     return res.status(401).json({ error: 'unauthenticated' });
   }
 
@@ -30,6 +31,7 @@ export const requireOrganizer: RequestHandler = async (req, res, next) => {
     .limit(1);
 
   if (!row) {
+    logger.warn('rejected an unknown or expired session');
     return res.status(401).json({ error: 'unauthenticated' });
   }
 
@@ -38,7 +40,7 @@ export const requireOrganizer: RequestHandler = async (req, res, next) => {
 };
 
 export const requireTenantMembership: RequestHandler = async (req, res, next) => {
-  const { db } = deps();
+  const { db, logger } = deps();
 
   const organizer = req.organizer;
   const tenantId = req.params.tenantId;
@@ -59,6 +61,7 @@ export const requireTenantMembership: RequestHandler = async (req, res, next) =>
     .limit(1);
 
   if (!row) {
+    logger.warn('organizer is not a member of this tenant', { organizer: organizer.email, tenantId });
     return res.status(403).json({ error: 'forbidden' });
   }
 

@@ -6,6 +6,7 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
 export type LogContext = Record<string, unknown>;
 
 export interface Logger {
+  readonly level: LogLevel;
   debug(message: string, context?: LogContext): void;
   info(message: string, context?: LogContext): void;
   warn(message: string, context?: LogContext): void;
@@ -50,6 +51,7 @@ export function consoleLogger(options: LoggerOptions = {}): Logger {
   }
 
   return {
+    level,
     debug: (message, extra) => log('debug', message, extra),
     info: (message, extra) => log('info', message, extra),
     warn: (message, extra) => log('warn', message, extra),
