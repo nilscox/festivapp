@@ -1,13 +1,11 @@
 import type { UploadedFile as FileDto, TenantTheme } from '@festivapp/contracts';
 import { assert, defined } from '@festivapp/utils';
 import { and, eq } from 'drizzle-orm';
-import express, { Router } from 'express';
+import express, { Router, type RequestHandler } from 'express';
 import { z } from 'zod';
 
-import { config } from '../../config.ts';
-import { db } from '../../db/client.ts';
+import { deps } from '../../container.ts';
 import { files, type File } from '../../db/schema.ts';
-import { storage } from '../../storage.ts';
 import { createId } from '../../utils.ts';
 
 export const filesRouter = Router({ mergeParams: true });
@@ -40,6 +38,8 @@ function toFileDto(row: File): FileDto {
 }
 
 filesRouter.get('/', async (req, res) => {
+  const { db } = deps();
+
   assert(req.tenant);
 
   const rows = await db.query.files.findMany({
@@ -54,48 +54,55 @@ const uploadSchema = z.object({
   name: z.string().trim().min(1).max(200).optional(),
 });
 
-filesRouter.post(
-  '/',
-  express.raw({ type: Object.keys(extensions), limit: config.uploadMaxBytes }),
-  async (req, res) => {
-    assert(req.tenant);
+const uploadBody: RequestHandler = (req, res, next) => {
+  const { config } = deps();
+  const raw = express.raw({ type: Object.keys(extensions), limit: config.uploadMaxBytes });
 
-    const { name } = uploadSchema.parse(req.query);
-    const contentType = req.get('content-type')?.split(';')[0]?.trim() ?? '';
-    const extension = extensions[contentType];
+  return raw(req, res, next);
+};
 
-    if (!Buffer.isBuffer(req.body) || extension === undefined) {
-      return res.status(415).json({ error: 'unsupported_media_type' });
-    }
+filesRouter.post('/', uploadBody, async (req, res) => {
+  const { db, storage } = deps();
 
-    const size = req.body.length;
+  assert(req.tenant);
 
-    if (size === 0) {
-      return res.status(400).json({ error: 'empty_file' });
-    }
+  const { name } = uploadSchema.parse(req.query);
+  const contentType = req.get('content-type')?.split(';')[0]?.trim() ?? '';
+  const extension = extensions[contentType];
 
-    const id = createId();
-    const storageKey = `${req.tenant.id}/${id}${extension}`;
+  if (!Buffer.isBuffer(req.body) || extension === undefined) {
+    return res.status(415).json({ error: 'unsupported_media_type' });
+  }
 
-    await storage.put(storageKey, req.body);
+  const size = req.body.length;
 
-    const [row] = await db
-      .insert(files)
-      .values({
-        id,
-        tenantId: req.tenant.id,
-        storageKey,
-        name,
-        contentType,
-        size,
-      })
-      .returning();
+  if (size === 0) {
+    return res.status(400).json({ error: 'empty_file' });
+  }
 
-    res.status(201).json(toFileDto(defined(row)));
-  },
-);
+  const id = createId();
+  const storageKey = `${req.tenant.id}/${id}${extension}`;
+
+  await storage.put(storageKey, req.body);
+
+  const [row] = await db
+    .insert(files)
+    .values({
+      id,
+      tenantId: req.tenant.id,
+      storageKey,
+      name,
+      contentType,
+      size,
+    })
+    .returning();
+
+  res.status(201).json(toFileDto(defined(row)));
+});
 
 filesRouter.delete('/:id', async (req, res) => {
+  const { db, storage } = deps();
+
   assert(req.tenant);
 
   const file = await db.query.files.findFirst({

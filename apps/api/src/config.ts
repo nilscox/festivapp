@@ -4,13 +4,18 @@ function env(name: string, defaultValue?: string) {
   return process.env[name] || defaultValue;
 }
 
-export const config = {
-  host: env('HOST', '127.0.0.1'),
-  port: Number(env('PORT', '3000')),
-  databaseUrl: env('DATABASE_URL'),
-  storageDir: env('STORAGE_DIR'),
-  uploadMaxBytes: env('UPLOAD_MAX_BYTES'),
-  vapidPublicKey: env('VAPID_PUBLIC_KEY'),
-  vapidPrivateKey: env('VAPID_PRIVATE_KEY'),
-  vapidSubject: env('VAPID_SUBJECT', 'mailto:admin@festivapp.local'),
-};
+export type Config = ReturnType<typeof envConfig>;
+
+export function envConfig() {
+  return {
+    host: env('HOST', '127.0.0.1'),
+    port: Number(env('PORT', '3000')),
+    logLevel: env('LOG_LEVEL', 'info'),
+    databaseUrl: env('DATABASE_URL'),
+    storageDir: env('STORAGE_DIR'),
+    uploadMaxBytes: env('UPLOAD_MAX_BYTES'),
+    vapidPublicKey: env('VAPID_PUBLIC_KEY'),
+    vapidPrivateKey: env('VAPID_PRIVATE_KEY'),
+    vapidSubject: env('VAPID_SUBJECT', 'mailto:admin@festivapp.local'),
+  };
+}

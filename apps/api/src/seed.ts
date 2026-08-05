@@ -5,9 +5,8 @@ import { readFile } from 'node:fs/promises';
 import { basename, dirname, extname, resolve } from 'node:path';
 import z from 'zod';
 
-import { db } from './db/client.ts';
+import { deps } from './container.ts';
 import * as schema from './db/schema.ts';
-import { storage } from './storage.ts';
 import { themeSchema } from './theme.ts';
 import { createId } from './utils.ts';
 
@@ -86,6 +85,8 @@ const dataSchema = z.strictObject({
 });
 
 export async function seed(input: string, drop = false): Promise<void> {
+  const { db, storage } = deps();
+
   const data = dataSchema.parse(JSON.parse(await readFile(input, 'utf8')));
 
   const tenantId = createId();
@@ -260,5 +261,9 @@ export async function seed(input: string, drop = false): Promise<void> {
 }
 
 async function deleteFile(storageKey: string) {
-  await storage.delete(storageKey).catch(console.error);
+  const { storage, logger } = deps();
+
+  await storage.delete(storageKey).catch((error: unknown) => {
+    logger.error('failed to delete an orphaned upload', { storageKey, error });
+  });
 }

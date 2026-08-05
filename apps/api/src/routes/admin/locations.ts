@@ -4,7 +4,7 @@ import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { db } from '../../db/client.ts';
+import { deps } from '../../container.ts';
 import { locations, type Location } from '../../db/schema.ts';
 import { optionalString } from '../../utils.ts';
 
@@ -39,6 +39,8 @@ function toLocationDto(row: Location): LocationDto {
 }
 
 locationsRouter.get('/', async (req, res) => {
+  const { db } = deps();
+
   assert(req.tenant);
 
   const locations = await db.query.locations.findMany({
@@ -50,6 +52,8 @@ locationsRouter.get('/', async (req, res) => {
 });
 
 locationsRouter.post('/', async (req, res) => {
+  const { db } = deps();
+
   assert(req.tenant);
 
   const values = createSchema.parse(req.body);
@@ -66,6 +70,8 @@ locationsRouter.post('/', async (req, res) => {
 });
 
 locationsRouter.patch('/:id', async (req, res) => {
+  const { db } = deps();
+
   assert(req.tenant);
 
   const { mapPin, ...values } = updateSchema.parse(req.body);
@@ -90,6 +96,8 @@ locationsRouter.patch('/:id', async (req, res) => {
 });
 
 locationsRouter.delete('/:id', async (req, res) => {
+  const { db } = deps();
+
   assert(req.tenant);
 
   const [row] = await db

@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { pipeline } from 'node:stream/promises';
 
-import { db } from '../db/client.ts';
-import { storage } from '../storage.ts';
+import { deps } from '../container.ts';
 
 export const filesRouter = Router();
 
 filesRouter.get('/:id', async (req, res) => {
+  const { db, storage } = deps();
+
   const file = await db.query.files.findFirst({ where: { id: req.params.id } });
 
   if (!file) {

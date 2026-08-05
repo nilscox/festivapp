@@ -51,17 +51,30 @@ packages/
   `pushPublicKey` and the app hides the opt-in). Nothing crashes at startup, so
   `pnpm dev` and `pnpm test` work on a machine with nothing installed — which is also
   the state the tests run in. Each app has its own `.env`, never a shared root one.
+  `LOG_LEVEL` is the one variable that only picks a verbosity (`debug`, `info`,
+  `warn`, `error`, `silent`), defaulting to `info`.
 
 ## API conventions
 
-- **With no `DATABASE_URL`, `db/client.ts` swaps the driver for an in-process wasm
-  Postgres** (`@electric-sql/pglite`), created empty, schema-pushed at boot with
-  `pushSchema` from `drizzle-kit/api-postgres`, and dropped with the process. It is
-  what the tests run on, and it boots the API with no database installed. Each
+- **Dependencies come from the container, never from a module singleton.**
+  `createContainer()` (`src/container.ts`) builds `{ config, logger, db, storage,
+push, close }` once per entrypoint, and `provideContainer(container)` — the first
+  middleware in `createApp(container)` — puts it in an `AsyncLocalStorage` for the
+  request, with a `logger` child carrying a fresh `requestId`. Everything downstream
+  reads `const { db, logger } = deps();` at the top of the handler or helper. There is
+  no root fallback: `deps()` throws outside a request, so a non-HTTP entrypoint
+  (`cli.ts`) opens its own scope with `runWithContainer(container, …)`. Anything built
+  from config at module level (an upload limit, a VAPID check) has to move into the
+  request or into a factory, because the container does not exist when the module
+  loads.
+- **With no `DATABASE_URL`, `createDatabase(config)` swaps the driver for an
+  in-process wasm Postgres** (`@electric-sql/pglite`), created empty, schema-pushed at
+  boot with `pushSchema` from `drizzle-kit/api-postgres`, and dropped with the process.
+  It is what the tests run on, and it boots the API with no database installed. Each
   process gets its own, so nothing written by the CLI is visible to a running
   server — anything that needs data to outlive the process wants real Postgres.
-  Both drivers are reached through the same `Database` type and
-  `closeDatabase()`; never touch `db.$client` directly, since its two clients have
+  Both drivers are reached through the same `Database` type and the handle's
+  `close()`; never touch `db.$client` directly, since its two clients have
   different shutdown methods. Keep pglite a devDependency behind the dynamic
   `import()` it sits in — the Postgres path must not load it.
 - **Read with the Drizzle relational query API** — prefer
@@ -95,12 +108,15 @@ packages/
   Group routers by audience under `routes/{app,admin}/` with an assembling
   `index.ts`. Admin routes take the tenant from the URL/session, **never** the
   `Host`; only the public attendee routes run `requireTenant`.
-- **Web push is fire-and-forget** (`apps/api/src/push.ts`). Publishing a message
-  responds `201` first, then `void sendToTenant(...)` runs — a festival can have
-  thousands of subscriptions and the organizer must not wait on them, so a failed
-  send is logged, never surfaced. `sendToTenant` prunes the subscriptions whose
-  push service answers 404/410; that is the only signal a device is gone. VAPID
-  keys are global to the deployment, not per tenant — generate a pair with
+- **Web push is fire-and-forget** (`apps/api/src/push.ts`, built by `createPush`
+  and reached as `deps().push`). Publishing a message responds `201` first, then
+  `void push.sendToTenant(...)` runs — a festival can have thousands of
+  subscriptions and the organizer must not wait on them, so a failed send is
+  logged, never surfaced. `sendToTenant` prunes the subscriptions whose push
+  service answers 404/410; that is the only signal a device is gone. Whether the
+  deployment has VAPID keys at all is `push.enabled`, computed per container
+  rather than at import, so a test can build one with push on. VAPID keys are
+  global to the deployment, not per tenant — generate a pair with
   `pnpm cli push keys`.
 - **Date math via date-fns** — `add(Date.now(), { months: 3 })`, not raw
   millisecond arithmetic.
@@ -127,11 +143,18 @@ packages/
   so `api.login(...)` authenticates every later call. Call it **once per file, at
   the top level** — inside a `describe` its hooks would be suite-scoped and the
   first suite to finish would close the pool for the rest.
+- **The test container is what makes the suite quiet and overridable**
+  (`test/helpers/container.ts`). `startContainer()` builds one per process with
+  `logLevel: 'silent'`, `useApi()` hands it to `createApp`, and anything running
+  outside a request — fixtures, a direct `db` read in an assertion — goes through
+  `testContainer()`. Override a dependency there rather than reaching for an
+  environment variable.
 - **Tests need nothing running, and read no env file** — every variable being unset
   is the point: each file gets its own private wasm Postgres (hence the parallel
   run), uploads stay in memory, and the upload limit is body-parser's own 100kb,
   which is what the 413 test has to exceed. Keep it that way; a test that needs a
-  setting should get it from the request or the fixture, not from the environment.
+  setting should get it from the request, the fixture or the container, not from
+  the environment.
 - Anything exported in the shell still reaches the tests, which is how you run the
   suite against a real Postgres: point `DATABASE_URL` at it, push the schema
   (`DATABASE_URL=… pnpm db:push`), then run node directly so the files stop

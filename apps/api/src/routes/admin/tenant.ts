@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { db } from '../../db/client.ts';
+import { deps } from '../../container.ts';
 import { pushSubscriptions, type Tenant, tenants } from '../../db/schema.ts';
 import { optionalString } from '../../utils.ts';
 
@@ -40,6 +40,8 @@ const schema = z
   .partial();
 
 tenantRouter.patch('/', async (req, res) => {
+  const { db } = deps();
+
   assert(req.tenant);
 
   const values = schema.parse(req.body);
@@ -62,5 +64,7 @@ tenantRouter.patch('/', async (req, res) => {
 });
 
 function countPushSubscriptions(tenantId: string) {
+  const { db } = deps();
+
   return db.$count(pushSubscriptions, eq(pushSubscriptions.tenantId, tenantId));
 }

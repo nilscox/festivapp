@@ -3,7 +3,6 @@ import { defined } from '@festivapp/utils';
 import { add } from 'date-fns';
 
 import { hashPassword } from '../../src/auth/password.ts';
-import { db } from '../../src/db/client.ts';
 import {
   authSessions,
   locations,
@@ -23,6 +22,7 @@ import {
   type Session,
   type Tenant,
 } from '../../src/db/schema.ts';
+import { testContainer } from './container.ts';
 
 type Values<T> = Partial<T>;
 
@@ -39,6 +39,8 @@ export const theme: TenantTheme = {
 };
 
 export async function createTenant(values: Values<Tenant> = {}): Promise<Tenant> {
+  const { db } = testContainer();
+
   const index = ++counter;
 
   const [row] = await db
@@ -58,6 +60,8 @@ export async function createTenant(values: Values<Tenant> = {}): Promise<Tenant>
 export async function createOrganizer(
   values: Values<Organizer> & { password?: string; tenants?: Tenant[] } = {},
 ): Promise<Organizer & { password: string }> {
+  const { db } = testContainer();
+
   const { password = 'password', tenants: memberships = [], ...rest } = values;
   const index = ++counter;
 
@@ -85,6 +89,8 @@ export async function createAuthSession(
   organizer: Organizer,
   values: Values<{ token: string; expiresAt: Date }> = {},
 ): Promise<string> {
+  const { db } = testContainer();
+
   const token = values.token ?? `token-${++counter}`;
 
   await db.insert(authSessions).values({
@@ -97,6 +103,8 @@ export async function createAuthSession(
 }
 
 export async function createLocation(tenant: Tenant, values: Values<Location> = {}): Promise<Location> {
+  const { db } = testContainer();
+
   const [row] = await db
     .insert(locations)
     .values({
@@ -110,6 +118,8 @@ export async function createLocation(tenant: Tenant, values: Values<Location> = 
 }
 
 export async function createParticipant(tenant: Tenant, values: Values<Participant> = {}): Promise<Participant> {
+  const { db } = testContainer();
+
   const [row] = await db
     .insert(participants)
     .values({
@@ -123,6 +133,8 @@ export async function createParticipant(tenant: Tenant, values: Values<Participa
 }
 
 export async function createMessage(tenant: Tenant, values: Values<Message> = {}): Promise<Message> {
+  const { db } = testContainer();
+
   const index = ++counter;
 
   const [row] = await db
@@ -142,6 +154,8 @@ export async function createPushSubscription(
   tenant: Tenant,
   values: Values<PushSubscription> = {},
 ): Promise<PushSubscription> {
+  const { db } = testContainer();
+
   const index = ++counter;
 
   const [row] = await db
@@ -163,6 +177,8 @@ export async function createSession(
   location: Location,
   values: Values<Session> & { participants?: Participant[] } = {},
 ): Promise<Session> {
+  const { db } = testContainer();
+
   const { participants: lineup = [], ...rest } = values;
 
   const [row] = await db

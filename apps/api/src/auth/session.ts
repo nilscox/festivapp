@@ -3,10 +3,12 @@ import { eq } from 'drizzle-orm';
 import type { CookieOptions, Request } from 'express';
 import { randomBytes } from 'node:crypto';
 
-import { db } from '../db/client.ts';
+import { deps } from '../container.ts';
 import { authSessions } from '../db/schema.ts';
 
 export async function createSession(organizerId: string): Promise<{ token: string; expiresAt: Date }> {
+  const { db } = deps();
+
   const token = randomBytes(32).toString('base64url');
   const expiresAt = new Date(add(Date.now(), { months: 3 }));
 
@@ -16,6 +18,8 @@ export async function createSession(organizerId: string): Promise<{ token: strin
 }
 
 export async function destroySession(token: string): Promise<void> {
+  const { db } = deps();
+
   await db.delete(authSessions).where(eq(authSessions.token, token));
 }
 

@@ -4,9 +4,8 @@ import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { db } from '../../db/client.ts';
+import { deps } from '../../container.ts';
 import { messages, type Message } from '../../db/schema.ts';
-import { sendToTenant } from '../../push.ts';
 
 export const messagesRouter = Router({ mergeParams: true });
 
@@ -28,6 +27,8 @@ function toMessageDto(row: Message): MessageDto {
 }
 
 messagesRouter.get('/', async (req, res) => {
+  const { db } = deps();
+
   assert(req.tenant);
 
   const rows = await db.query.messages.findMany({
@@ -39,6 +40,8 @@ messagesRouter.get('/', async (req, res) => {
 });
 
 messagesRouter.post('/', async (req, res) => {
+  const { db, push, logger } = deps();
+
   assert(req.tenant);
 
   const tenantId = req.tenant.id;
@@ -55,13 +58,15 @@ messagesRouter.post('/', async (req, res) => {
   res.status(201).json(toMessageDto(defined(row)));
 
   if (notify) {
-    void sendToTenant(tenantId, { title: values.title, body: values.body }).catch((error: unknown) => {
-      console.error(`[api] failed to notify ${tenantId}:`, error);
+    void push.sendToTenant(tenantId, { title: values.title, body: values.body }).catch((error: unknown) => {
+      logger.error('failed to notify a festival', { tenantId, error });
     });
   }
 });
 
 messagesRouter.patch('/:id', async (req, res) => {
+  const { db } = deps();
+
   assert(req.tenant);
 
   const values = updateSchema.parse(req.body);
@@ -83,6 +88,8 @@ messagesRouter.patch('/:id', async (req, res) => {
 });
 
 messagesRouter.delete('/:id', async (req, res) => {
+  const { db } = deps();
+
   assert(req.tenant);
 
   const [row] = await db

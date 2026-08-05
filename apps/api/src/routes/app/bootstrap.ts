@@ -2,12 +2,13 @@ import type { BootstrapResponse, Message, Participant, Session } from '@festivap
 import { assert } from '@festivapp/utils';
 import { Router } from 'express';
 
-import { config } from '../../config.ts';
-import { db } from '../../db/client.ts';
+import { deps } from '../../container.ts';
 
 export const bootstrapRouter = Router();
 
 bootstrapRouter.get('/', async (req, res) => {
+  const { config, db } = deps();
+
   const tenant = req.tenant;
   assert(tenant);
 

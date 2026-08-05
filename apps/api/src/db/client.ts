@@ -1,17 +1,21 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import type { PgAsyncDatabase, PgAsyncTransaction, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 
-import { config } from '../config.ts';
 import * as schema from './schema.ts';
+
+import type { Config } from '../config.ts';
 
 const { relations } = schema;
 
 export type Database = PgAsyncDatabase<PgQueryResultHKT, Record<string, never>, typeof relations>;
 export type Transaction = PgAsyncTransaction<PgQueryResultHKT, Record<string, never>, typeof relations>;
 
-export const { db, close: closeDatabase } = await createDatabase();
+export type DatabaseHandle = {
+  db: Database;
+  close(): Promise<void>;
+};
 
-function createDatabase() {
+export function createDatabase(config: Config): Promise<DatabaseHandle> {
   if (!config.databaseUrl) {
     return createMemoryDatabase();
   }
@@ -19,7 +23,7 @@ function createDatabase() {
   return createPostgresDatabase(config.databaseUrl);
 }
 
-function createPostgresDatabase(connection: string) {
+async function createPostgresDatabase(connection: string): Promise<DatabaseHandle> {
   const db: Database & { $client: { end: () => Promise<void> } } = drizzle({
     connection,
     logger: false,
@@ -33,7 +37,7 @@ function createPostgresDatabase(connection: string) {
   };
 }
 
-async function createMemoryDatabase() {
+async function createMemoryDatabase(): Promise<DatabaseHandle> {
   const { PGlite } = await import('@electric-sql/pglite');
   const { drizzle } = await import('drizzle-orm/pglite');
   const { pushSchema } = await import('drizzle-kit/api-postgres');

@@ -3,9 +3,8 @@ import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { db } from '../../db/client.ts';
+import { deps } from '../../container.ts';
 import { pushSubscriptions } from '../../db/schema.ts';
-import { pushEnabled } from '../../push.ts';
 
 export const pushRouter = Router();
 
@@ -18,9 +17,11 @@ const subscriptionSchema = z.strictObject({
 });
 
 pushRouter.post('/', async (req, res) => {
+  const { db, push } = deps();
+
   assert(req.tenant);
 
-  if (!pushEnabled) {
+  if (!push.enabled) {
     return res.status(503).json({ error: 'push_disabled' });
   }
 
@@ -38,6 +39,8 @@ pushRouter.post('/', async (req, res) => {
 });
 
 pushRouter.delete('/', async (req, res) => {
+  const { db } = deps();
+
   assert(req.tenant);
 
   const { endpoint } = subscriptionSchema.pick({ endpoint: true }).parse(req.body);

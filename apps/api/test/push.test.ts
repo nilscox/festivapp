@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { db } from '../src/db/client.ts';
 import { useApi } from './helpers/api.ts';
+import { testContainer } from './helpers/container.ts';
 import { createPushSubscription, createTenant } from './helpers/fixtures.ts';
 
 const api = useApi();
@@ -31,6 +31,7 @@ describe('POST /push/subscriptions', () => {
 
 describe('DELETE /push/subscriptions', () => {
   it('unregisters a device', async () => {
+    const { db } = await testContainer();
     const tenant = await createTenant({ domain: 'coolfest.localhost' });
     const registered = await createPushSubscription(tenant);
 

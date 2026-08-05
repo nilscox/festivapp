@@ -2,7 +2,7 @@ import { and, eq, gt } from 'drizzle-orm';
 import type { RequestHandler } from 'express';
 
 import { readSessionToken } from '../auth/session.ts';
-import { db } from '../db/client.ts';
+import { deps } from '../container.ts';
 import { authSessions, type Organizer, organizers, organizerTenants, tenants } from '../db/schema.ts';
 
 declare global {
@@ -14,6 +14,8 @@ declare global {
 }
 
 export const requireOrganizer: RequestHandler = async (req, res, next) => {
+  const { db } = deps();
+
   const token = readSessionToken(req);
 
   if (token === undefined) {
@@ -36,6 +38,8 @@ export const requireOrganizer: RequestHandler = async (req, res, next) => {
 };
 
 export const requireTenantMembership: RequestHandler = async (req, res, next) => {
+  const { db } = deps();
+
   const organizer = req.organizer;
   const tenantId = req.params.tenantId;
 

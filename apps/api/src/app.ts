@@ -1,13 +1,17 @@
 import express, { type Express, type Request, type Response } from 'express';
 
+import { provideContainer } from './middleware/container.ts';
 import { errorHandler, payloadErrorHandler, zodErrorHandler } from './middleware/error.ts';
 import { adminRouter } from './routes/admin/index.ts';
 import { tenantRouter } from './routes/app/index.ts';
 import { filesRouter } from './routes/files.ts';
 
-export function createApp(): Express {
+import type { Container } from './container.ts';
+
+export function createApp(container: Container): Express {
   const app = express();
 
+  app.use(provideContainer(container));
   app.use(express.json());
 
   app.get('/health', health);

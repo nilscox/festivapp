@@ -1,5 +1,5 @@
 import type { MeResponse } from '@festivapp/contracts';
-import { assert } from '@festivapp/utils';
+import { assert, defined } from '@festivapp/utils';
 import {
   createServer,
   request,
@@ -12,7 +12,8 @@ import type { AddressInfo } from 'node:net';
 import { after, before, beforeEach } from 'node:test';
 
 import { createApp } from '../../src/app.ts';
-import { config } from '../../src/config.ts';
+import { envConfig } from '../../src/config.ts';
+import { startContainer } from './container.ts';
 import { closeDatabase, resetDatabase } from './database.ts';
 
 type RequestOptions = {
@@ -41,16 +42,20 @@ export function useApi(): TestApi {
 }
 
 export class TestApi {
-  private server: Server = createServer(createApp());
+  private server?: Server;
   private cookies = new Map<string, string>();
   private port = 0;
 
   async start(): Promise<void> {
+    const config = envConfig();
+
     if (config.databaseUrl !== undefined) {
       assert(config.databaseUrl.includes('localhost'), new Error('DATABASE_URL must include "localhost"'));
     }
 
-    await new Promise<void>((resolve) => this.server.listen(0, '127.0.0.1', resolve));
+    this.server = createServer(createApp(await startContainer()));
+
+    await new Promise<void>((resolve) => this.server?.listen(0, '127.0.0.1', resolve));
 
     const address = this.server.address() as AddressInfo | null;
     assert(address);
@@ -59,8 +64,10 @@ export class TestApi {
   }
 
   async stop(): Promise<void> {
+    const server = defined(this.server);
+
     await new Promise<void>((resolve, reject) => {
-      this.server.close((err) => (err ? reject(err) : resolve()));
+      server.close((err) => (err ? reject(err) : resolve()));
     });
   }
 

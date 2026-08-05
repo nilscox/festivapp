@@ -4,12 +4,16 @@ import { mkdir, rm, rmdir, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 
-import { config } from './config.ts';
+import type { Config } from './config.ts';
 
 export interface Storage {
   put(key: string, data: Buffer): Promise<void>;
   read(key: string): Readable;
   delete(key: string): Promise<void>;
+}
+
+export function createStorage(config: Config): Storage {
+  return config.storageDir ? new DiskStorage(config.storageDir) : new MemoryStorage();
 }
 
 class DiskStorage implements Storage {
@@ -63,5 +67,3 @@ class MemoryStorage implements Storage {
     this.files.delete(key);
   }
 }
-
-export const storage: Storage = config.storageDir ? new DiskStorage(config.storageDir) : new MemoryStorage();

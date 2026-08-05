@@ -11,7 +11,7 @@ import {
   readSessionToken,
   sessionCookieOptions,
 } from '../../auth/session.ts';
-import { db } from '../../db/client.ts';
+import { deps } from '../../container.ts';
 import { type Organizer, type Tenant } from '../../db/schema.ts';
 import { requireOrganizer } from '../../middleware/admin-auth.ts';
 
@@ -23,6 +23,8 @@ const loginSchema = z.object({
 });
 
 async function listOrganizerTenants(organizerId: string) {
+  const { db } = deps();
+
   return db.query.tenants.findMany({
     where: { organizers: { id: organizerId } },
     orderBy: { name: 'asc' },
@@ -37,6 +39,8 @@ function toMeResponseDto(organizer: Organizer, tenants: Tenant[]): MeResponse {
 }
 
 authRouter.post('/login', async (req, res) => {
+  const { db } = deps();
+
   const { email, password } = loginSchema.parse(req.body);
 
   const organizer = await db.query.organizers.findFirst({

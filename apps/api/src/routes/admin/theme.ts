@@ -2,7 +2,7 @@ import { assert, defined } from '@festivapp/utils';
 import { eq } from 'drizzle-orm';
 import { Router } from 'express';
 
-import { db } from '../../db/client.ts';
+import { deps } from '../../container.ts';
 import { tenants } from '../../db/schema.ts';
 import { themeSchema } from '../../theme.ts';
 
@@ -14,6 +14,8 @@ themeRouter.get('/', (req, res) => {
 });
 
 themeRouter.put('/', async (req, res) => {
+  const { db } = deps();
+
   assert(req.tenant);
 
   const theme = themeSchema.parse(req.body);

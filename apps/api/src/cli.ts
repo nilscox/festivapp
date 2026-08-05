@@ -6,11 +6,9 @@ import webpush from 'web-push';
 import z from 'zod';
 
 import { hashPassword } from './auth/password.ts';
-import { closeDatabase, db } from './db/client.ts';
+import { createContainer, deps, runWithContainer } from './container.ts';
 import { organizers, organizerTenants, tenants, type Tenant } from './db/schema.ts';
-import { findSubscriptions, pushEnabled, sendToTenant } from './push.ts';
 import { seed } from './seed.ts';
-import { storage } from './storage.ts';
 
 const program = new Command();
 
@@ -46,6 +44,8 @@ organizer
   .argument('<domains...>', 'one or more festival domains to grant access to')
   .option('-n, --name <name>', 'organizer display name')
   .action(async (email: string, password: string, domains: string[], options: { name?: string }) => {
+    const { db } = deps();
+
     const tenantRows = await findTenants(domains);
 
     const [organizer] = await db
@@ -66,6 +66,8 @@ organizer
   .argument('<email>', 'organizer email', (email) => email.trim().toLowerCase())
   .argument('<domains...>', 'one or more festival domains to grant access to')
   .action(async (email: string, domains: string[]) => {
+    const { db } = deps();
+
     const organizer = await db.query.organizers.findFirst({ where: { email } });
 
     if (!organizer) {
@@ -92,6 +94,8 @@ festival
   .option('-t, --timezone <timezone>', 'festival time zone')
   .option('-d, --domain <domain>', 'attendees app domain')
   .action(async (name: string, { timezone = 'Europe/London', domain = 'localhost' }) => {
+    const { db } = deps();
+
     const theme: TenantTheme = {
       backgroundColor: '#000000',
       accentColor: '#ffffff',
@@ -113,6 +117,8 @@ festival
   .description('List all festivals')
   .option('-j, --json', 'Output in JSON format')
   .action(async ({ json }: { json: boolean }) => {
+    const { db } = deps();
+
     const tenants = await db.query.tenants.findMany();
 
     if (json) {
@@ -133,6 +139,8 @@ festival
   .description('Delete an existing festival')
   .argument('<domain>', "festival's app domain")
   .action(async (domain: string) => {
+    const { db, storage } = deps();
+
     const tenant = await db.query.tenants.findFirst({ where: { domain } });
 
     if (!tenant) {
@@ -172,16 +180,18 @@ push
   .option('-b, --body <body>', 'notification body', 'If you can read this, push works.')
   .option('-s, --subscription <id>', 'send to this subscription only, instead of every device')
   .action(async (domain: string, options: { title: string; body: string; subscription?: string }) => {
+    const { push } = deps();
+
     const { title, body, subscription } = options;
 
-    if (!pushEnabled) {
+    if (!push.enabled) {
       throw new Error('No VAPID keys configured — run "cli push keys" and put the pair in .env');
     }
 
     const [tenant] = await findTenants([domain]);
     assert(tenant);
 
-    const subscriptions = await findSubscriptions(tenant.id, subscription);
+    const subscriptions = await push.findSubscriptions(tenant.id, subscription);
 
     if (subscriptions.length === 0) {
       console.log(subscription ? `No subscription ${subscription} on ${domain}` : `No device subscribed to ${domain}`);
@@ -189,10 +199,12 @@ push
       return;
     }
 
-    await sendToTenant(tenant.id, { title, body }, subscription);
+    await push.sendToTenant(tenant.id, { title, body }, subscription);
   });
 
 async function findTenants(domains: string[]) {
+  const { db } = deps();
+
   const rows = await db.query.tenants.findMany({ where: { domain: { in: domains } } });
   const found = new Set(rows.map(get('domain')));
   const missing = domains.filter((domain) => !found.has(domain));
@@ -204,4 +216,6 @@ async function findTenants(domains: string[]) {
   return rows;
 }
 
-await program.parseAsync(process.argv).finally(closeDatabase);
+const container = await createContainer();
+
+await runWithContainer(container, () => program.parseAsync(process.argv)).finally(() => container.close());

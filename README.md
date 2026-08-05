@@ -50,13 +50,14 @@ lists the rest.
 
 Each app has its own `.env`, and every variable is optional. For the API:
 
-| Variable           | Unset means | Description                             |
-| ------------------ | ----------- | --------------------------------------- |
-| `HOST`             | localhost   | Address the API listens on              |
-| `PORT`             | 3000        | Port the API listens on                 |
-| `DATABASE_URL`     | in-memory   | Postgres connection string              |
-| `STORAGE_DIR`      | in-memory   | Directory uploaded files are written to |
-| `UPLOAD_MAX_BYTES` | 100kb       | Largest accepted upload (`5mb`, `2048`) |
+| Variable           | Unset means | Description                                |
+| ------------------ | ----------- | ------------------------------------------ |
+| `HOST`             | localhost   | Address the API listens on                 |
+| `PORT`             | 3000        | Port the API listens on                    |
+| `LOG_LEVEL`        | info        | `debug`, `info`, `warn`, `error`, `silent` |
+| `DATABASE_URL`     | in-memory   | Postgres connection string                 |
+| `STORAGE_DIR`      | in-memory   | Directory uploaded files are written to    |
+| `UPLOAD_MAX_BYTES` | 100kb       | Largest accepted upload (`5mb`, `2048`)    |
 
 The last three switch to an in-memory implementation rather than to a default
 value: with no `DATABASE_URL` the API runs on a Postgres compiled to wasm

@@ -4,9 +4,11 @@ import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { db, type Transaction } from '../../db/client.ts';
+import { deps } from '../../container.ts';
 import { sessionParticipants, sessions, type Session } from '../../db/schema.ts';
 import { optionalString } from '../../utils.ts';
+
+import type { Transaction } from '../../db/client.ts';
 
 export const sessionsRouter = Router({ mergeParams: true });
 
@@ -63,6 +65,8 @@ function toSessionDto(row: Session, participantIds: string[]): SessionDto {
 }
 
 sessionsRouter.get('/', async (req, res) => {
+  const { db } = deps();
+
   assert(req.tenant);
 
   const [rows, participantRows] = await Promise.all([
@@ -86,6 +90,8 @@ sessionsRouter.get('/', async (req, res) => {
 });
 
 sessionsRouter.post('/', async (req, res) => {
+  const { db } = deps();
+
   assert(req.tenant);
 
   const { participantIds, ...values } = sessionSchema.parse(req.body);
@@ -119,6 +125,8 @@ sessionsRouter.post('/', async (req, res) => {
 });
 
 sessionsRouter.put('/:id', async (req, res) => {
+  const { db } = deps();
+
   assert(req.tenant);
 
   const { participantIds, ...values } = sessionSchema.parse(req.body);
@@ -162,6 +170,8 @@ sessionsRouter.put('/:id', async (req, res) => {
 });
 
 sessionsRouter.delete('/:id', async (req, res) => {
+  const { db } = deps();
+
   assert(req.tenant);
 
   const [row] = await db
@@ -177,6 +187,8 @@ sessionsRouter.delete('/:id', async (req, res) => {
 });
 
 async function ownsLocation(tenantId: string, locationId: string) {
+  const { db } = deps();
+
   const row = await db.query.locations.findFirst({ where: { id: locationId, tenantId } });
 
   return row !== undefined;
@@ -186,6 +198,8 @@ async function ownsParticipants(tenantId: string, participantIds: string[]) {
   if (participantIds.length === 0) {
     return true;
   }
+
+  const { db } = deps();
 
   const rows = await db.query.participants.findMany({
     where: { tenantId, id: { in: participantIds } },

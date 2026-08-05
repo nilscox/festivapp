@@ -1,12 +1,15 @@
 import { createApp } from './app.ts';
-import { config } from './config.ts';
+import { createContainer } from './container.ts';
 
-const app = createApp();
+const container = await createContainer();
+const { config, logger } = container;
+
+const app = createApp(container);
 
 app.listen(config.port, config.host, (err) => {
   if (err) {
     throw err;
   }
 
-  console.log(`[api] listening on http://${config.host}:${config.port}`);
+  logger.info(`listening on http://${config.host}:${config.port}`);
 });
