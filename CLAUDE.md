@@ -1,453 +1,158 @@
 # CLAUDE.md
 
-Guidance for working in this repository.
-
-## What this is
-
-FestivApp — a white-label, multi-tenant PWA for festival attendees, plus an
-organizer backoffice. One deployment serves many festivals; a **tenant** (one
-festival) is resolved from the request's `Host` header, and all tenant data is
-scoped by `tenants.id`. Attendees never log in — saved events and notes live on
-the device; the attendee SPA must work fully offline after first load.
-
-## Layout
+FestivApp — a white-label, multi-tenant PWA for festival attendees plus an organizer backoffice. One
+deployment serves many festivals: a **tenant** is resolved from the request's `Host` and all tenant
+data is scoped by `tenants.id`. Attendees never log in — saved events and notes live on the device,
+and the SPA must work fully offline after first load.
 
 ```
-apps/
-  api/         Express 5 + Drizzle + Postgres API
-  app/         Attendee PWA (Vite + React, offline-first)
-  admin/       Organizer backoffice (Vite + React)
-packages/
-  contracts/   Shared, type-only request/response types (@festivapp/contracts)
-  config/      Shared base tsconfig + oxlint/oxfmt configs (@festivapp/config)
-  utils/       Shared dependency-free helpers (@festivapp/utils)
+apps/api      Express 5 + Drizzle + Postgres          apps/app    Attendee PWA (Vite + React)
+apps/admin    Organizer backoffice (Vite + React)
+packages/     contracts (type-only) · config (tsconfig/oxlint/oxfmt) · utils (pure helpers)
 ```
 
 ## Runtime & TypeScript
 
-- TypeScript runs **directly on Node** (native type stripping) — there is no build
-  step and no `tsx`. Because of this:
-  - Relative imports use explicit `.ts`/`.tsx` extensions (e.g. `import { config } from "./config.ts"`),
-    enforced by the `import/extensions` lint rule.
-  - `erasableSyntaxOnly` is on: no enums, no runtime `namespace`, no parameter
-    properties — nothing that emits JS from types.
-  - `packages/contracts` is **type-only**; import from it with `import type`.
-- Tooling config is layered: `packages/config` holds the base
-  `tsconfig.base.json` / `oxlint.config.ts` / `oxfmt.config.ts`, and each
-  app/package extends (or spreads) it in its own config file.
-- **Narrow invariants with `assert(value, error?)`** (`@festivapp/utils`), not `!`
-  — e.g. `assert(req.tenant)` then `req.tenant.id`. Where you need an expression
-  rather than a statement, use `defined(value)`. `!` is a lint error
-  (`typescript/no-non-null-assertion`).
-- **`packages/utils` holds only pure, dependency-free helpers** that could serve any
-  of the three apps (`assert`/`defined`, `has`, `matchesSearch`, color math). It has
-  no runtime dependencies and touches neither the DOM nor Node built-ins — anything
-  app-specific stays in that app's `src/lib/`.
-- **Every environment variable is optional**, read through `env(name, default?)`
-  inside `envConfig()` (`apps/api/src/config.ts`), which the container resolves once
-  as the `config` singleton. `HOST`, `PORT` and `VAPID_SUBJECT` fall back to a
-  value; the rest switch behaviour when unset rather than standing in for one — no
-  `DATABASE_URL` runs an in-process wasm Postgres, no `STORAGE_DIR` keeps uploads in
-  memory, no VAPID keys turn push off everywhere (`/bootstrap` reports a null
-  `pushPublicKey` and the app hides the opt-in). Nothing crashes at startup, so
-  `pnpm dev` and `pnpm test` work on a machine with nothing installed — which is also
-  the state the tests run in. Each app has its own `.env`, never a shared root one.
-  `LOG_LEVEL` is the one variable that only picks a verbosity (`debug`, `info`,
-  `warn`, `error`, `silent`), defaulting to `info`.
+- TypeScript runs **directly on Node** (type stripping): no build step, relative imports carry
+  `.ts`/`.tsx` extensions, `erasableSyntaxOnly` is on (no enums, `namespace`, parameter properties),
+  and `packages/contracts` is `import type` only.
+- **Narrow with `assert(value)` / `defined(value)`** (`@festivapp/utils`) — `!` is a lint error.
+- **`packages/utils` stays pure and dependency-free** — app-specific helpers go in that app's `lib/`.
+- **Every environment variable is optional**, read via `env()` in `envConfig()`; unset switches
+  behaviour rather than crashing (no `DATABASE_URL` runs wasm Postgres in-process, no `STORAGE_DIR`
+  keeps uploads in memory, no VAPID keys turn push off), so `pnpm dev` and `pnpm test` must work on
+  a machine with nothing installed. Each app has its own `.env`.
 
-## API conventions
+## API (`apps/api`)
 
-- **Dependencies come from the awilix container, never from a module singleton.**
-  `src/container.ts` registers `{ config, logger, client, db, storage, push }` on one
-  module-level `container`. Injection is `PROXY`, so **every factory takes the cradle
-  and destructures what it needs** (`createPush({ config, db, logger })`) — a factory
-  with a positional parameter silently receives the cradle instead. `strict: true`
-  turns an unregistered name into a throw rather than `undefined`, and enforces
-  lifetimes: **a singleton may not depend on a scoped registration**, which is why
-  `push` is scoped (it needs `db`).
-- **A request gets a real child scope, hung off `req`.** `provideContainer` calls
-  `container.createScope()`, registers a `logger` child carrying a fresh `requestId`,
-  and assigns it to `req.container`; handlers and middleware read
-  `req.container.resolve('db')`. Code with no request in hand — `cli.ts`, `seed.ts`,
-  the test fixtures — resolves from the imported `container` instead. Anything built
-  from config at module level (an upload limit, a VAPID check) has to move into the
-  request or into a factory, since resolution is what applies the config.
-- **Lifetimes carry the request identity.** The connection (`client`) is a
-  **singleton** with a `.disposer()`, and `db` is **scoped**: it is a ~1µs drizzle
-  wrapper around the shared client, rebuilt per scope so it holds that request's
-  logger. That is the only reason a query can log under the id of the request that
-  fired it — a singleton `db` would capture the root logger and lose the link.
-  `container.dispose()` is what closes the pool; without it a CLI command hangs for
-  pg's 10s idle timeout.
-- **Log through the container's logger, never `console`** (`src/logger.ts`:
-  `debug`/`info`/`warn`/`error`/`child`, colors auto-disabled off a TTY, `warn`/`error` to stderr).
-  Pass context as the second argument (`logger.warn('…', { domain })`) rather than
-  interpolating it, and put an `Error` in there under any key — the logger prints its
-  stack indented instead of inlining it. `requestLogger` already emits one line per
-  request with status, duration and tenant, at a level derived from the status, so a
-  route only logs what that line cannot say. The CLI keeps `console.log`: its output
-  is a result, not a log.
-- **With no `DATABASE_URL`, `createDatabaseClient` returns an in-process wasm
-  Postgres** (`@electric-sql/pglite`) instead of a `pg` `Pool`. It is created empty,
-  so `container.ts` runs `applyMigrations` (`pushSchema` from
-  `drizzle-kit/api-postgres`) at boot on that branch only — skip it and the API starts
-  fine and then answers 500 `relation "tenants" does not exist` on every route. It is
-  what the tests run on, and it boots the API with no database installed. Each process
-  gets its own, so nothing written by the CLI is visible to a running server —
-  anything that needs data to outlive the process wants real Postgres. Both clients
-  are wrapped into the same `Database` type by `createDatabase`, and both are closed
-  by `closeDatabaseClient`, which branches on the client rather than on `db.$client`.
-  **`@electric-sql/pglite` and `drizzle-kit` are runtime dependencies, not dev ones**,
-  because `db/client.ts` imports them statically: move either back to
-  `devDependencies` and the production image (`pnpm install --prod`) dies at startup
-  on a missing module, with tests, typecheck and lint all still green. Drizzle's own
-  query logging is wired to `debug` through the scope's logger.
-- **Read with the Drizzle relational query API** — prefer
-  `db.query.<table>.findMany/findFirst({ where, orderBy })` over hand-written
-  `select().from().innerJoin()`; declare cross-table `relations` (`defineRelations`
-  in `db/schema.ts`) so `where` can traverse them (e.g. `where: { organizers: { id } }`).
-  Writes stay explicit: `db.insert/update/delete(...).returning()`.
-- **Always map rows to a contract DTO at the response boundary.** Relational reads
-  return **full rows**, so never hand a raw row (or a spread of one) to `res.json`
-  — it leaks columns the contract doesn't declare. Write one small `to<Name>Dto(row)`
-  per resource; colocate it in the route file when only one caller uses it.
-- **DTO vs row naming** — alias the contract type as `<Name>Dto` and keep the
-  Drizzle row type as the plain `<Name>` (`import { locations, type Location }` +
-  `import type { Location as LocationDto }`).
-- **Validate with `schema.parse(req.body)`**, never `safeParse` + a hand-rolled 400. Put normalisation in the schema (zod v4 top-level formats + transforms, e.g.
-  `z.email().trim().toLowerCase()`). A thrown `ZodError` becomes
-  `400 z.treeifyError(err)` via the shared `zodErrorHandler` (mounted before
-  `errorHandler`) — this relies on Express 5 forwarding rejected async handlers.
-  Other failures respond `{ error: '<snake_code>' }`.
-- **Guard clauses are one-liners:** `return res.status(x).json(...)` (Express 5
-  ignores the return value) — no separate `return;`.
-- **`PATCH` for a flat resource, `PUT` for one with children.** Locations,
-  participants and messages take a partial `PATCH` (`createSchema.partial()`).
-  Sessions take a whole-body `PUT`: they own their `session_participants` rows,
-  which a patch would have to merge before validating (a session needs a title
-  _or_ a line-up, so the rule is a property of the result, not of the body) and
-  then reconcile. Replacing outright keeps one schema and one write.
-- **Compose routers by mounting shared middleware on a parent segment.**
-  `/admin/tenants/:tenantId` carries `requireOrganizer, requireTenantMembership`
-  once, then nests resource routers (`tenantRouter.use('/locations', locationsRouter)`).
-  Group routers by audience under `routes/{app,admin}/` with an assembling
-  `index.ts`. Admin routes take the tenant from the URL/session, **never** the
-  `Host`; only the public attendee routes run `requireTenant`.
-- **Web push is fire-and-forget** (`apps/api/src/push.ts`, built by `createPush`
-  and reached as `req.container.resolve('push')`). Publishing a message responds `201` first, then
-  `void push.sendToTenant(...)` runs — a festival can have thousands of
-  subscriptions and the organizer must not wait on them, so a failed send is
-  logged, never surfaced. `sendToTenant` prunes the subscriptions whose push
-  service answers 404/410; that is the only signal a device is gone. Whether the
-  deployment has VAPID keys at all is `push.enabled`, computed per container
-  rather than at import, so a test can build one with push on. VAPID keys are
-  global to the deployment, not per tenant — generate a pair with
-  `pnpm cli push keys`.
-- **Date math via date-fns** — `add(Date.now(), { months: 3 })`, not raw
-  millisecond arithmetic.
-- **Entity ids are nanoids generated by the API** — `createId()`
-  (`apps/api/src/utils.ts`, 8 chars, letters + digits) wired into each table's `id`
-  as `.$defaultFn(createId)`; the database has no id default of its own.
-- **Dev uses `pnpm db:push`, production uses committed migrations.** Locally the
-  schema is pushed and the data recreated from the seed; for a deployed database
-  `drizzle/` holds generated migrations applied with `pnpm db:migrate`. Never point
-  `db:push` at production — it diffs the schema straight in and records nothing in
-  `drizzle.__drizzle_migrations`, leaving the two out of sync.
-- **The seed is committed** (`apps/api/src/seed.ts`) and is the canonical dev
-  dataset. It takes a JSON file (`pnpm cli seed <file>`) whose image paths are
-  relative to it, and turns each one into a `files` row plus a copy in the storage.
+- **Dependencies come from the awilix container** (`src/container.ts`), never a module singleton.
+  Injection is `PROXY`, so **every factory takes the cradle and destructures** — a positional
+  parameter silently receives the cradle. A singleton may not depend on a scoped registration.
+- **A request gets a child scope on `req`** — `req.container.resolve('db')`; `db` is scoped so queries
+  log under the request id, and `container.dispose()` closes the singleton pool. `cli.ts`, `seed.ts`
+  and the tests resolve the imported container. Never build from config at module level.
+- **Log through the container's logger, never `console`**, context in the second argument
+  (`logger.warn('…', { domain, err })`); `requestLogger` already logs status/duration/tenant. The
+  CLI keeps `console.log`, its output being a result rather than a log.
+- **With no `DATABASE_URL` the client is pglite**, created empty, so `container.ts` runs
+  `applyMigrations` on that branch only; each process gets its own, so CLI writes are invisible to a
+  live server. `@electric-sql/pglite` and `drizzle-kit` are **runtime** dependencies — moving either
+  to `devDependencies` kills the production image with tests and typecheck still green.
+- **Read with the relational query API** (`db.query.<table>.findMany({ where, orderBy })`,
+  traversing declared `relations`); writes stay explicit with `.returning()`.
+- **Map rows to a contract DTO at the response boundary** — reads return full rows, so never hand one
+  to `res.json`; write a `to<Name>Dto(row)`, aliasing the contract type `<Name>Dto`.
+- **Validate with `schema.parse(req.body)`**, normalising in the schema (`optionalString()`), never
+  `safeParse` plus a hand-rolled 400: a `ZodError` becomes `400 z.treeifyError(err)`, other failures
+  `{ error: '<snake_code>' }`. Guard clauses are one-liners: `return res.status(x).json()`.
+- **`PATCH` a flat resource, `PUT` one with children** (a session owns its participants rows).
+- **Mount shared middleware on a parent segment**, nesting resource routers under it, grouped by
+  audience in `routes/{app,admin}/`. Admin routes take the tenant from the URL/session, **never** the
+  `Host`; only attendee routes run `requireTenant` (`?__tenant=`, `x-tenant-domain`, hostname).
+- **Files go through the `storage` registration** (disk under `STORAGE_DIR`, else memory), never
+  `node:fs`; `/files/:id` serves them immutable, so bytes must not change under an id.
+- **Web push is fire-and-forget**: respond `201`, then `void push.sendToTenant(...)`, which logs
+  failures and prunes subscriptions on 404/410. VAPID keys are global to the deployment.
+- **Dev uses `pnpm db:push`, production committed migrations** (`pnpm db:migrate`) — never point
+  `db:push` at production. `src/seed.ts` is the canonical dev dataset.
 
 ## Tests (`apps/api/test`)
 
-- **`node --test` + `node:assert/strict` only** — no test framework, no new
-  dependency. Files are `test/<subject>.test.ts`, `describe`/`it`, run with
-  `pnpm test` from `apps/api`.
-- **Tests hit a real Postgres over real HTTP.** `useApi()` (`test/helpers/api.ts`)
-  starts the Express app on an ephemeral port, truncates every table before each
-  test and closes the pool at the end; the returned client carries a cookie jar,
-  so `api.login(...)` authenticates every later call. Call it **once per file, at
-  the top level** — inside a `describe` its hooks would be suite-scoped and the
-  first suite to finish would close the pool for the rest.
-- **Tests override the container rather than the environment.** `useApi({ … })` takes
-  a partial `Config` for the file — `push.test.ts` passes a generated VAPID pair —
-  and `registerTestDependencies` turns it into the `config` and `logger`
-  registrations, defaulting to `logLevel: 'silent'`, which is what keeps the parallel
-  run readable. `start()` then runs `applyMigrations` on the resolved `db`, and the
-  `after` hook calls `container.dispose()` to close the client. Fixtures and
-  assertions resolve from the imported `container`, the same one `src` uses — there is
-  no separate test container.
-- **Config and logger are registered as values, and re-applied every `beforeEach`.**
-  Two awilix behaviours make that necessary: `container.ts` resolves `config` and
-  `logger` while it is being imported, and **re-registering a factory does not evict
-  what a singleton already cached** — only an `asValue` wins over it. `beforeEach`
-  runs `initContainer()`, which would otherwise hand the environment's config back and
-  undo the file's, so `registerTestDependencies` runs straight after it. That pairing
-  is also what makes a **one-test** override work: call
-  `registerTestDependencies({ … })` inside the test — as the 503 case does to take the
-  VAPID keys away — and the next `beforeEach` puts the file's config back. Anything
-  resolved per request (`db`, `push`) sees the change on the next call; a singleton
-  already resolved does not.
-- **Tests need nothing running, and read no env file** — every variable being unset
-  is the point: each file gets its own private wasm Postgres (hence the parallel
-  run), uploads stay in memory, and the upload limit is body-parser's own 100kb,
-  which is what the 413 test has to exceed. Keep it that way; a test that needs a
-  setting should get it from the request, the fixture or the container, not from
-  the environment.
-- Anything exported in the shell still reaches the tests, which is how you run the
-  suite against a real Postgres: point `DATABASE_URL` at it, push the schema
-  (`DATABASE_URL=… pnpm db:push`), then run node directly so the files stop
-  truncating each other's rows —
-  `node --test --test-concurrency=1 'test/**/*.test.ts'`.
-  `pnpm test --test-concurrency=1` does **not** work: pnpm appends the flag after
-  the file pattern, where node ignores it.
-- **Build rows with the fixtures** (`test/helpers/fixtures.ts`,
-  `createTenant`/`createOrganizer`/`createLocation`/…), which fill in every
-  required column and give each row a unique name and domain — don't insert
-  through Drizzle in a test file.
-- **Only critical paths**, not exhaustive coverage: tenant resolution and tenant
-  isolation, authentication and membership, validation rejections, and the
-  response body of each read. Assert a full payload with `deepEqual` at least once
-  per endpoint — a partial assertion would not catch a row leaking columns the
-  contract doesn't declare.
-- Cover the tenant scoping of every resource route (another festival's row must
-  answer 404, never 200), since that is the invariant the whole product rests on.
+- **`node --test` + `node:assert/strict` only**, no framework, in `test/<subject>.test.ts`, with rows
+  built by `test/helpers/fixtures.ts` rather than raw inserts.
+- Tests hit a real database over real HTTP. Call **`useApi()` once per file at the top level** —
+  inside a `describe` its hooks close the pool for the other suites.
+- **Override the container, never the environment**: `useApi({ … })` takes a partial `Config` and
+  `registerTestDependencies` re-applies config + logger as **values** after every `beforeEach`
+  (re-registering a factory does not evict a cached singleton). Each file gets its own wasm Postgres.
+- **Critical paths only** — tenant resolution and isolation, auth and membership, validation
+  rejections, and each read's body. `deepEqual` a full payload at least once per endpoint, and give
+  every resource route its tenant-scoping test (another festival's row answers 404).
 
-## Backoffice conventions (`apps/admin`)
+## Backoffice (`apps/admin`)
 
-- **The router owns navigation state and gating** (TanStack Router, code-based).
-  Do auth/data gating in route `beforeLoad`/`loader`, never in `useEffect`:
-  `createRootRouteWithContext<{ queryClient }>`, branch with `throw redirect(...)`,
-  and thread shared data (`me`, `tenant`) through route **context**, read via
-  `useRouteContext({ from })`. Only the auth gate awaits its data (the root's
-  `beforeLoad` + `ensureQueryData(getMeOptions())`); route **loaders fire
-  `queryClient.prefetchQuery(...)` without awaiting**, so the page paints at once
-  (and a hover still warms the cache through `defaultPreload: 'intent'`). Awaiting
-  there would both delay the first paint and turn a failed request into a route
-  load error.
-- **Transient UI state lives in the URL, not `useState`.** Model drawers/dialogs and
-  the selected record as validated search params
-  (`validateSearch: z.object({ create: z.optional(z.literal(true)), edit: z.optional(z.string()) })`),
-  open with `<LinkButton search={{ … }}>`, close with `navigate({ search: {} })`.
-- **Reads share a `queryOptions` factory, writes don't.** Every query lives in
-  `lib/queries.ts` as `<verb><Resource>Options(tenantId)` (`getMeOptions()`,
-  `listLocationsOptions(id)`), reused by route loaders (`prefetchQuery`) and
-  components (`useQuery`) — a shared key is what makes prefetching and invalidation
-  line up. A mutation has no such second caller, so it is written inline in the
-  component that fires it (`useMutation({ mutationFn: (id: string) => api.delete(…),
-onSuccess: … })`), invalidating by the query factory's key.
-- **Gate on data with `<QueryBoundary>`**, never a hand-rolled
-  `isPending`/`isError`/`isSuccess` triplet. It takes one query result or a tuple
-  (`query={[tenantQuery, locationsQuery]}`), renders a spinner until every one has
-  data, and hands its `children` render prop one typed argument per query. A query
-  whose failure shouldn't take the page down (a theme color, a thumbnail) stays
-  outside the boundary and keeps reading `query.data?.…`.
-- **A filterable list assembles the `search.tsx` primitives** rather than a single
-  list component: `SearchInput`, `SearchSummary` (the count line — its `children`
-  are the idle summary, the "n of m matching" form is built in) and `NoMatch` (the
-  no-match `EmptyState` with its clear button). Filter wherever it reads best —
-  inline in the list (`items.filter((item) => matchesSearch(search, …))`) or through
-  a predicate the derived row carries (`ScheduleSession.matches`, `lib/schedule.ts`)
-  — but never behind a `useMemo`: the lists are small and the closure would break the
-  deps. The list renders its own rows, and holds the
-  search state too: a page in the URL through `useSearchParam(from)` (widen its route
-  union when a new route gains a `search` param), a drawer in a `useState`. The
-  "nothing at all yet" empty state is a separate early return — it belongs to the
-  resource, not to the search.
-- **Errors are thrown, and caught by two boundaries, both rendering `RouteError`**
-  (message, retry through `router.invalidate()`, stack in dev). `Page` wraps its
-  content — not its header — in a `CatchBoundary` keyed on the router's `loadedAt`,
-  so a page that throws keeps its title and the shell around it; the router's
-  `defaultErrorComponent` is the outer net for whatever throws outside a page's
-  content (the header, `beforeLoad`, a lazy chunk). Keep headers readable without
-  data (`Boolean(query.data?.length)`), since they still render in the error state.
-- **One `ApiError`, guarded by `ApiError.is(err, status?)`.** `lib/api.ts` throws it
-  (carrying `status`, raw `body`, parsed `error` code). Cross-cutting handling is
-  central in `main.tsx`: `retry` skips 4xx; a 401 on any query or mutation — while a
-  session is cached, so a failed login isn't one — clears the cache and re-runs the
-  router, letting the root's `beforeLoad` redirect to `/login`; and the
-  `MutationCache` runs `toast.error` (`react-hot-toast`) on every failure except a
-  400 and except a mutation that declares its own `onError`. **That opt-out only sees
-  `useMutation` options** — a per-call `mutate(vars, { onError })` is invisible to the
-  cache and still toasts, which is how a call site reverts an optimistic update
-  without silencing the message.
-- **Server errors go to `<Form errors>`, not to a field.** `parseValidationError`
-  (`lib/errors.ts`) flattens the API's zod tree into the `{ [field name]: messages }`
-  shape Base UI expects — a path becomes a dotted name, so an error on one item of an
-  array lands on that item's input (`styles.0`) rather than on the array. A `useMemo`
-  on the mutation error keeps the object's reference stable (Base UI re-seeds its
-  internal copy whenever the prop changes, and clears a
-  message as soon as its field is edited). Anything else that isn't a zod tree is
-  mapped to the same shape at the call site (settings turns a 409 into a `domain`
-  message). `<Field error=…>` is left for messages computed on the client.
-- **Forms use Base UI `<Form onFormSubmit>`** — it yields typed values; don't read
-  `FormData` or control inputs by hand. Keep inputs uncontrolled (`defaultValue`) and
-  wrap every control (`Input`, `Select`) in `<Field name=…>` so it registers with the
-  form and surfaces validity: `errors` declares a custom message per native match,
-  and the match-less `<Field.Error>` underneath renders the server message (and the
-  browser's for undeclared matches), skipped while a declared match shows its own.
-  `FieldArray` is a named field too, so an error on the array itself has a place to
-  render.
-- **Compose small primitives**, exported component first with sub-components below:
-  `Field`, `Input`, `Select`, `Table`/`TableHeader`/`TableBody`, `Page`/`PageHeader`,
-  `EmptyState`, `Spinner`, `Drawer`, `ConfirmDialog`, `Chip`,
-  `Button`/`LinkButton`/`IconButton`. Use `createLink` to make a styled anchor
-  router-aware.
-- **Every inline tag, badge or pill is a `<Chip>`** (`components/chip.tsx`), sized
-  `sm`/`md`/`lg`. A chip whose colors are computed elsewhere (the schedule's
-  per-session-type palette) takes `variant="custom"` and passes them in `className`
-  — the `solid` variant's own `bg-*`/`text-*` would otherwise collide with them,
-  since Tailwind, not the class string, decides which wins.
-- **Lists are a real `<table>`** (`components/table.tsx`): `Table` (the rounded,
-  clipping wrapper + `table-fixed border-collapse`), `TableHeader`/`TableHeaderCell`
-  = `thead`/`th`, `TableBody`/`TableRow`/`TableCell` = `tbody`/`tr`/`td`, with the
-  cell padding and the row hover living in the primitives. **Declare each column's
-  width once, on its `TableHeaderCell`** — `table-fixed` hands it to the body rows,
-  which is what keeps a row from drifting out of its header. Columns with no width
-  split what is left, so a `w-*` on the wrong cell silently squeezes the flexible
-  one (`md:w-1/3` for a column that must stay widest on desktop but absorb the slack
-  on mobile). Responsively hiding a column is the one thing that stays on both cells:
-  `<col>` cannot carry `display: none`.
-- **Keep the first-paint bundle small.** Lazy-load heavy route components with
-  `lazyRouteComponent(() => import('./x.tsx'), 'X')` (route definitions, loaders and
-  `validateSearch` stay eager so they can still prefetch) — this defers Base UI's
-  dialogs/select + floating-ui off the login path. Use **`zod/mini`**
-  (`import * as z from 'zod/mini'`; `z.optional(z.string())` rather than
-  `z.string().optional()`), not full `zod` — same Standard-Schema behavior at a
-  fraction of the size.
+- **The router owns navigation and gating** (TanStack Router, code-based): gate in
+  `beforeLoad`/`loader`, never `useEffect`, threading `me`/`tenant` through route context; only the
+  auth gate awaits, loaders `prefetchQuery` without awaiting.
+- **Transient UI state lives in the URL** — drawers and the selected record as validated search
+  params, opened with `<LinkButton search={{ … }}>`.
+- **Reads share a `queryOptions` factory in `lib/queries.ts`, writes don't** — mutations are inline
+  in the component, invalidating by the factory's key.
+- **Gate on data with `<QueryBoundary>`** (one query or a tuple), never a hand-rolled
+  pending/error/success triplet; a query that shouldn't take the page down stays outside it.
+- **A filterable list assembles the `search.tsx` primitives** and holds its own search state, never
+  behind a `useMemo`; the "nothing yet" empty state is a separate early return.
+- **Errors are thrown, and two boundaries render `RouteError`** — `Page` wraps its content but not
+  its header, so headers must read without data.
+- **One `ApiError`, guarded by `ApiError.is(err, status?)`**, handled centrally in `main.tsx`: no
+  retry on 4xx, a 401 clears the cache and re-runs the router, and the `MutationCache` toasts every
+  failure except a 400 or a `useMutation` declaring its own `onError`.
+- **Forms are Base UI `<Form onFormSubmit>`**, inputs uncontrolled, every control in `<Field name>`;
+  server errors go to `<Form errors>` through `parseValidationError` behind a `useMemo`, leaving
+  `<Field error>` for client-computed messages.
+- **Compose the primitives in `components/`**: every inline tag is a `<Chip>`, every list a real
+  `<table>` whose column widths are declared once on the `TableHeaderCell` (`table-fixed`).
+- **Keep the first paint small**: `lazyRouteComponent` for heavy components, and **`zod/mini`**.
 
-## Attendee app conventions (`apps/app`)
+## Attendee app (`apps/app`)
 
-Deliberately simpler than the backoffice — no auth, no forms, no router context.
+- **All data comes from one `/bootstrap` query**, shaped once in `select` and read through
+  `useTenant()`/`useSession(id)`; add derived reads there, not in components.
+- **Offline-first**: `PersistQueryClientProvider` over `idb-keyval` plus `vite-plugin-pwa`, and
+  anything that breaks a cold offline start is a bug.
+- **The service worker is hand-written** (`src/sw.ts`) because a generated one cannot carry a `push`
+  handler; it owns the precache and the `/files/` `CacheFirst` route, so re-verify a cold offline
+  boot after touching it.
+- **Push opt-in is asked for, never assumed** (one `usePushSubscription()` store behind the banner and
+  the toggle): subscribe from a click (Safari), feature-detect `PushManager`, and treat a null
+  `pushPublicKey` as push being off.
+- **Timetable filters are route-local `useReducer`**, called once by the route and passed down, with
+  every transition in the reducer.
+- **A session carries its own `day` key** (`yyyy-MM-dd`, tenant timezone) from the bootstrap
+  `select`, which also derives `days` and `styles`. **Never re-format a day key** — parsed as UTC it
+  lands a day early west of Greenwich; label from a session's `startsAt`.
+- **Overlays go through `<Sheet>`**, opened with **`showModal()` from an effect, never the `open`
+  attribute** (which silently costs the focus trap, scroll lock and Escape). It needs
+  `fixed inset-0 z-50`, a scrim element rather than `backdrop:*`, and an explicit `text-ink`.
+- **Theming is per-tenant at runtime** — `applyTenant` turns the bootstrap theme into CSS variables,
+  shading the palette from the background with `color-mix` over an ink from its luminance; never
+  hardcode brand colors, and there is no dark mode. It mirrors them into `localStorage`, replayed by
+  an inline script in `index.html` so an offline start paints themed. `customCss` is set with
+  `textContent`, never `innerHTML`.
+- **Analytics is a build-time Matomo**, off unless both `VITE_ANALYTICS_*` are set, so changing it
+  means rebuilding the image. `initAnalytics()` runs from `main.tsx`, not an effect (StrictMode).
 
-- **All data comes from one `/bootstrap` query** (`lib/bootstrap.ts`), shaped once
-  in `select` (sorting, id → entity maps) and read through `useTenant()` /
-  `useSession(id)` style hooks. Add derived reads there rather than re-deriving in
-  components.
-- **Offline-first:** the query client is wrapped in `PersistQueryClientProvider`
-  backed by `idb-keyval`, and `vite-plugin-pwa` precaches the shell. Anything that
-  breaks a cold, offline start is a bug.
-- **The service worker is hand-written** (`src/sw.ts`, `injectManifest`), because a
-  generated one cannot carry a `push` handler. It owns what the plugin's `workbox`
-  options used to declare — the precache, `skipWaiting`/`clientsClaim` behind
-  `registerType: 'autoUpdate'`, and the `/files/` `CacheFirst` route, whose
-  `tenant-files` cache name `lib/cache.ts` also writes to by hand. It compiles under
-  its own `tsconfig.sw.json` (referenced from the root) since `WebWorker` and `DOM`
-  libs cannot share a program. Re-verify a cold offline boot after touching it.
-- **Push opt-in is asked for, never assumed** (`lib/push.ts`): a dismissible banner
-  in the shell plus a permanent toggle on the info page, both driven by one
-  `usePushSubscription()` over a module-level store so the two stay in sync.
-  `subscribe`/`requestPermission` must run from a click — Safari only grants on a
-  gesture. Feature-detect `PushManager`, which iOS exposes only to an installed PWA,
-  and treat a null `pushPublicKey` from `/bootstrap` as "push is off, hide it all".
-- **Timetable filters are route-local `useReducer`** (`routes/timetable/use-timetable-filters.ts`)
-  — text query, day, locations and styles, deliberately not in the URL. **The route calls
-  the hook once and passes the filters object down**; a second call site gets its own
-  independent copy and silently shows stale filters. **Every transition lives in the
-  reducer**, one action per filter, so a toggle reads the current state from the reducer's
-  argument instead of closing over the render's.
-- **A session carries its own `day` key** (`yyyy-MM-dd` in the tenant's timezone) from the
-  bootstrap `select`, which also derives the labelled `days` — the timetable groups against
-  that list rather than re-deriving days — and the `styles` list ordered by how many sessions
-  use each. **Never format a day key back through `formatDayLabel`**: parsed as UTC midnight
-  it lands on the previous day west of Greenwich. Label a day from one of its sessions'
-  `startsAt`.
-- **Overlays go through `<Sheet>`** (`components/sheet.tsx`), a `<dialog>` portalled
-  into `#root` that animates in and out — `starting:` for the enter, an `open`/`closed`
-  flag for the exit, and `onTransitionEnd` to unmount once the exit has played.
-  **Open it with `showModal()` from an effect, never with the `open` attribute**: the
-  attribute renders the dialog inline, which silently costs the focus trap, the scroll
-  lock and Escape (`onCancel` only fires for a modal dialog) while still looking
-  right. Promoting it to the top layer does not break the enter transition. Style it to
-  stand on its own regardless: **`fixed inset-0 z-50`** (the tab bar is `static`, so its
-  own `z-50` is inert and would otherwise paint over an inline dialog) and **a real
-  scrim element inside the dialog**, never `backdrop:*`. Give the element an explicit
-  `text-ink` too: the UA stylesheet sets `color: CanvasText` on `dialog`, which breaks
-  inheritance and paints black text on a dark tenant's panel.
-- **Theming is per-tenant at runtime** — `applyTenant` sets CSS variables from the
-  bootstrap payload; don't hardcode brand colors. The organizer picks two colors
-  (`backgroundColor`, `accentColor`, hex only); everything else is derived there
-  with `color-mix`, over an ink picked from the background's luminance. There is
-  no dark mode — a dark tenant is just a dark `backgroundColor`. A tenant's
-  `customCss` goes into a `<style>` via `textContent` (never `innerHTML`, which
-  would let the CSS close the tag and inject markup).
-- **Analytics is a self-hosted Matomo** (`components/analytics.tsx`), off unless both
-  `VITE_ANALYTICS_URL` and `VITE_ANALYTICS_SITE_ID` are set. They are **build-time**,
-  inlined by Vite into the bundle — the deployment reads no analytics variable at
-  runtime, so turning tracking on or changing the instance means rebuilding the image,
-  and the setting is global to it rather than per tenant. `initAnalytics()` injects the
-  tracker snippet **from `main.tsx`, not from an effect**: React would run it twice
-  under StrictMode and Matomo warns on a second `setTrackerUrl`. Page views are the one
-  reactive part, so `AnalyticsProvider` sits in the router's `InnerWrap` (it needs
-  `useLocation`) and pushes `setCustomUrl` + `trackPageView` per navigation, the SPA
-  standing in for the page loads Matomo would otherwise count. Anything else is a
-  `trackEvent(category, action)` call — a plain import, no hook, no context. Offline,
-  `matomo.js` never loads and every push is a silent no-op on a missing `_paq`.
+## Styling & code style
 
-## Styling
-
-- **Prefer Tailwind scale tokens; avoid arbitrary values** (`[...]`) unless strictly
-  required — e.g. a responsive `clamp()`, animation delays, `env()`.
-- Use the `.row`/`.col` flex utilities, and the custom text scale tokens
-  (`text-xxs`, plus `text-label`/`text-form` in admin) defined in each app's
-  `@theme` block.
-- In admin, a global `* { border-color: … }` means `border` needs no color; animate
-  Base UI popups with the shared `.base-ui-fade` helper +
-  `data-starting-style`/`data-ending-style`.
-- Wrap static class lists in `clsx(...)` so oxfmt sorts them.
-
-## Code style
-
-- **No comments**, except one that states a rule which is hard to guess from
-  reading the code. This holds in `packages/contracts` too — document only the
-  non-obvious there (units, invariants, what a field means to the client, what
-  makes a value nullable), never the self-evident.
-- **Blank lines before and after blocks** (`if`, `for`, …).
-- **kebab-case file names** — `use-clock.ts`, `shell.tsx` (not `useClock.ts` / `Shell.tsx`),
-  even for files exporting a PascalCase React component.
-- **Straight ASCII quotes and apostrophes** in code and UI copy — not curly/smart
-  quotes (no U+2018/U+2019/U+201C/U+201D).
-- **Top-down file order** — the main/exported component comes first, then the
-  local sub-components and helpers it uses below it. Constants and type
-  declarations stay at the top.
+- **Prefer Tailwind scale tokens over arbitrary values** unless required (`clamp()`, delays, `env()`);
+  use the `.row`/`.col` utilities and each app's text tokens, and wrap static class lists in
+  `clsx(...)` so oxfmt sorts them. In admin, `border` needs no color (a global `* { border-color }`).
+- **No comments**, except one stating a rule that is hard to guess from the code — including in
+  `packages/contracts`, where only units, invariants and nullability earn a word.
+- **Blank lines around blocks**; **kebab-case file names** even for a PascalCase component;
+  **straight ASCII quotes** in code and copy; **top-down file order** (exported thing first, helpers
+  below, constants and types at the top).
 
 ## Deployment
 
-Each app ships as its own image, built and pushed to GHCR by
-`.github/workflows/deploy.yml` (triggered by a successful CI run on `master`),
-then redeployed by a Coolify webhook per service.
+Each app ships as its own image, built by `.github/workflows/deploy.yml` and redeployed by a Coolify
+webhook. Production needs `DATABASE_URL` (unset, the API boots on pglite and loses everything on
+restart) and a volume for `STORAGE_DIR`.
 
-- **The API image keeps the pnpm workspace layout, symlinks included.** `packages/utils`
-  exports TypeScript sources, and node refuses to strip types under `node_modules` —
-  the symlink's realpath is what saves it. `pnpm deploy` (or a hoisted node-linker)
-  copies the package in as a real directory and the image dies at startup on
-  `ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`.
-- **The frontends are same-origin — nginx in each image proxies to the API.** They
-  call `/api/*`, `/files/*` (and the app `/manifest.webmanifest`), which in dev is
-  Vite's proxy and in production is `nginx.conf.template` in each app. It **must
-  forward `Host`**, since that is how the API resolves the tenant. The upstream is
-  `${API_URL}`, held in a variable with a `resolver` so nginx still starts when the
-  API container is not up yet — a literal `proxy_pass` resolves at startup and
-  hard-fails.
-- **The build stages must not copy the root `tsconfig.json`.** It is a solution file
-  referencing every workspace project, so a build context holding only one app fails
-  on the missing references.
-- Production needs `DATABASE_URL` set — unset, the API silently boots on in-process
-  pglite and loses everything on restart. `STORAGE_DIR` defaults to `/data/files` in
-  the image and wants a volume. See the README for the full variable list.
+- **The API image keeps the pnpm workspace layout, symlinks included** — `packages/utils` ships
+  TypeScript sources and node refuses to strip types under a real `node_modules` directory.
+- **The frontends are same-origin**: nginx proxies `/api/*` and `/files/*` to `${API_URL}` and **must
+  forward `Host`**; keep the upstream in a variable with a `resolver` so nginx starts before the API.
+- **Build stages must not copy the root `tsconfig.json`** — it references every project.
 
 ## Commands
 
-- Root: `pnpm typecheck`, `pnpm lint`, `pnpm format`
-- `apps/api`: `pnpm dev`, `pnpm db:push`, `pnpm db:migrate`, `pnpm test`, `pnpm cli`
-  (e.g. `pnpm cli organizer create <email> <password> <domain…>` to get a
-  backoffice login, `pnpm cli seed <file>` to load a festival).
-- `apps/app` / `apps/admin`: `pnpm dev`, `pnpm build`, `pnpm preview`.
-- Local Postgres runs in a container — see the README.
+- Root: `pnpm typecheck`, `pnpm lint`, `pnpm format` — CI runs those plus the API tests and both
+  frontend builds.
+- `apps/api`: `pnpm dev`, `pnpm db:push`, `pnpm db:migrate`, `pnpm test`, `pnpm cli` (`organizer
+  create <email> <password> <domain…>`, `seed <file>`); `apps/app` / `apps/admin`: `pnpm dev`,
+  `pnpm build`, `pnpm preview`.
 
-**Typecheck and lint passing do not prove the app runs.** An import with the wrong
-extension (`./x.tsx` for a file named `x.ts`) satisfies both and still fails at bundle
-time, taking the whole app down — so run the app's `pnpm build` as well, and load the
-page before calling a UI change done.
-
-To verify API behavior, run `pnpm dev` from `apps/api` and exercise the endpoints
-with `curl`, setting `Host` (or `?__tenant=`) to pick the tenant.
+**Typecheck and lint passing do not prove the app runs** — a wrong import extension passes both and
+still breaks the bundle, so run the app's `pnpm build` and load the page before calling a UI change
+done. For the API, `pnpm dev` and curl the endpoints with a `Host` (or `?__tenant=`).

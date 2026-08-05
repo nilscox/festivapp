@@ -1,7 +1,7 @@
 import type { SessionType } from '@festivapp/contracts';
 import { defined, get } from '@festivapp/utils';
 
-import type { ResolvedSession } from './bootstrap';
+import type { ResolvedSession } from './bootstrap.ts';
 
 export function formatSessionType(type: SessionType): string {
   return {
