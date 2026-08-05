@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { CircleAlert } from 'lucide-react';
 import { useMemo } from 'react';
+import { toast } from 'react-hot-toast';
 
 import { Button } from '../components/button.tsx';
 import { Field, Label } from '../components/field.tsx';
@@ -19,6 +20,11 @@ export function Login() {
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: (body: LoginRequest) => api.post<MeResponse>('/admin/auth/login', body),
+    onError: (error) => {
+      if (!ApiError.is(error, 400) && !ApiError.is(error, 401)) {
+        toast.error(error.message);
+      }
+    },
     onSuccess: (data) => {
       queryClient.setQueryData(['me'], data);
       void router.invalidate();
