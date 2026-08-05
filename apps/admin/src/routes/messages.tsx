@@ -1,10 +1,10 @@
 import { Form } from '@base-ui/react/form';
-import type { Message, MessageInput, MessageUpdate, TenantSummary } from '@festivapp/contracts';
+import type { Message, MessageInput, MessageUpdate, Tenant, TenantSummary, TenantTheme } from '@festivapp/contracts';
 import { has } from '@festivapp/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import { format } from 'date-fns';
-import { Megaphone, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Bell, Megaphone, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo } from 'react';
 
 import { Button, IconButton, LinkButton } from '../components/button.tsx';
@@ -21,7 +21,7 @@ import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } f
 import { Textarea } from '../components/textarea.tsx';
 import { api } from '../lib/api.ts';
 import { parseValidationError } from '../lib/errors.ts';
-import { getTenantOptions, listMessagesOptions } from '../lib/queries.ts';
+import { getTenantOptions, getThemeOptions, listMessagesOptions } from '../lib/queries.ts';
 
 const from = '/festivals/$tenantId/messages';
 
@@ -34,12 +34,14 @@ type FormValues = {
 export function Messages() {
   const { tenant } = useRouteContext({ from });
 
-  const query = useQuery(listMessagesOptions(tenant.id));
+  const tenantQuery = useQuery(getTenantOptions(tenant.id));
+  const themeQuery = useQuery(getThemeOptions(tenant.id));
+  const messagesQuery = useQuery(listMessagesOptions(tenant.id));
 
   return (
-    <Page header={<Header tenant={tenant} showCreate={Boolean(query.data?.length)} />}>
-      <QueryBoundary query={query}>
-        {(messages) => (
+    <Page header={<Header tenant={tenant} showCreate={Boolean(messagesQuery.data?.length)} />}>
+      <QueryBoundary query={[tenantQuery, themeQuery, messagesQuery]}>
+        {(tenant, theme, messages) => (
           <>
             {messages.length === 0 ? (
               <EmptyState
@@ -57,7 +59,7 @@ export function Messages() {
               <MessagesList tenant={tenant} messages={messages} />
             )}
 
-            <MessageDrawer tenant={tenant} messages={messages} />
+            <MessageDrawer tenant={tenant} theme={theme} messages={messages} />
           </>
         )}
       </QueryBoundary>
@@ -156,7 +158,7 @@ function MessageItem({ message, onDelete }: { message: Message; onDelete: () => 
   );
 }
 
-function MessageDrawer({ tenant, messages }: { tenant: TenantSummary; messages: Message[] }) {
+function MessageDrawer({ tenant, theme, messages }: { tenant: Tenant; theme: TenantTheme; messages: Message[] }) {
   const { create, edit: editId } = useSearch({ from });
   const open = create !== undefined || editId !== undefined;
 
@@ -167,6 +169,7 @@ function MessageDrawer({ tenant, messages }: { tenant: TenantSummary; messages: 
     <Drawer open={open} onOpenChange={(open) => !open && onClose()} title={create ? 'New message' : 'Edit message'}>
       <MessageForm
         tenant={tenant}
+        theme={theme}
         defaultValue={editId ? messages.find(has('id', editId)) : undefined}
         onClose={onClose}
       />
@@ -175,26 +178,27 @@ function MessageDrawer({ tenant, messages }: { tenant: TenantSummary; messages: 
 }
 
 function MessageForm({
-  tenant: { id: tenantId },
+  tenant,
+  theme,
   defaultValue,
   onClose,
 }: {
-  tenant: TenantSummary;
+  tenant: Tenant;
+  theme: TenantTheme;
   defaultValue?: Message;
   onClose: () => void;
 }) {
-  const { data: tenant } = useQuery(getTenantOptions(tenantId));
   const queryClient = useQueryClient();
-  const invalidate = () => queryClient.invalidateQueries(listMessagesOptions(tenantId));
+  const invalidate = () => queryClient.invalidateQueries(listMessagesOptions(tenant.id));
 
   const createMutation = useMutation({
-    mutationFn: (input: MessageInput) => api.post<Message>(`/admin/tenants/${tenantId}/messages`, input),
+    mutationFn: (input: MessageInput) => api.post<Message>(`/admin/tenants/${tenant.id}/messages`, input),
     onSuccess: invalidate,
   });
 
   const updateMutation = useMutation({
     mutationFn: ([id, input]: [id: string, input: MessageUpdate]) =>
-      api.patch<Message>(`/admin/tenants/${tenantId}/messages/${id}`, input),
+      api.patch<Message>(`/admin/tenants/${tenant.id}/messages/${id}`, input),
     onSuccess: invalidate,
   });
 
@@ -207,19 +211,15 @@ function MessageForm({
   const confirm = useConfirmDialog();
 
   const confirmNotify = (values: FormValues) => {
-    const description = tenant
-      ? `A push notification will be sent to ${tenant.registeredSubscriptions} device${tenant.registeredSubscriptions === 1 ? '' : 's'}.`
-      : 'A push notification will be sent to every attendee who opted in.';
-
     confirm({
       title: 'Send notification',
       description: (
         <>
-          <div>{description}</div>
-          <div className="text-ink mt-2 rounded-md border p-2">
-            <div className="text-lg font-semibold tracking-tight">{values.title}</div>
-            <div className="leading-relaxed whitespace-pre-wrap">{values.body}</div>
+          <div className="mb-4">
+            A push notification will be sent to {tenant.registeredSubscriptions} device
+            {tenant.registeredSubscriptions === 1 ? '' : 's'}.
           </div>
+          <NotificationPreview theme={theme} title={values.title} body={values.body} />
         </>
       ),
       confirmLabel: 'Send',
@@ -232,7 +232,7 @@ function MessageForm({
     if (defaultValue) {
       updateMutation.mutate([defaultValue.id, { title: values.title, body: values.body }], { onSuccess: onClose });
     } else {
-      if (values.notify) {
+      if (values.notify && tenant.registeredSubscriptions > 0) {
         confirmNotify(values);
       } else {
         createMutation.mutate(values, { onSuccess: onClose });
@@ -273,5 +273,27 @@ function MessageForm({
         </Button>
       </div>
     </Form>
+  );
+}
+
+function NotificationPreview({ theme, title, body }: { theme: TenantTheme; title: string; body: string }) {
+  return (
+    <div className="row bg-subtle text-ink items-start gap-2 rounded-xl border p-3 shadow-md">
+      <div
+        className="bg-accent row size-8 shrink-0 items-center justify-center rounded-lg text-white"
+        style={{ backgroundColor: theme?.backgroundColor, color: theme?.accentColor }}
+      >
+        {theme.logo.iconUrl ? (
+          <img src={theme.logo.iconUrl} alt="" className="size-6 object-contain" />
+        ) : (
+          <Bell className="size-4" />
+        )}
+      </div>
+
+      <div className="col min-w-0 flex-1 gap-1">
+        <div className="text-base font-semibold tracking-tight">{title}</div>
+        <div className="text-muted text-sm leading-snug whitespace-pre-wrap">{body}</div>
+      </div>
+    </div>
   );
 }

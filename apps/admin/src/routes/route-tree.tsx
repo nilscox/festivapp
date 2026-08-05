@@ -171,6 +171,7 @@ const messagesRoute = createRoute({
   component: Messages,
   loader: ({ context: { queryClient, tenant } }) => {
     void queryClient.prefetchQuery(getTenantOptions(tenant.id));
+    void queryClient.prefetchQuery(getThemeOptions(tenant.id));
     void queryClient.prefetchQuery(listMessagesOptions(tenant.id));
   },
 });
