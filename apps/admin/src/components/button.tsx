@@ -6,9 +6,9 @@ export type ButtonSize = 'md' | 'sm';
 
 const variants: Record<ButtonVariant, string> = {
   primary: clsx('bg-accent text-white outline-offset-2 hover:brightness-110'),
-  secondary: clsx('bg-surface text-ink/80 hover:text-ink hover:border-line-strong border'),
+  secondary: clsx('bg-surface text-ink/80 hover:text-ink hover:border-line-strong hover:bg-subtle border'),
   danger: clsx('bg-danger text-white hover:brightness-110'),
-  ghost: clsx('text-muted hover:bg-subtle'),
+  ghost: clsx('text-ink/80 hover:bg-subtle'),
 };
 
 const sizes: Record<ButtonSize, string> = {

@@ -7,7 +7,7 @@ import { toast, type Renderable } from 'react-hot-toast';
 
 import { api, ApiError } from '../lib/api.ts';
 import { listFilesOptions } from '../lib/queries.ts';
-import { Button } from './button.tsx';
+import { Button, type ButtonSize, type ButtonVariant } from './button.tsx';
 import { Spinner } from './spinner.tsx';
 
 export const acceptedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/avif', 'image/svg+xml'];
@@ -15,12 +15,14 @@ export const acceptedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/av
 export function UploadButton({
   tenantId,
   variant,
+  size,
   children,
   multiple,
   onUploaded,
 }: {
   tenantId: string;
-  variant?: 'primary' | 'secondary';
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   multiple?: boolean;
   onUploaded?: (files: UploadedFile[]) => void;
   children?: React.ReactNode;
@@ -63,7 +65,7 @@ export function UploadButton({
 
   return (
     <>
-      <Button variant={variant} disabled={upload.isPending} onClick={() => inputRef.current?.click()}>
+      <Button variant={variant} size={size} disabled={upload.isPending} onClick={() => inputRef.current?.click()}>
         {upload.isPending ? <Spinner className="size-4" /> : <Upload className="size-4" />}
         {children ?? 'Upload'}
       </Button>

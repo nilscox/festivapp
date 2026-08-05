@@ -1,13 +1,15 @@
 import { Field as BaseField } from '@base-ui/react/field';
 import type { UploadedFile } from '@festivapp/contracts';
-import { has } from '@festivapp/utils';
+import { defined, has } from '@festivapp/utils';
 import { useQuery } from '@tanstack/react-query';
+import { ArrowLeftRight } from 'lucide-react';
 import { useState } from 'react';
 
 import { getThemeOptions, listFilesOptions } from '../lib/queries.ts';
 import { Button } from './button.tsx';
 import { FilePicker } from './file-picker.tsx';
 import { Thumbnail } from './thumbnail.tsx';
+import { UploadButton } from './upload-button.tsx';
 
 export function FileInput({
   tenantId,
@@ -47,9 +49,25 @@ export function FileInput({
           </span>
 
           <div className="row gap-2">
-            <BaseField.Control render={<Button variant="secondary" size="sm" />} onClick={() => setOpen(true)}>
-              {value !== null ? 'Change' : 'Choose a file'}
+            <BaseField.Control
+              render={
+                <UploadButton
+                  variant="secondary"
+                  size="sm"
+                  tenantId={tenantId}
+                  onUploaded={([file]) => onSelect(defined(file))}
+                />
+              }
+            >
+              Upload
             </BaseField.Control>
+
+            {value !== null && (
+              <BaseField.Control render={<Button variant="secondary" size="sm" />} onClick={() => setOpen(true)}>
+                <ArrowLeftRight className="size-4" />
+                Change
+              </BaseField.Control>
+            )}
 
             {value !== null && (
               <Button variant="ghost" size="sm" onClick={() => onValueChange(null)}>
