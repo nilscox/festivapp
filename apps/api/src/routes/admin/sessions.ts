@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 import { db, type Transaction } from '../../db/client.ts';
 import { sessionParticipants, sessions, type Session } from '../../db/schema.ts';
-import { falsyToNull } from '../../utils.ts';
+import { optionalString } from '../../utils.ts';
 
 export const sessionsRouter = Router({ mergeParams: true });
 
@@ -14,8 +14,8 @@ const sessionSchema = z
   .strictObject({
     locationId: z.string().trim().min(1),
     type: z.enum(['dj_set', 'live', 'talk', 'workshop', 'other']),
-    title: z.string().max(200).trim().nullish().transform(falsyToNull),
-    description: z.string().trim().nullish().transform(falsyToNull),
+    title: optionalString().pipe(z.string().max(200).nullable()),
+    description: optionalString(),
     participantIds: z.array(z.string().trim().min(1)),
     startsAt: z.iso.datetime(),
     endsAt: z.iso.datetime(),

@@ -219,10 +219,10 @@ function toTheme(values: FormValues, images: Images): TenantTheme {
     backgroundImage: images.backgroundImageUrl
       ? { url: images.backgroundImageUrl, opacity: Number(values.backgroundImageOpacity) }
       : null,
-    customCss: values.customCss.trim() || null,
+    customCss: values.customCss,
     pwa: {
-      name: values.pwaName.trim() || null,
-      shortName: values.pwaShortName.trim() || null,
+      name: values.pwaName,
+      shortName: values.pwaShortName,
     },
   };
 }

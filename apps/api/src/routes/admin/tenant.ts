@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 import { db } from '../../db/client.ts';
 import { pushSubscriptions, type Tenant, tenants } from '../../db/schema.ts';
-import { falsyToNull } from '../../utils.ts';
+import { optionalString } from '../../utils.ts';
 
 export const tenantRouter = Router({ mergeParams: true });
 
@@ -35,7 +35,7 @@ const schema = z
     name: z.string().trim().min(1).max(100),
     domain: z.string().trim().toLowerCase().max(253).regex(hostname, 'must be a host name'),
     timezone: z.string().refine((value) => timezones.has(value), 'must be an IANA timezone'),
-    mapUrl: z.string().trim().startsWith('/').transform(falsyToNull).nullable(),
+    mapUrl: optionalString().pipe(z.string().startsWith('/').nullable()),
   })
   .partial();
 

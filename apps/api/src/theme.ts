@@ -1,38 +1,34 @@
 import { z } from 'zod';
 
-import { falsyToNull } from './utils.ts';
+import { optionalString } from './utils.ts';
 
 const color = z
   .string()
   .trim()
   .toLowerCase()
-  .regex(/^#[0-9a-f]{6}$/, 'must be a hex color such as #1d4ed8');
-
-const fontStack = z.string().trim().min(1).max(200);
-
-const url = z.string().trim().startsWith('/');
+  .regex(/^#[0-9a-f]{6}$/, 'must be a hex color (#RRGGBB)');
 
 export const themeSchema = z.strictObject({
   backgroundColor: color,
   accentColor: color,
   fonts: z.strictObject({
-    display: fontStack,
-    body: fontStack,
-    mono: fontStack,
+    display: z.string().trim().min(1).max(200),
+    body: z.string().trim().min(1).max(200),
+    mono: z.string().trim().min(1).max(200),
   }),
   logo: z.strictObject({
-    wordmarkUrl: url.nullable(),
-    iconUrl: url.nullable(),
+    wordmarkUrl: optionalString().pipe(z.string().startsWith('/').nullable()),
+    iconUrl: optionalString().pipe(z.string().startsWith('/').nullable()),
   }),
   backgroundImage: z
     .strictObject({
-      url,
+      url: z.string().trim().startsWith('/'),
       opacity: z.number().min(0).max(1),
     })
     .nullable(),
   pwa: z.strictObject({
-    name: z.string().trim().max(60).transform(falsyToNull).nullable(),
-    shortName: z.string().trim().max(12).transform(falsyToNull).nullable(),
+    name: optionalString().pipe(z.string().max(60).nullable()),
+    shortName: optionalString().pipe(z.string().max(12).nullable()),
   }),
-  customCss: z.string().trim().max(20_000).transform(falsyToNull).nullable(),
+  customCss: optionalString().pipe(z.string().max(20_000).nullable()),
 });

@@ -273,12 +273,12 @@ function ParticipantForm({
   const handleSubmit = (values: FormValues) => {
     const input: ParticipantInput = {
       name: values.name,
-      description: values.description.trim() || null,
+      description: values.description,
       imageUrl,
-      origin: values.origin.trim() || null,
-      label: values.label.trim() || null,
-      styles: getFieldArrayValues(values, 'styles', nonEmptyString),
-      socialLinks: getFieldArrayValues(values, 'socialLinks', nonEmptyString),
+      origin: values.origin,
+      label: values.label,
+      styles: getFieldArrayValues(values, 'styles', String),
+      socialLinks: getFieldArrayValues(values, 'socialLinks', String),
     };
 
     if (!defaultValue) {
@@ -371,12 +371,4 @@ function SocialLinksEditor({ links = [] }: { links?: string[] }) {
       )}
     </FieldArray>
   );
-}
-
-function nonEmptyString(value: unknown) {
-  if (typeof value !== 'string') {
-    return undefined;
-  }
-
-  return value.trim() || undefined;
 }

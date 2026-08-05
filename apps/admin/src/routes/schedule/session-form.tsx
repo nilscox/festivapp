@@ -1,6 +1,6 @@
 import { Form } from '@base-ui/react/form';
 import type { Location, Participant, Session, SessionInput, SessionType } from '@festivapp/contracts';
-import { has } from '@festivapp/utils';
+import { get, has } from '@festivapp/utils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { useMemo, useState } from 'react';
@@ -96,9 +96,9 @@ export function SessionForm({
     const input: SessionInput = {
       locationId: values.locationId,
       type: values.type,
-      title: values.title.trim() || null,
-      description: values.description.trim() || null,
-      participantIds: people.filter((person) => person !== undefined).map((person) => person.id),
+      title: values.title,
+      description: values.description,
+      participantIds: people.filter((person) => person !== undefined).map(get('id')),
       startsAt: toInstant(values.date, values.startsAt, timezone),
       endsAt: toInstant(endsOn, values.endsAt, timezone),
     };

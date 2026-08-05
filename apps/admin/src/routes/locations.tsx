@@ -212,7 +212,7 @@ function LocationForm({
   const handleSubmit = (values: FormValues) => {
     const input = {
       name: values.name,
-      description: values.description.trim() || null,
+      description: values.description,
       position: Number(values.position),
     };
 
