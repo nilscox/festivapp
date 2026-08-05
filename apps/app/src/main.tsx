@@ -12,10 +12,12 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 
+import { AnalyticsProvider, initAnalytics } from './components/analytics.tsx';
 import { routeTree } from './routes/route-tree.ts';
 import './styles.css';
 
 registerSW({ immediate: true });
+initAnalytics();
 
 declare module '@tanstack/react-router' {
   interface Register {
@@ -23,7 +25,10 @@ declare module '@tanstack/react-router' {
   }
 }
 
-const router = createRouter({ routeTree });
+const router = createRouter({
+  routeTree,
+  InnerWrap: ({ children }) => <AnalyticsProvider>{children}</AnalyticsProvider>,
+});
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,16 +51,10 @@ const persister = createAsyncStoragePersister({
 
 const container = defined(document.getElementById('root'));
 
-function App() {
-  return (
+createRoot(container).render(
+  <StrictMode>
     <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
       <RouterProvider router={router} />
     </PersistQueryClientProvider>
-  );
-}
-
-createRoot(container).render(
-  <StrictMode>
-    <App />
   </StrictMode>,
 );

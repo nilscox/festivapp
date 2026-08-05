@@ -370,6 +370,18 @@ Deliberately simpler than the backoffice — no auth, no forms, no router contex
   no dark mode — a dark tenant is just a dark `backgroundColor`. A tenant's
   `customCss` goes into a `<style>` via `textContent` (never `innerHTML`, which
   would let the CSS close the tag and inject markup).
+- **Analytics is a self-hosted Matomo** (`components/analytics.tsx`), off unless both
+  `VITE_ANALYTICS_URL` and `VITE_ANALYTICS_SITE_ID` are set. They are **build-time**,
+  inlined by Vite into the bundle — the deployment reads no analytics variable at
+  runtime, so turning tracking on or changing the instance means rebuilding the image,
+  and the setting is global to it rather than per tenant. `initAnalytics()` injects the
+  tracker snippet **from `main.tsx`, not from an effect**: React would run it twice
+  under StrictMode and Matomo warns on a second `setTrackerUrl`. Page views are the one
+  reactive part, so `AnalyticsProvider` sits in the router's `InnerWrap` (it needs
+  `useLocation`) and pushes `setCustomUrl` + `trackPageView` per navigation, the SPA
+  standing in for the page loads Matomo would otherwise count. Anything else is a
+  `trackEvent(category, action)` call — a plain import, no hook, no context. Offline,
+  `matomo.js` never loads and every push is a silent no-op on a missing `_paq`.
 
 ## Styling
 
