@@ -168,15 +168,25 @@ packages/
   so `api.login(...)` authenticates every later call. Call it **once per file, at
   the top level** — inside a `describe` its hooks would be suite-scoped and the
   first suite to finish would close the pool for the rest.
-- **Tests override the container rather than the environment.** `useApi()` registers
-  a whole `config` as an `asValue` (with `logLevel: 'silent'`, which is what keeps the
-  parallel run readable), then `applyMigrations` on the resolved `db`; the `after`
-  hook calls `container.dispose()` to close the client. Fixtures and assertions
-  resolve from the imported `container`, the same one `src` uses — there is no
-  separate test container. **The override is per file**, since node runs each test
-  file in its own process; `container.register(...)` from a test replaces a
-  registration for the rest of that file, so a case needing the opposite
-  configuration wants its own file.
+- **Tests override the container rather than the environment.** `useApi({ … })` takes
+  a partial `Config` for the file — `push.test.ts` passes a generated VAPID pair —
+  and `registerTestDependencies` turns it into the `config` and `logger`
+  registrations, defaulting to `logLevel: 'silent'`, which is what keeps the parallel
+  run readable. `start()` then runs `applyMigrations` on the resolved `db`, and the
+  `after` hook calls `container.dispose()` to close the client. Fixtures and
+  assertions resolve from the imported `container`, the same one `src` uses — there is
+  no separate test container.
+- **Config and logger are registered as values, and re-applied every `beforeEach`.**
+  Two awilix behaviours make that necessary: `container.ts` resolves `config` and
+  `logger` while it is being imported, and **re-registering a factory does not evict
+  what a singleton already cached** — only an `asValue` wins over it. `beforeEach`
+  runs `initContainer()`, which would otherwise hand the environment's config back and
+  undo the file's, so `registerTestDependencies` runs straight after it. That pairing
+  is also what makes a **one-test** override work: call
+  `registerTestDependencies({ … })` inside the test — as the 503 case does to take the
+  VAPID keys away — and the next `beforeEach` puts the file's config back. Anything
+  resolved per request (`db`, `push`) sees the change on the next call; a singleton
+  already resolved does not.
 - **Tests need nothing running, and read no env file** — every variable being unset
   is the point: each file gets its own private wasm Postgres (hence the parallel
   run), uploads stay in memory, and the upload limit is body-parser's own 100kb,

@@ -12,11 +12,11 @@ import type { AddressInfo } from 'node:net';
 import { after, before, beforeEach } from 'node:test';
 
 import { createApp } from '../../src/app.ts';
+import { envConfig, type Config } from '../../src/config.ts';
 import { container, initContainer } from '../../src/container.ts';
 import { applyMigrations } from '../../src/db/client.ts';
+import { consoleLogger } from '../../src/logger.ts';
 import { resetDatabase } from './database.ts';
-
-import type { Config } from '../../src/config.ts';
 
 type RequestOptions = {
   host?: string;
@@ -29,13 +29,14 @@ export type ApiResponse<T> = {
   body: T;
 };
 
-export function useApi(): TestApi {
-  const api = new TestApi();
+export function useApi(config: Partial<Config> = {}): TestApi {
+  const api = new TestApi(config);
 
   before(() => api.start());
 
   beforeEach(async () => {
     initContainer();
+    registerTestDependencies(config);
     await resetDatabase();
   });
 
@@ -47,29 +48,31 @@ export function useApi(): TestApi {
   return api;
 }
 
+export function registerTestDependencies(overrides: Partial<Config> = {}): void {
+  const config: Config = { ...envConfig(), logLevel: 'silent', ...overrides };
+
+  container.register({
+    config: asValue(config),
+    logger: asValue(consoleLogger({ level: config.logLevel })),
+  });
+}
+
 export class TestApi {
   private server = createServer(createApp());
   private cookies = new Map<string, string>();
   private port = 0;
+  private config: Partial<Config>;
+
+  constructor(config: Partial<Config> = {}) {
+    this.config = config;
+  }
 
   async start(): Promise<void> {
-    const databaseUrl = process.env.DATABASE_URL ?? '';
+    registerTestDependencies(this.config);
 
-    container.register({
-      config: asValue<Config>({
-        host: '',
-        port: NaN,
-        logLevel: 'silent',
-        databaseUrl,
-        storageDir: undefined,
-        uploadMaxBytes: undefined,
-        vapidPublicKey: undefined,
-        vapidPrivateKey: undefined,
-        vapidSubject: 'subject',
-      }),
-    });
+    const { databaseUrl } = container.resolve('config');
 
-    if (databaseUrl !== '') {
+    if (databaseUrl !== undefined) {
       assert(databaseUrl.includes('localhost'), new Error('DATABASE_URL must include "localhost"'));
     }
 
