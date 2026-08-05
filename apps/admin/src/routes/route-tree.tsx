@@ -67,13 +67,14 @@ const indexRoute = createRoute({
       throw redirect({ to: '/login', replace: true });
     }
 
-    const firstTenant = me.tenants[0];
+    const storedTenantId = localStorage.getItem('tenantId');
+    const tenant = me.tenants.find(has('id', storedTenantId ?? '')) ?? me.tenants[0];
 
-    assert(firstTenant, new Error('No tenant'));
+    assert(tenant, new Error('No tenant'));
 
     throw redirect({
       to: '/festivals/$tenantId',
-      params: { tenantId: firstTenant.id },
+      params: { tenantId: tenant.id },
       replace: true,
     });
   },
@@ -93,6 +94,8 @@ const festivalRoute = createRoute({
     if (!tenant) {
       throw redirect({ to: '/' });
     }
+
+    localStorage.setItem('tenantId', tenant.id);
 
     return {
       me,
