@@ -44,7 +44,8 @@ packages/
   no runtime dependencies and touches neither the DOM nor Node built-ins — anything
   app-specific stays in that app's `src/lib/`.
 - **Every environment variable is optional**, read through `env(name, default?)`
-  (`apps/api/src/config.ts`). `HOST`, `PORT` and `VAPID_SUBJECT` fall back to a
+  inside `envConfig()` (`apps/api/src/config.ts`), which the container resolves once
+  as the `config` singleton. `HOST`, `PORT` and `VAPID_SUBJECT` fall back to a
   value; the rest switch behaviour when unset rather than standing in for one — no
   `DATABASE_URL` runs an in-process wasm Postgres, no `STORAGE_DIR` keeps uploads in
   memory, no VAPID keys turn push off everywhere (`/bootstrap` reports a null
@@ -56,36 +57,51 @@ packages/
 
 ## API conventions
 
-- **Dependencies come from the container, never from a module singleton.**
-  `createContainer()` (`src/container.ts`) builds `{ config, logger, db, storage,
-push, close }` once per entrypoint, and `provideContainer(container)` — the first
-  middleware in `createApp(container)` — puts it in an `AsyncLocalStorage` for the
-  request, with a `logger` child carrying a fresh `requestId`. Everything downstream
-  reads `const { db, logger } = deps();` at the top of the handler or helper. There is
-  no root fallback: `deps()` throws outside a request, so a non-HTTP entrypoint
-  (`cli.ts`) opens its own scope with `runWithContainer(container, …)`. Anything built
+- **Dependencies come from the awilix container, never from a module singleton.**
+  `src/container.ts` registers `{ config, logger, client, db, storage, push }` on one
+  module-level `container`. Injection is `PROXY`, so **every factory takes the cradle
+  and destructures what it needs** (`createPush({ config, db, logger })`) — a factory
+  with a positional parameter silently receives the cradle instead. `strict: true`
+  turns an unregistered name into a throw rather than `undefined`, and enforces
+  lifetimes: **a singleton may not depend on a scoped registration**, which is why
+  `push` is scoped (it needs `db`).
+- **A request gets a real child scope, hung off `req`.** `provideContainer` calls
+  `container.createScope()`, registers a `logger` child carrying a fresh `requestId`,
+  and assigns it to `req.container`; handlers and middleware read
+  `req.container.resolve('db')`. Code with no request in hand — `cli.ts`, `seed.ts`,
+  the test fixtures — resolves from the imported `container` instead. Anything built
   from config at module level (an upload limit, a VAPID check) has to move into the
-  request or into a factory, because the container does not exist when the module
-  loads.
-- **Log through `deps().logger`, never `console`** (`src/logger.ts`: `debug`/`info`/
-  `warn`/`error`/`child`, colors auto-disabled off a TTY, `warn`/`error` to stderr).
+  request or into a factory, since resolution is what applies the config.
+- **Lifetimes carry the request identity.** The connection (`client`) is a
+  **singleton** with a `.disposer()`, and `db` is **scoped**: it is a ~1µs drizzle
+  wrapper around the shared client, rebuilt per scope so it holds that request's
+  logger. That is the only reason a query can log under the id of the request that
+  fired it — a singleton `db` would capture the root logger and lose the link.
+  `container.dispose()` is what closes the pool; without it a CLI command hangs for
+  pg's 10s idle timeout.
+- **Log through the container's logger, never `console`** (`src/logger.ts`:
+  `debug`/`info`/`warn`/`error`/`child`, colors auto-disabled off a TTY, `warn`/`error` to stderr).
   Pass context as the second argument (`logger.warn('…', { domain })`) rather than
   interpolating it, and put an `Error` in there under any key — the logger prints its
   stack indented instead of inlining it. `requestLogger` already emits one line per
   request with status, duration and tenant, at a level derived from the status, so a
   route only logs what that line cannot say. The CLI keeps `console.log`: its output
   is a result, not a log.
-- **With no `DATABASE_URL`, `createDatabase(config)` swaps the driver for an
-  in-process wasm Postgres** (`@electric-sql/pglite`), created empty, schema-pushed at
-  boot with `pushSchema` from `drizzle-kit/api-postgres`, and dropped with the process.
-  It is what the tests run on, and it boots the API with no database installed. Each
-  process gets its own, so nothing written by the CLI is visible to a running
-  server — anything that needs data to outlive the process wants real Postgres.
-  Both drivers are reached through the same `Database` type and the handle's
-  `close()`; never touch `db.$client` directly, since its two clients have
-  different shutdown methods. Keep pglite a devDependency behind the dynamic
-  `import()` it sits in — the Postgres path must not load it. Drizzle's own query
-  logging is wired to `debug`, through the request's logger when there is one.
+- **With no `DATABASE_URL`, `createDatabaseClient` returns an in-process wasm
+  Postgres** (`@electric-sql/pglite`) instead of a `pg` `Pool`. It is created empty,
+  so `container.ts` runs `applyMigrations` (`pushSchema` from
+  `drizzle-kit/api-postgres`) at boot on that branch only — skip it and the API starts
+  fine and then answers 500 `relation "tenants" does not exist` on every route. It is
+  what the tests run on, and it boots the API with no database installed. Each process
+  gets its own, so nothing written by the CLI is visible to a running server —
+  anything that needs data to outlive the process wants real Postgres. Both clients
+  are wrapped into the same `Database` type by `createDatabase`, and both are closed
+  by `closeDatabaseClient`, which branches on the client rather than on `db.$client`.
+  **`@electric-sql/pglite` and `drizzle-kit` are runtime dependencies, not dev ones**,
+  because `db/client.ts` imports them statically: move either back to
+  `devDependencies` and the production image (`pnpm install --prod`) dies at startup
+  on a missing module, with tests, typecheck and lint all still green. Drizzle's own
+  query logging is wired to `debug` through the scope's logger.
 - **Read with the Drizzle relational query API** — prefer
   `db.query.<table>.findMany/findFirst({ where, orderBy })` over hand-written
   `select().from().innerJoin()`; declare cross-table `relations` (`defineRelations`
@@ -118,7 +134,7 @@ push, close }` once per entrypoint, and `provideContainer(container)` — the fi
   `index.ts`. Admin routes take the tenant from the URL/session, **never** the
   `Host`; only the public attendee routes run `requireTenant`.
 - **Web push is fire-and-forget** (`apps/api/src/push.ts`, built by `createPush`
-  and reached as `deps().push`). Publishing a message responds `201` first, then
+  and reached as `req.container.resolve('push')`). Publishing a message responds `201` first, then
   `void push.sendToTenant(...)` runs — a festival can have thousands of
   subscriptions and the organizer must not wait on them, so a failed send is
   logged, never surfaced. `sendToTenant` prunes the subscriptions whose push
@@ -152,12 +168,15 @@ push, close }` once per entrypoint, and `provideContainer(container)` — the fi
   so `api.login(...)` authenticates every later call. Call it **once per file, at
   the top level** — inside a `describe` its hooks would be suite-scoped and the
   first suite to finish would close the pool for the rest.
-- **The test container is what makes the suite quiet and overridable**
-  (`test/helpers/container.ts`). `startContainer()` builds one per process with
-  `logLevel: 'silent'`, `useApi()` hands it to `createApp`, and anything running
-  outside a request — fixtures, a direct `db` read in an assertion — goes through
-  `testContainer()`. Override a dependency there rather than reaching for an
-  environment variable.
+- **Tests override the container rather than the environment.** `useApi()` registers
+  a whole `config` as an `asValue` (with `logLevel: 'silent'`, which is what keeps the
+  parallel run readable), then `applyMigrations` on the resolved `db`; the `after`
+  hook calls `container.dispose()` to close the client. Fixtures and assertions
+  resolve from the imported `container`, the same one `src` uses — there is no
+  separate test container. **The override is per file**, since node runs each test
+  file in its own process; `container.register(...)` from a test replaces a
+  registration for the rest of that file, so a case needing the opposite
+  configuration wants its own file.
 - **Tests need nothing running, and read no env file** — every variable being unset
   is the point: each file gets its own private wasm Postgres (hence the parallel
   run), uploads stay in memory, and the upload limit is body-parser's own 100kb,

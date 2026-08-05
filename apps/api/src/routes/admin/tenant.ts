@@ -4,9 +4,10 @@ import { eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { deps } from '../../container.ts';
 import { pushSubscriptions, type Tenant, tenants } from '../../db/schema.ts';
 import { optionalString } from '../../utils.ts';
+
+import type { Database } from '../../db/client.ts';
 
 export const tenantRouter = Router({ mergeParams: true });
 
@@ -24,7 +25,9 @@ function toTenantDto(row: Tenant, registeredSubscriptions: number): TenantDto {
 tenantRouter.get('/', async (req, res) => {
   assert(req.tenant);
 
-  res.json(toTenantDto(req.tenant, await countPushSubscriptions(req.tenant.id)));
+  const db = req.container.resolve('db');
+
+  res.json(toTenantDto(req.tenant, await countPushSubscriptions(db, req.tenant.id)));
 });
 
 const timezones = new Set(Intl.supportedValuesOf('timeZone'));
@@ -40,7 +43,7 @@ const schema = z
   .partial();
 
 tenantRouter.patch('/', async (req, res) => {
-  const { db } = deps();
+  const db = req.container.resolve('db');
 
   assert(req.tenant);
 
@@ -60,11 +63,9 @@ tenantRouter.patch('/', async (req, res) => {
     .where(eq(tenants.id, req.tenant.id))
     .returning();
 
-  res.json(toTenantDto(defined(row), await countPushSubscriptions(req.tenant.id)));
+  res.json(toTenantDto(defined(row), await countPushSubscriptions(db, req.tenant.id)));
 });
 
-function countPushSubscriptions(tenantId: string) {
-  const { db } = deps();
-
+function countPushSubscriptions(db: Database, tenantId: string) {
   return db.$count(pushSubscriptions, eq(pushSubscriptions.tenantId, tenantId));
 }

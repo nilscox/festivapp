@@ -1,15 +1,16 @@
 import { createApp } from './app.ts';
-import { createContainer } from './container.ts';
+import { container } from './container.ts';
 
-const container = await createContainer();
-const { config, logger, push } = container;
-
-const app = createApp(container);
+const config = container.resolve('config');
+const app = createApp();
 
 app.listen(config.port, config.host, (err) => {
   if (err) {
     throw err;
   }
+
+  const logger = container.resolve('logger');
+  const push = container.resolve('push');
 
   logger.info(`listening on http://${config.host}:${config.port}`, {
     database: config.databaseUrl ? 'postgres' : 'memory',

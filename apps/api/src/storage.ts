@@ -12,7 +12,7 @@ export interface Storage {
   delete(key: string): Promise<void>;
 }
 
-export function createStorage(config: Config): Storage {
+export function createStorage({ config }: { config: Config }): Storage {
   return config.storageDir ? new DiskStorage(config.storageDir) : new MemoryStorage();
 }
 

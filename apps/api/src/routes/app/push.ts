@@ -3,7 +3,6 @@ import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { deps } from '../../container.ts';
 import { pushSubscriptions } from '../../db/schema.ts';
 
 export const pushRouter = Router();
@@ -17,7 +16,8 @@ const subscriptionSchema = z.strictObject({
 });
 
 pushRouter.post('/', async (req, res) => {
-  const { db, push } = deps();
+  const db = req.container.resolve('db');
+  const push = req.container.resolve('push');
 
   assert(req.tenant);
 
@@ -39,7 +39,7 @@ pushRouter.post('/', async (req, res) => {
 });
 
 pushRouter.delete('/', async (req, res) => {
-  const { db } = deps();
+  const db = req.container.resolve('db');
 
   assert(req.tenant);
 

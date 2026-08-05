@@ -4,7 +4,6 @@ import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { deps } from '../../container.ts';
 import { messages, type Message } from '../../db/schema.ts';
 
 export const messagesRouter = Router({ mergeParams: true });
@@ -27,7 +26,7 @@ function toMessageDto(row: Message): MessageDto {
 }
 
 messagesRouter.get('/', async (req, res) => {
-  const { db } = deps();
+  const db = req.container.resolve('db');
 
   assert(req.tenant);
 
@@ -40,7 +39,9 @@ messagesRouter.get('/', async (req, res) => {
 });
 
 messagesRouter.post('/', async (req, res) => {
-  const { db, push, logger } = deps();
+  const db = req.container.resolve('db');
+  const push = req.container.resolve('push');
+  const logger = req.container.resolve('logger');
 
   assert(req.tenant);
 
@@ -65,7 +66,7 @@ messagesRouter.post('/', async (req, res) => {
 });
 
 messagesRouter.patch('/:id', async (req, res) => {
-  const { db } = deps();
+  const db = req.container.resolve('db');
 
   assert(req.tenant);
 
@@ -88,7 +89,7 @@ messagesRouter.patch('/:id', async (req, res) => {
 });
 
 messagesRouter.delete('/:id', async (req, res) => {
-  const { db } = deps();
+  const db = req.container.resolve('db');
 
   assert(req.tenant);
 

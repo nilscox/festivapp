@@ -1,20 +1,22 @@
 import type { MeResponse } from '@festivapp/contracts';
 import { assert, defined } from '@festivapp/utils';
+import { asValue } from 'awilix';
 import {
   createServer,
   request,
   type RequestOptions as HttpRequestOptions,
   type IncomingHttpHeaders,
   type IncomingMessage,
-  type Server,
 } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { after, before, beforeEach } from 'node:test';
 
 import { createApp } from '../../src/app.ts';
-import { envConfig } from '../../src/config.ts';
-import { startContainer } from './container.ts';
-import { closeDatabase, resetDatabase } from './database.ts';
+import { container, initContainer } from '../../src/container.ts';
+import { applyMigrations } from '../../src/db/client.ts';
+import { resetDatabase } from './database.ts';
+
+import type { Config } from '../../src/config.ts';
 
 type RequestOptions = {
   host?: string;
@@ -31,31 +33,49 @@ export function useApi(): TestApi {
   const api = new TestApi();
 
   before(() => api.start());
-  beforeEach(() => resetDatabase());
+
+  beforeEach(async () => {
+    initContainer();
+    await resetDatabase();
+  });
 
   after(async () => {
     await api.stop();
-    await closeDatabase();
+    await container.dispose();
   });
 
   return api;
 }
 
 export class TestApi {
-  private server?: Server;
+  private server = createServer(createApp());
   private cookies = new Map<string, string>();
   private port = 0;
 
   async start(): Promise<void> {
-    const config = envConfig();
+    const databaseUrl = process.env.DATABASE_URL ?? '';
 
-    if (config.databaseUrl !== undefined) {
-      assert(config.databaseUrl.includes('localhost'), new Error('DATABASE_URL must include "localhost"'));
+    container.register({
+      config: asValue<Config>({
+        host: '',
+        port: NaN,
+        logLevel: 'silent',
+        databaseUrl,
+        storageDir: undefined,
+        uploadMaxBytes: undefined,
+        vapidPublicKey: undefined,
+        vapidPrivateKey: undefined,
+        vapidSubject: 'subject',
+      }),
+    });
+
+    if (databaseUrl !== '') {
+      assert(databaseUrl.includes('localhost'), new Error('DATABASE_URL must include "localhost"'));
     }
 
-    this.server = createServer(createApp(await startContainer()));
+    await applyMigrations(container.resolve('db'));
 
-    await new Promise<void>((resolve) => this.server?.listen(0, '127.0.0.1', resolve));
+    await new Promise<void>((resolve) => this.server.listen(0, '127.0.0.1', resolve));
 
     const address = this.server.address() as AddressInfo | null;
     assert(address);

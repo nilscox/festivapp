@@ -1,12 +1,10 @@
 import type { RequestHandler } from 'express';
 
-import { deps } from '../container.ts';
-
 export const requestLogger: RequestHandler = (req, res, next) => {
   const startedAt = performance.now();
 
   res.on('finish', () => {
-    const { logger } = deps();
+    const logger = req.container.resolve('logger');
     const duration = Math.round(performance.now() - startedAt);
 
     logger[levelOf(res.statusCode)](`${req.method} ${req.originalUrl}`, {

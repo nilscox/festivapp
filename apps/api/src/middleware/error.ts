@@ -1,8 +1,6 @@
 import type { ErrorRequestHandler } from 'express';
 import z from 'zod';
 
-import { deps } from '../container.ts';
-
 export const payloadErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof Error && 'type' in err && err.type === 'entity.too.large') {
     return res.status(413).json({ error: 'file_too_large' });
@@ -11,8 +9,8 @@ export const payloadErrorHandler: ErrorRequestHandler = (err, _req, res, _next) 
   throw err;
 };
 
-export const zodErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  const { logger } = deps();
+export const zodErrorHandler: ErrorRequestHandler = (err, req, res, _next) => {
+  const logger = req.container.resolve('logger');
 
   if (err instanceof z.ZodError) {
     const issues = z.treeifyError(err);
@@ -25,8 +23,8 @@ export const zodErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   throw err;
 };
 
-export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  const { logger } = deps();
+export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
+  const logger = req.container.resolve('logger');
 
   logger.error('unhandled error', { err });
 

@@ -4,11 +4,10 @@ import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { deps } from '../../container.ts';
 import { sessionParticipants, sessions, type Session } from '../../db/schema.ts';
 import { optionalString } from '../../utils.ts';
 
-import type { Transaction } from '../../db/client.ts';
+import type { Database, Transaction } from '../../db/client.ts';
 
 export const sessionsRouter = Router({ mergeParams: true });
 
@@ -65,7 +64,7 @@ function toSessionDto(row: Session, participantIds: string[]): SessionDto {
 }
 
 sessionsRouter.get('/', async (req, res) => {
-  const { db } = deps();
+  const db = req.container.resolve('db');
 
   assert(req.tenant);
 
@@ -90,18 +89,18 @@ sessionsRouter.get('/', async (req, res) => {
 });
 
 sessionsRouter.post('/', async (req, res) => {
-  const { db } = deps();
+  const db = req.container.resolve('db');
 
   assert(req.tenant);
 
   const { participantIds, ...values } = sessionSchema.parse(req.body);
   const tenantId = req.tenant.id;
 
-  if (!(await ownsLocation(tenantId, values.locationId))) {
+  if (!(await ownsLocation(db, tenantId, values.locationId))) {
     return res.status(400).json({ error: 'unknown_location' });
   }
 
-  if (!(await ownsParticipants(tenantId, participantIds))) {
+  if (!(await ownsParticipants(db, tenantId, participantIds))) {
     return res.status(400).json({ error: 'unknown_participant' });
   }
 
@@ -125,18 +124,18 @@ sessionsRouter.post('/', async (req, res) => {
 });
 
 sessionsRouter.put('/:id', async (req, res) => {
-  const { db } = deps();
+  const db = req.container.resolve('db');
 
   assert(req.tenant);
 
   const { participantIds, ...values } = sessionSchema.parse(req.body);
   const tenantId = req.tenant.id;
 
-  if (!(await ownsLocation(tenantId, values.locationId))) {
+  if (!(await ownsLocation(db, tenantId, values.locationId))) {
     return res.status(400).json({ error: 'unknown_location' });
   }
 
-  if (!(await ownsParticipants(tenantId, participantIds))) {
+  if (!(await ownsParticipants(db, tenantId, participantIds))) {
     return res.status(400).json({ error: 'unknown_participant' });
   }
 
@@ -170,7 +169,7 @@ sessionsRouter.put('/:id', async (req, res) => {
 });
 
 sessionsRouter.delete('/:id', async (req, res) => {
-  const { db } = deps();
+  const db = req.container.resolve('db');
 
   assert(req.tenant);
 
@@ -186,20 +185,16 @@ sessionsRouter.delete('/:id', async (req, res) => {
   res.status(204).end();
 });
 
-async function ownsLocation(tenantId: string, locationId: string) {
-  const { db } = deps();
-
+async function ownsLocation(db: Database, tenantId: string, locationId: string) {
   const row = await db.query.locations.findFirst({ where: { id: locationId, tenantId } });
 
   return row !== undefined;
 }
 
-async function ownsParticipants(tenantId: string, participantIds: string[]) {
+async function ownsParticipants(db: Database, tenantId: string, participantIds: string[]) {
   if (participantIds.length === 0) {
     return true;
   }
-
-  const { db } = deps();
 
   const rows = await db.query.participants.findMany({
     where: { tenantId, id: { in: participantIds } },

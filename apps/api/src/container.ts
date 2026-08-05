@@ -1,54 +1,47 @@
-import { defined } from '@festivapp/utils';
-import { AsyncLocalStorage } from 'node:async_hooks';
+import { asFunction, createContainer, InjectionMode } from 'awilix';
 
 import { envConfig, type Config } from './config.ts';
-import { createDatabase, type Database } from './db/client.ts';
+import {
+  applyMigrations,
+  closeDatabaseClient,
+  createDatabase,
+  createDatabaseClient,
+  type Database,
+  type DatabaseClient,
+} from './db/client.ts';
 import { consoleLogger, type Logger } from './logger.ts';
 import { createPush, type Push } from './push.ts';
 import { createStorage, type Storage } from './storage.ts';
 
-export type Container = {
+export type Dependencies = {
   config: Config;
   logger: Logger;
+  client: DatabaseClient;
   db: Database;
   storage: Storage;
   push: Push;
-  close(): Promise<void>;
 };
 
-const store = new AsyncLocalStorage<Container>();
+export const container = createContainer<Dependencies>({
+  injectionMode: InjectionMode.PROXY,
+  strict: true,
+});
 
-export async function createContainer(overrides: Partial<Container> = {}): Promise<Container> {
-  const config = overrides.config ?? envConfig();
-  const logger = overrides.logger ?? consoleLogger({ level: config.logLevel });
-  const scoped = scopedLogger(logger);
-
-  const handle = await createDatabase(config, scoped);
-
-  const db = overrides.db ?? handle.db;
-  const storage = overrides.storage ?? createStorage(config);
-  const push = overrides.push ?? createPush({ config, db, logger: scoped });
-
-  return { config, logger, db, storage, push, close: () => handle.close(), ...overrides };
+export function initContainer() {
+  container.register({
+    config: asFunction(envConfig).singleton(),
+    logger: asFunction(({ config }) => consoleLogger({ level: config.logLevel })).singleton(),
+    client: asFunction(createDatabaseClient).singleton().disposer(closeDatabaseClient),
+    db: asFunction(createDatabase).scoped(),
+    storage: asFunction(createStorage).singleton(),
+    push: asFunction(createPush).scoped(),
+  });
 }
 
-export function runWithContainer<T>(container: Container, fn: () => T): T {
-  return store.run(container, fn);
-}
+initContainer();
 
-export function deps(): Container {
-  return defined(store.getStore(), new Error('deps() was called outside of runWithContainer()'));
-}
+const config = container.resolve('config');
 
-function scopedLogger(fallback: Logger): Logger {
-  const current = () => store.getStore()?.logger ?? fallback;
-
-  return {
-    level: fallback.level,
-    debug: (message, context) => current().debug(message, context),
-    info: (message, context) => current().info(message, context),
-    warn: (message, context) => current().warn(message, context),
-    error: (message, context) => current().error(message, context),
-    child: (context) => current().child(context),
-  };
+if (!config.databaseUrl) {
+  await applyMigrations(container.resolve('db'));
 }

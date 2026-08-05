@@ -1,6 +1,10 @@
+import { PGlite } from '@electric-sql/pglite';
+import { pushSchema } from 'drizzle-kit/api-postgres';
 import type { Logger as DrizzleLogger } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import type { PgAsyncDatabase, PgAsyncTransaction, PgQueryResultHKT } from 'drizzle-orm/pg-core';
+import { drizzle as drizzlePgLite } from 'drizzle-orm/pglite';
+import { Pool } from 'pg';
 
 import * as schema from './schema.ts';
 
@@ -11,20 +15,42 @@ const { relations } = schema;
 
 export type Database = PgAsyncDatabase<PgQueryResultHKT, Record<string, never>, typeof relations>;
 export type Transaction = PgAsyncTransaction<PgQueryResultHKT, Record<string, never>, typeof relations>;
+export type DatabaseClient = Pool | PGlite;
 
-export type DatabaseHandle = {
-  db: Database;
-  close(): Promise<void>;
-};
-
-export function createDatabase(config: Config, logger: Logger): Promise<DatabaseHandle> {
-  const drizzleLogger = toDrizzleLogger(logger);
-
+export function createDatabaseClient({ config }: { config: Config }): DatabaseClient {
   if (!config.databaseUrl) {
-    return createMemoryDatabase(drizzleLogger);
+    return new PGlite();
   }
 
-  return createPostgresDatabase(config.databaseUrl, drizzleLogger);
+  return new Pool({ connectionString: config.databaseUrl });
+}
+
+export function closeDatabaseClient(client: DatabaseClient): Promise<void> {
+  if (client instanceof Pool) {
+    return client.end();
+  }
+
+  return client.close();
+}
+
+export function createDatabase({ client, logger }: { client: DatabaseClient; logger: Logger }): Database {
+  const options = {
+    logger: toDrizzleLogger(logger),
+    casing: 'snake_case',
+    relations,
+  } as const;
+
+  if (client instanceof PGlite) {
+    return drizzlePgLite({ client, ...options });
+  }
+
+  return drizzle({ client, ...options });
+}
+
+export async function applyMigrations(db: Database): Promise<void> {
+  const { apply } = await pushSchema(schema, db, 'snake_case');
+
+  await apply();
 }
 
 function toDrizzleLogger(logger: Logger): DrizzleLogger | false {
@@ -34,36 +60,5 @@ function toDrizzleLogger(logger: Logger): DrizzleLogger | false {
 
   return {
     logQuery: (query, params) => logger.debug(query, { params }),
-  };
-}
-
-async function createPostgresDatabase(connection: string, logger: DrizzleLogger | false): Promise<DatabaseHandle> {
-  const db: Database & { $client: { end: () => Promise<void> } } = drizzle({
-    connection,
-    logger,
-    casing: 'snake_case',
-    relations,
-  });
-
-  return {
-    db,
-    close: () => db.$client.end(),
-  };
-}
-
-async function createMemoryDatabase(logger: DrizzleLogger | false): Promise<DatabaseHandle> {
-  const { PGlite } = await import('@electric-sql/pglite');
-  const { drizzle } = await import('drizzle-orm/pglite');
-  const { pushSchema } = await import('drizzle-kit/api-postgres');
-
-  const client = new PGlite();
-  const db: Database = drizzle({ client, logger, casing: 'snake_case', relations });
-
-  const { apply } = await pushSchema(schema, db, 'snake_case');
-  await apply();
-
-  return {
-    db,
-    close: () => client.close(),
   };
 }

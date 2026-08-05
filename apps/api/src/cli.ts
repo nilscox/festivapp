@@ -6,7 +6,7 @@ import webpush from 'web-push';
 import z from 'zod';
 
 import { hashPassword } from './auth/password.ts';
-import { createContainer, deps, runWithContainer } from './container.ts';
+import { container } from './container.ts';
 import { organizers, organizerTenants, tenants, type Tenant } from './db/schema.ts';
 import { seed } from './seed.ts';
 
@@ -44,7 +44,7 @@ organizer
   .argument('<domains...>', 'one or more festival domains to grant access to')
   .option('-n, --name <name>', 'organizer display name')
   .action(async (email: string, password: string, domains: string[], options: { name?: string }) => {
-    const { db } = deps();
+    const db = container.resolve('db');
 
     const tenantRows = await findTenants(domains);
 
@@ -66,7 +66,7 @@ organizer
   .argument('<email>', 'organizer email', (email) => email.trim().toLowerCase())
   .argument('<domains...>', 'one or more festival domains to grant access to')
   .action(async (email: string, domains: string[]) => {
-    const { db } = deps();
+    const db = container.resolve('db');
 
     const organizer = await db.query.organizers.findFirst({ where: { email } });
 
@@ -94,7 +94,7 @@ festival
   .option('-t, --timezone <timezone>', 'festival time zone')
   .option('-d, --domain <domain>', 'attendees app domain')
   .action(async (name: string, { timezone = 'Europe/London', domain = 'localhost' }) => {
-    const { db } = deps();
+    const db = container.resolve('db');
 
     const theme: TenantTheme = {
       backgroundColor: '#000000',
@@ -117,7 +117,7 @@ festival
   .description('List all festivals')
   .option('-j, --json', 'Output in JSON format')
   .action(async ({ json }: { json: boolean }) => {
-    const { db } = deps();
+    const db = container.resolve('db');
 
     const tenants = await db.query.tenants.findMany();
 
@@ -139,7 +139,8 @@ festival
   .description('Delete an existing festival')
   .argument('<domain>', "festival's app domain")
   .action(async (domain: string) => {
-    const { db, storage } = deps();
+    const db = container.resolve('db');
+    const storage = container.resolve('storage');
 
     const tenant = await db.query.tenants.findFirst({ where: { domain } });
 
@@ -180,7 +181,7 @@ push
   .option('-b, --body <body>', 'notification body', 'If you can read this, push works.')
   .option('-s, --subscription <id>', 'send to this subscription only, instead of every device')
   .action(async (domain: string, options: { title: string; body: string; subscription?: string }) => {
-    const { push } = deps();
+    const push = container.resolve('push');
 
     const { title, body, subscription } = options;
 
@@ -203,7 +204,7 @@ push
   });
 
 async function findTenants(domains: string[]) {
-  const { db } = deps();
+  const db = container.resolve('db');
 
   const rows = await db.query.tenants.findMany({ where: { domain: { in: domains } } });
   const found = new Set(rows.map(get('domain')));
@@ -216,6 +217,4 @@ async function findTenants(domains: string[]) {
   return rows;
 }
 
-const container = await createContainer();
-
-await runWithContainer(container, () => program.parseAsync(process.argv)).finally(() => container.close());
+program.parseAsync(process.argv).finally(() => container.dispose());

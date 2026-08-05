@@ -11,9 +11,10 @@ import {
   readSessionToken,
   sessionCookieOptions,
 } from '../../auth/session.ts';
-import { deps } from '../../container.ts';
 import { type Organizer, type Tenant } from '../../db/schema.ts';
 import { requireOrganizer } from '../../middleware/admin-auth.ts';
+
+import type { Database } from '../../db/client.ts';
 
 export const authRouter = Router();
 
@@ -22,9 +23,7 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-async function listOrganizerTenants(organizerId: string) {
-  const { db } = deps();
-
+async function listOrganizerTenants(db: Database, organizerId: string) {
   return db.query.tenants.findMany({
     where: { organizers: { id: organizerId } },
     orderBy: { name: 'asc' },
@@ -39,7 +38,7 @@ function toMeResponseDto(organizer: Organizer, tenants: Tenant[]): MeResponse {
 }
 
 authRouter.post('/login', async (req, res) => {
-  const { db } = deps();
+  const db = req.container.resolve('db');
 
   const { email, password } = loginSchema.parse(req.body);
 
@@ -51,8 +50,8 @@ authRouter.post('/login', async (req, res) => {
     return res.status(401).json({ error: 'invalid_credentials' });
   }
 
-  const { token, expiresAt } = await createSession(organizer.id);
-  const tenants = await listOrganizerTenants(organizer.id);
+  const { token, expiresAt } = await createSession(db, organizer.id);
+  const tenants = await listOrganizerTenants(db, organizer.id);
 
   res.cookie('token', token, sessionCookieOptions(expiresAt));
   res.json(toMeResponseDto(organizer, tenants));
@@ -61,17 +60,19 @@ authRouter.post('/login', async (req, res) => {
 authRouter.get('/me', requireOrganizer, async (req, res) => {
   assert(req.organizer);
 
+  const db = req.container.resolve('db');
   const organizer = req.organizer;
-  const tenants = await listOrganizerTenants(organizer.id);
+  const tenants = await listOrganizerTenants(db, organizer.id);
 
   res.json(toMeResponseDto(organizer, tenants));
 });
 
 authRouter.post('/logout', requireOrganizer, async (req, res) => {
+  const db = req.container.resolve('db');
   const token = readSessionToken(req);
 
   if (token !== undefined) {
-    await destroySession(token);
+    await destroySession(db, token);
   }
 
   res.clearCookie('token', clearCookieOptions());

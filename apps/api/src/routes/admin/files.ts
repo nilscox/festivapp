@@ -4,7 +4,6 @@ import { and, eq } from 'drizzle-orm';
 import express, { Router, type RequestHandler } from 'express';
 import { z } from 'zod';
 
-import { deps } from '../../container.ts';
 import { files, type File } from '../../db/schema.ts';
 import { createId } from '../../utils.ts';
 
@@ -38,7 +37,7 @@ function toFileDto(row: File): FileDto {
 }
 
 filesRouter.get('/', async (req, res) => {
-  const { db } = deps();
+  const db = req.container.resolve('db');
 
   assert(req.tenant);
 
@@ -55,14 +54,15 @@ const uploadSchema = z.object({
 });
 
 const uploadBody: RequestHandler = (req, res, next) => {
-  const { config } = deps();
+  const config = req.container.resolve('config');
   const raw = express.raw({ type: Object.keys(extensions), limit: config.uploadMaxBytes });
 
   return raw(req, res, next);
 };
 
 filesRouter.post('/', uploadBody, async (req, res) => {
-  const { db, storage } = deps();
+  const db = req.container.resolve('db');
+  const storage = req.container.resolve('storage');
 
   assert(req.tenant);
 
@@ -101,7 +101,8 @@ filesRouter.post('/', uploadBody, async (req, res) => {
 });
 
 filesRouter.delete('/:id', async (req, res) => {
-  const { db, storage } = deps();
+  const db = req.container.resolve('db');
+  const storage = req.container.resolve('storage');
 
   assert(req.tenant);
 

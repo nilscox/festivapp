@@ -1,5 +1,6 @@
 import express, { type Express, type Request, type Response } from 'express';
 
+import { container } from './container.ts';
 import { provideContainer } from './middleware/container.ts';
 import { errorHandler, payloadErrorHandler, zodErrorHandler } from './middleware/error.ts';
 import { requestLogger } from './middleware/logging.ts';
@@ -7,9 +8,7 @@ import { adminRouter } from './routes/admin/index.ts';
 import { tenantRouter } from './routes/app/index.ts';
 import { filesRouter } from './routes/files.ts';
 
-import type { Container } from './container.ts';
-
-export function createApp(container: Container): Express {
+export function createApp(): Express {
   const app = express();
 
   app.use(provideContainer(container));

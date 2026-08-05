@@ -1,6 +1,5 @@
 import type { RequestHandler } from 'express';
 
-import { deps } from '../container.ts';
 import { type Tenant } from '../db/schema.ts';
 
 declare global {
@@ -12,7 +11,8 @@ declare global {
 }
 
 export const requireTenant: RequestHandler = async (req, res, next) => {
-  const { db, logger } = deps();
+  const db = req.container.resolve('db');
+  const logger = req.container.resolve('logger');
 
   const domain =
     // oxlint-disable-next-line no-underscore-dangle

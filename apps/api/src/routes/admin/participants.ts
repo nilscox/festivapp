@@ -4,7 +4,6 @@ import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { deps } from '../../container.ts';
 import { participants, type Participant } from '../../db/schema.ts';
 import { optionalString } from '../../utils.ts';
 
@@ -40,7 +39,7 @@ function toParticipantDto(row: Participant): ParticipantDto {
 }
 
 participantsRouter.get('/', async (req, res) => {
-  const { db } = deps();
+  const db = req.container.resolve('db');
 
   assert(req.tenant);
 
@@ -53,7 +52,7 @@ participantsRouter.get('/', async (req, res) => {
 });
 
 participantsRouter.post('/', async (req, res) => {
-  const { db } = deps();
+  const db = req.container.resolve('db');
 
   assert(req.tenant);
 
@@ -71,7 +70,7 @@ participantsRouter.post('/', async (req, res) => {
 });
 
 participantsRouter.patch('/:id', async (req, res) => {
-  const { db } = deps();
+  const db = req.container.resolve('db');
 
   assert(req.tenant);
 
@@ -94,7 +93,7 @@ participantsRouter.patch('/:id', async (req, res) => {
 });
 
 participantsRouter.delete('/:id', async (req, res) => {
-  const { db } = deps();
+  const db = req.container.resolve('db');
 
   assert(req.tenant);
 
