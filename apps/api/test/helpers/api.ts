@@ -1,6 +1,7 @@
+import type { PGlite } from '@electric-sql/pglite';
 import type { MeResponse } from '@festivapp/contracts';
 import { assert, defined } from '@festivapp/utils';
-import { getTableName, is, sql } from 'drizzle-orm';
+import { getTableName, is } from 'drizzle-orm';
 import { PgTable } from 'drizzle-orm/pg-core';
 import {
   createServer,
@@ -44,6 +45,7 @@ export type ApiResponse<T> = {
 export class TestSuite {
   public readonly db: Database;
 
+  private client: PGlite;
   private server: Server;
   private handler?: RequestListener;
   private port = 0;
@@ -54,7 +56,7 @@ export class TestSuite {
     before(() => suite.start());
     after(() => suite.stop());
 
-    beforeEach(() => suite.truncate());
+    beforeEach(() => suite.clear());
 
     return suite;
   }
@@ -62,10 +64,12 @@ export class TestSuite {
   private constructor() {
     const config = testConfig();
 
+    this.client = createFileClient();
+
     this.db = createDatabase({
       config,
       logger: new StubLogger(config.logLevel),
-      client: createFileClient(),
+      client: this.client,
     });
 
     this.server = createServer((req, res) => defined(this.handler)(req, res));
@@ -105,11 +109,13 @@ export class TestSuite {
     await closeDatabase(this.db);
   }
 
-  private async truncate(): Promise<void> {
-    const tables = Object.values(schema).filter((value) => is(value, PgTable));
-    const names = tables.map((table) => sql.identifier(getTableName(table)));
+  private async clear(): Promise<void> {
+    const query = Object.values(schema)
+      .filter((value) => is(value, PgTable))
+      .map((table) => `delete from "${getTableName(table)}"`)
+      .join('; ');
 
-    await this.db.execute(sql`truncate table ${sql.join(names, sql`, `)} cascade`);
+    await this.client.exec(query);
   }
 }
 

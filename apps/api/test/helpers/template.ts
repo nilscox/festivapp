@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 
-import { applyMigrations, createDatabase, type DatabaseClient } from '../../src/db/client.ts';
+import { applyMigrations, createDatabase } from '../../src/db/client.ts';
 import { testConfig } from './config.ts';
 import { StubLogger } from './logger.ts';
 
@@ -45,7 +45,7 @@ export async function createTemplate(): Promise<void> {
   }
 }
 
-export function createFileClient(): DatabaseClient {
+export function createFileClient(): PGlite {
   return new PGlite({ loadDataDir: new Blob([readFileSync(templatePath())]) });
 }
 
