@@ -1,34 +1,31 @@
 import type { Session as SessionDto } from '@festivapp/contracts';
 import assert from 'node:assert/strict';
-import { beforeEach, describe, it } from 'node:test';
+import { describe, it, type TestContext } from 'node:test';
 
-import { TestApi } from './helpers/api.ts';
+import { TestSuite } from './helpers/api.ts';
 import { fixtures } from './helpers/fixtures.ts';
 
-import type { Location, Participant, Tenant } from '../src/db/schema.ts';
+const suite = TestSuite.create();
+const create = fixtures(suite.db);
 
-const api = TestApi.create();
-const create = fixtures(api.db);
-
-let tenant: Tenant;
-let other: Tenant;
-let location: Location;
-let johnny: Participant;
-let nova: Participant;
-
-beforeEach(async () => {
-  tenant = await create.tenant();
-  other = await create.tenant();
-  location = await create.location(tenant, { name: 'Main stage' });
-  johnny = await create.participant(tenant, { name: 'Johnny Purple' });
-  nova = await create.participant(tenant, { name: 'Nova Twins' });
-
+async function setup(t: TestContext) {
+  const api = suite.api(t);
+  const tenant = await create.tenant();
+  const other = await create.tenant();
+  const location = await create.location(tenant, { name: 'Main stage' });
+  const johnny = await create.participant(tenant, { name: 'Johnny Purple' });
+  const nova = await create.participant(tenant, { name: 'Nova Twins' });
   const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant, other] });
+
   await api.login(organizer.email, 'hunter2');
-});
+
+  return { api, tenant, other, location, johnny, nova };
+}
 
 describe('sessions', () => {
-  it('lists the festival sessions by start, line-up in order', async () => {
+  it('lists the festival sessions by start, line-up in order', async (t) => {
+    const { api, tenant, other, location, johnny, nova } = await setup(t);
+
     const later = await create.session(tenant, location, {
       title: 'Closing set',
       startsAt: new Date('2026-07-01T23:00:00Z'),
@@ -73,7 +70,9 @@ describe('sessions', () => {
     ]);
   });
 
-  it('creates a session with its line-up', async () => {
+  it('creates a session with its line-up', async (t) => {
+    const { api, tenant, location, johnny, nova } = await setup(t);
+
     const res = await api.post<SessionDto>(`/admin/tenants/${tenant.id}/sessions`, {
       locationId: location.id,
       type: 'dj_set',
@@ -99,7 +98,9 @@ describe('sessions', () => {
     assert.deepEqual(list.body[0]?.participantIds, [nova.id, johnny.id]);
   });
 
-  it('creates a titleless session for the one person on it', async () => {
+  it('creates a titleless session for the one person on it', async (t) => {
+    const { api, tenant, location, johnny } = await setup(t);
+
     const res = await api.post<SessionDto>(`/admin/tenants/${tenant.id}/sessions`, {
       locationId: location.id,
       type: 'dj_set',
@@ -113,7 +114,9 @@ describe('sessions', () => {
     assert.equal(res.body.title, null);
   });
 
-  it('creates a session with no line-up when it has a title', async () => {
+  it('creates a session with no line-up when it has a title', async (t) => {
+    const { api, tenant, location } = await setup(t);
+
     const res = await api.post<SessionDto>(`/admin/tenants/${tenant.id}/sessions`, {
       locationId: location.id,
       type: 'workshop',
@@ -127,7 +130,9 @@ describe('sessions', () => {
     assert.deepEqual(res.body.participantIds, []);
   });
 
-  it('replaces a session whole, line-up included', async () => {
+  it('replaces a session whole, line-up included', async (t) => {
+    const { api, tenant, location, johnny, nova } = await setup(t);
+
     const session = await create.session(tenant, location, {
       title: 'Closing set',
       description: 'Dropped on replace.',
@@ -159,7 +164,9 @@ describe('sessions', () => {
     assert.deepEqual(list.body, [res.body]);
   });
 
-  it('deletes a session and its line-up', async () => {
+  it('deletes a session and its line-up', async (t) => {
+    const { api, tenant, location, johnny } = await setup(t);
+
     const session = await create.session(tenant, location, { participants: [johnny] });
 
     const res = await api.delete(`/admin/tenants/${tenant.id}/sessions/${session.id}`);
@@ -169,7 +176,9 @@ describe('sessions', () => {
     assert.deepEqual(list.body, []);
   });
 
-  it('allows two sessions to overlap at the same location', async () => {
+  it('allows two sessions to overlap at the same location', async (t) => {
+    const { api, tenant, location } = await setup(t);
+
     await create.session(tenant, location, { title: 'First' });
 
     const res = await api.post(`/admin/tenants/${tenant.id}/sessions`, {
@@ -186,7 +195,9 @@ describe('sessions', () => {
 });
 
 describe('session validation', () => {
-  it('rejects an end at or before the start', async () => {
+  it('rejects an end at or before the start', async (t) => {
+    const { api, tenant, location } = await setup(t);
+
     const res = await api.post<{ properties: Record<string, unknown> }>(`/admin/tenants/${tenant.id}/sessions`, {
       locationId: location.id,
       type: 'live',
@@ -200,7 +211,9 @@ describe('session validation', () => {
     assert.ok(res.body.properties?.endsAt);
   });
 
-  it('rejects a session with neither a title nor a line-up', async () => {
+  it('rejects a session with neither a title nor a line-up', async (t) => {
+    const { api, tenant, location } = await setup(t);
+
     const res = await api.post<{ properties: Record<string, unknown> }>(`/admin/tenants/${tenant.id}/sessions`, {
       locationId: location.id,
       type: 'live',
@@ -214,7 +227,9 @@ describe('session validation', () => {
     assert.ok(res.body.properties?.title);
   });
 
-  it('rejects a session with several people and no title', async () => {
+  it('rejects a session with several people and no title', async (t) => {
+    const { api, tenant, location, johnny, nova } = await setup(t);
+
     const res = await api.post<{ properties: Record<string, unknown> }>(`/admin/tenants/${tenant.id}/sessions`, {
       locationId: location.id,
       type: 'live',
@@ -228,7 +243,9 @@ describe('session validation', () => {
     assert.ok(res.body.properties?.title);
   });
 
-  it('rejects a replacement that leaves neither a title nor a line-up', async () => {
+  it('rejects a replacement that leaves neither a title nor a line-up', async (t) => {
+    const { api, tenant, location, johnny } = await setup(t);
+
     const session = await create.session(tenant, location, { participants: [johnny] });
 
     const res = await api.put(`/admin/tenants/${tenant.id}/sessions/${session.id}`, {
@@ -242,7 +259,9 @@ describe('session validation', () => {
     assert.equal(res.status, 400);
   });
 
-  it('rejects the same participant twice on a line-up', async () => {
+  it('rejects the same participant twice on a line-up', async (t) => {
+    const { api, tenant, location, johnny } = await setup(t);
+
     const res = await api.post<{ properties: Record<string, unknown> }>(`/admin/tenants/${tenant.id}/sessions`, {
       locationId: location.id,
       type: 'live',
@@ -256,7 +275,9 @@ describe('session validation', () => {
     assert.ok(res.body.properties?.participantIds);
   });
 
-  it('rejects an unknown type', async () => {
+  it('rejects an unknown type', async (t) => {
+    const { api, tenant, location } = await setup(t);
+
     const res = await api.post(`/admin/tenants/${tenant.id}/sessions`, {
       locationId: location.id,
       type: 'concert',
@@ -271,7 +292,9 @@ describe('session validation', () => {
 });
 
 describe('sessions of another festival', () => {
-  it('are not listed', async () => {
+  it('are not listed', async (t) => {
+    const { api, tenant, other } = await setup(t);
+
     await create.session(other, await create.location(other), { title: 'Elsewhere' });
 
     const res = await api.get<SessionDto[]>(`/admin/tenants/${tenant.id}/sessions`);
@@ -279,7 +302,9 @@ describe('sessions of another festival', () => {
     assert.deepEqual(res.body, []);
   });
 
-  it('are not reachable for replacement', async () => {
+  it('are not reachable for replacement', async (t) => {
+    const { api, tenant, other, location } = await setup(t);
+
     const session = await create.session(other, await create.location(other), { title: 'Elsewhere' });
 
     const res = await api.put(`/admin/tenants/${tenant.id}/sessions/${session.id}`, {
@@ -295,7 +320,9 @@ describe('sessions of another festival', () => {
     assert.deepEqual(res.body, { error: 'not_found' });
   });
 
-  it('are not reachable for deletion', async () => {
+  it('are not reachable for deletion', async (t) => {
+    const { api, tenant, other } = await setup(t);
+
     const session = await create.session(other, await create.location(other), { title: 'Elsewhere' });
 
     const res = await api.delete(`/admin/tenants/${tenant.id}/sessions/${session.id}`);
@@ -303,7 +330,9 @@ describe('sessions of another festival', () => {
     assert.equal(res.status, 404);
   });
 
-  it('cannot lend their location to a session', async () => {
+  it('cannot lend their location to a session', async (t) => {
+    const { api, tenant, other } = await setup(t);
+
     const elsewhere = await create.location(other, { name: 'Elsewhere' });
 
     const res = await api.post(`/admin/tenants/${tenant.id}/sessions`, {
@@ -319,7 +348,9 @@ describe('sessions of another festival', () => {
     assert.deepEqual(res.body, { error: 'unknown_location' });
   });
 
-  it('cannot lend their people to a line-up', async () => {
+  it('cannot lend their people to a line-up', async (t) => {
+    const { api, tenant, other, location } = await setup(t);
+
     const stranger = await create.participant(other, { name: 'Stranger' });
 
     const res = await api.post(`/admin/tenants/${tenant.id}/sessions`, {

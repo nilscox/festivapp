@@ -4,14 +4,16 @@ import { sub } from 'date-fns';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { TestApi } from './helpers/api.ts';
+import { TestSuite } from './helpers/api.ts';
 import { fixtures } from './helpers/fixtures.ts';
 
-const api = TestApi.create();
-const create = fixtures(api.db);
+const suite = TestSuite.create();
+const create = fixtures(suite.db);
 
 describe('POST /admin/auth/login', () => {
-  it('signs the organizer in and returns their festivals', async () => {
+  it('signs the organizer in and returns their festivals', async (t) => {
+    const api = suite.api(t);
+
     const tenant = await create.tenant({ name: 'Cool Fest', domain: 'coolfest.localhost' });
     const organizer = await create.organizer({ email: 'jane@test.local', password: 'hunter2', tenants: [tenant] });
 
@@ -24,7 +26,9 @@ describe('POST /admin/auth/login', () => {
     });
   });
 
-  it('sets an http-only session cookie', async () => {
+  it('sets an http-only session cookie', async (t) => {
+    const api = suite.api(t);
+
     await create.organizer({ email: 'jane@test.local', password: 'hunter2' });
 
     const res = await api.login('jane@test.local', 'hunter2');
@@ -35,7 +39,9 @@ describe('POST /admin/auth/login', () => {
     assert.match(String(cookie), /SameSite=Lax/i);
   });
 
-  it('lowercases the email before looking the organizer up', async () => {
+  it('lowercases the email before looking the organizer up', async (t) => {
+    const api = suite.api(t);
+
     await create.organizer({ email: 'jane@test.local', password: 'hunter2' });
 
     const res = await api.login('JANE@Test.Local', 'hunter2');
@@ -43,7 +49,9 @@ describe('POST /admin/auth/login', () => {
     assert.equal(res.status, 200);
   });
 
-  it('rejects a wrong password without setting a cookie', async () => {
+  it('rejects a wrong password without setting a cookie', async (t) => {
+    const api = suite.api(t);
+
     await create.organizer({ email: 'jane@test.local', password: 'hunter2' });
 
     const res = await api.login('jane@test.local', 'wrong');
@@ -53,14 +61,18 @@ describe('POST /admin/auth/login', () => {
     assert.equal(res.headers['set-cookie'], undefined);
   });
 
-  it('rejects an unknown email', async () => {
+  it('rejects an unknown email', async (t) => {
+    const api = suite.api(t);
+
     const res = await api.login('nobody@test.local', 'hunter2');
 
     assert.equal(res.status, 401);
     assert.deepEqual(res.body, { error: 'invalid_credentials' });
   });
 
-  it('responds 400 with a validation tree for a malformed body', async () => {
+  it('responds 400 with a validation tree for a malformed body', async (t) => {
+    const api = suite.api(t);
+
     const res = await api.post<{ properties: Record<string, unknown> }>('/admin/auth/login', {
       email: 'not-an-email',
       password: '',
@@ -73,7 +85,9 @@ describe('POST /admin/auth/login', () => {
 });
 
 describe('GET /admin/auth/me', () => {
-  it('returns the signed-in organizer', async () => {
+  it('returns the signed-in organizer', async (t) => {
+    const api = suite.api(t);
+
     const tenant = await create.tenant();
     const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant] });
 
@@ -85,20 +99,26 @@ describe('GET /admin/auth/me', () => {
     assert.deepEqual(res.body.tenants.map(get('id')), [tenant.id]);
   });
 
-  it('responds 401 without a session cookie', async () => {
+  it('responds 401 without a session cookie', async (t) => {
+    const api = suite.api(t);
+
     const res = await api.get('/admin/auth/me');
 
     assert.equal(res.status, 401);
     assert.deepEqual(res.body, { error: 'unauthenticated' });
   });
 
-  it('responds 401 for an unknown token', async () => {
+  it('responds 401 for an unknown token', async (t) => {
+    const api = suite.api(t);
+
     const res = await api.get('/admin/auth/me', { headers: { cookie: 'token=made-up' } });
 
     assert.equal(res.status, 401);
   });
 
-  it('responds 401 for an expired session', async () => {
+  it('responds 401 for an expired session', async (t) => {
+    const api = suite.api(t);
+
     const organizer = await create.organizer();
     const token = await create.authSession(organizer, { expiresAt: new Date(sub(Date.now(), { days: 1 })) });
 
@@ -109,7 +129,9 @@ describe('GET /admin/auth/me', () => {
 });
 
 describe('POST /admin/auth/logout', () => {
-  it('destroys the session', async () => {
+  it('destroys the session', async (t) => {
+    const api = suite.api(t);
+
     const organizer = await create.organizer({ password: 'hunter2' });
 
     await api.login(organizer.email, 'hunter2');
@@ -121,7 +143,9 @@ describe('POST /admin/auth/logout', () => {
     assert.equal(res.status, 401);
   });
 
-  it('makes the session token unusable even if the client keeps the cookie', async () => {
+  it('makes the session token unusable even if the client keeps the cookie', async (t) => {
+    const api = suite.api(t);
+
     const organizer = await create.organizer({ password: 'hunter2' });
     const login = await api.login(organizer.email, 'hunter2');
 
@@ -135,7 +159,9 @@ describe('POST /admin/auth/logout', () => {
 });
 
 describe('tenant membership', () => {
-  it('lets a member read the festival', async () => {
+  it('lets a member read the festival', async (t) => {
+    const api = suite.api(t);
+
     const tenant = await create.tenant({ name: 'Cool Fest' });
     const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant] });
 
@@ -146,7 +172,9 @@ describe('tenant membership', () => {
     assert.equal(res.body.name, 'Cool Fest');
   });
 
-  it('responds 403 for a festival the organizer does not belong to', async () => {
+  it('responds 403 for a festival the organizer does not belong to', async (t) => {
+    const api = suite.api(t);
+
     const tenant = await create.tenant();
     const other = await create.tenant();
     const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant] });
@@ -158,7 +186,9 @@ describe('tenant membership', () => {
     assert.deepEqual(res.body, { error: 'forbidden' });
   });
 
-  it('responds 401 before 403 when unauthenticated', async () => {
+  it('responds 401 before 403 when unauthenticated', async (t) => {
+    const api = suite.api(t);
+
     const tenant = await create.tenant();
 
     const res = await api.get(`/admin/tenants/${tenant.id}`);
@@ -166,7 +196,9 @@ describe('tenant membership', () => {
     assert.equal(res.status, 401);
   });
 
-  it('never reads the tenant from the Host header', async () => {
+  it('never reads the tenant from the Host header', async (t) => {
+    const api = suite.api(t);
+
     const tenant = await create.tenant({ domain: 'coolfest.localhost' });
     const other = await create.tenant({ domain: 'other.localhost', name: 'Other' });
     const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant] });

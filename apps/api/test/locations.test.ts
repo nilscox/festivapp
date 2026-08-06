@@ -1,29 +1,29 @@
 import type { Location as LocationDto } from '@festivapp/contracts';
 import { get } from '@festivapp/utils';
 import assert from 'node:assert/strict';
-import { beforeEach, describe, it } from 'node:test';
+import { describe, it, type TestContext } from 'node:test';
 
-import { TestApi } from './helpers/api.ts';
+import { TestSuite } from './helpers/api.ts';
 import { fixtures } from './helpers/fixtures.ts';
 
-import type { Tenant } from '../src/db/schema.ts';
+const suite = TestSuite.create();
+const create = fixtures(suite.db);
 
-const api = TestApi.create();
-const create = fixtures(api.db);
-
-let tenant: Tenant;
-let other: Tenant;
-
-beforeEach(async () => {
-  tenant = await create.tenant();
-  other = await create.tenant();
-
+async function setup(t: TestContext) {
+  const api = suite.api(t);
+  const tenant = await create.tenant();
+  const other = await create.tenant();
   const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant, other] });
+
   await api.login(organizer.email, 'hunter2');
-});
+
+  return { api, tenant, other };
+}
 
 describe('locations', () => {
-  it('creates a location at the centre of the map', async () => {
+  it('creates a location at the centre of the map', async (t) => {
+    const { api, tenant } = await setup(t);
+
     const res = await api.post<LocationDto>(`/admin/tenants/${tenant.id}/locations`, {
       name: '  Main stage  ',
       description: '',
@@ -39,7 +39,9 @@ describe('locations', () => {
     });
   });
 
-  it('lists the festival locations by position', async () => {
+  it('lists the festival locations by position', async (t) => {
+    const { api, tenant, other } = await setup(t);
+
     const second = await create.location(tenant, { name: 'Second', position: 2 });
     const first = await create.location(tenant, { name: 'First', position: 1 });
     await create.location(other, { name: 'Elsewhere' });
@@ -50,7 +52,9 @@ describe('locations', () => {
     assert.deepEqual(res.body.map(get('id')), [first.id, second.id]);
   });
 
-  it('updates a location, flattening the map pin', async () => {
+  it('updates a location, flattening the map pin', async (t) => {
+    const { api, tenant } = await setup(t);
+
     const location = await create.location(tenant, { name: 'Main stage' });
 
     const res = await api.patch<LocationDto>(`/admin/tenants/${tenant.id}/locations/${location.id}`, {
@@ -63,7 +67,9 @@ describe('locations', () => {
     assert.deepEqual(res.body.mapPin, { x: 10, y: 20, labelPosition: 'left' });
   });
 
-  it('keeps the fields a patch omits', async () => {
+  it('keeps the fields a patch omits', async (t) => {
+    const { api, tenant } = await setup(t);
+
     const location = await create.location(tenant, { name: 'Main stage', description: 'Outdoors', position: 3 });
 
     const res = await api.patch<LocationDto>(`/admin/tenants/${tenant.id}/locations/${location.id}`, {
@@ -78,7 +84,9 @@ describe('locations', () => {
     });
   });
 
-  it('deletes a location', async () => {
+  it('deletes a location', async (t) => {
+    const { api, tenant } = await setup(t);
+
     const location = await create.location(tenant);
 
     const res = await api.delete(`/admin/tenants/${tenant.id}/locations/${location.id}`);
@@ -88,7 +96,9 @@ describe('locations', () => {
     assert.deepEqual(list.body, []);
   });
 
-  it('rejects an invalid body with a validation tree', async () => {
+  it('rejects an invalid body with a validation tree', async (t) => {
+    const { api, tenant } = await setup(t);
+
     const res = await api.post<{ properties: Record<string, unknown> }>(`/admin/tenants/${tenant.id}/locations`, {
       name: '',
       position: -1,
@@ -99,7 +109,9 @@ describe('locations', () => {
     assert.ok(res.body.properties?.position);
   });
 
-  it('rejects unknown fields', async () => {
+  it('rejects unknown fields', async (t) => {
+    const { api, tenant, other } = await setup(t);
+
     const res = await api.post(`/admin/tenants/${tenant.id}/locations`, {
       name: 'Main stage',
       position: 0,
@@ -111,7 +123,9 @@ describe('locations', () => {
 });
 
 describe('locations of another festival', () => {
-  it('are not reachable for update', async () => {
+  it('are not reachable for update', async (t) => {
+    const { api, tenant, other } = await setup(t);
+
     const location = await create.location(other, { name: 'Elsewhere' });
 
     const res = await api.patch(`/admin/tenants/${tenant.id}/locations/${location.id}`, { name: 'Hijacked' });
@@ -120,7 +134,9 @@ describe('locations of another festival', () => {
     assert.deepEqual(res.body, { error: 'not_found' });
   });
 
-  it('are not reachable for deletion', async () => {
+  it('are not reachable for deletion', async (t) => {
+    const { api, tenant, other } = await setup(t);
+
     const location = await create.location(other, { name: 'Elsewhere' });
 
     const res = await api.delete(`/admin/tenants/${tenant.id}/locations/${location.id}`);

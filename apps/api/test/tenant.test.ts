@@ -2,14 +2,16 @@ import type { BootstrapResponse } from '@festivapp/contracts';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { TestApi } from './helpers/api.ts';
+import { TestSuite } from './helpers/api.ts';
 import { fixtures } from './helpers/fixtures.ts';
 
-const api = TestApi.create();
-const create = fixtures(api.db);
+const suite = TestSuite.create();
+const create = fixtures(suite.db);
 
 describe('tenant resolution', () => {
-  it('resolves the tenant from the Host header', async () => {
+  it('resolves the tenant from the Host header', async (t) => {
+    const api = suite.api(t);
+
     const tenant = await create.tenant({ domain: 'coolfest.localhost' });
 
     const res = await api.get<BootstrapResponse>('/bootstrap', { host: 'coolfest.localhost' });
@@ -18,7 +20,9 @@ describe('tenant resolution', () => {
     assert.equal(res.body.tenant.id, tenant.id);
   });
 
-  it('ignores the port in the Host header', async () => {
+  it('ignores the port in the Host header', async (t) => {
+    const api = suite.api(t);
+
     await create.tenant({ domain: 'coolfest.localhost' });
 
     const res = await api.get<BootstrapResponse>('/bootstrap', { host: 'coolfest.localhost:8000' });
@@ -27,7 +31,9 @@ describe('tenant resolution', () => {
     assert.equal(res.body.tenant.domain, 'coolfest.localhost');
   });
 
-  it('resolves the tenant from the x-tenant-domain header', async () => {
+  it('resolves the tenant from the x-tenant-domain header', async (t) => {
+    const api = suite.api(t);
+
     const tenant = await create.tenant({ domain: 'coolfest.localhost' });
 
     const res = await api.get<BootstrapResponse>('/bootstrap', {
@@ -39,7 +45,9 @@ describe('tenant resolution', () => {
     assert.equal(res.body.tenant.id, tenant.id);
   });
 
-  it('resolves the tenant from the __tenant query param', async () => {
+  it('resolves the tenant from the __tenant query param', async (t) => {
+    const api = suite.api(t);
+
     const tenant = await create.tenant({ domain: 'coolfest.localhost' });
 
     const res = await api.get<BootstrapResponse>('/bootstrap?__tenant=coolfest.localhost', {
@@ -50,7 +58,9 @@ describe('tenant resolution', () => {
     assert.equal(res.body.tenant.id, tenant.id);
   });
 
-  it('serves the tenant matching the host when several exist', async () => {
+  it('serves the tenant matching the host when several exist', async (t) => {
+    const api = suite.api(t);
+
     await create.tenant({ domain: 'one.localhost', name: 'One' });
     await create.tenant({ domain: 'two.localhost', name: 'Two' });
 
@@ -59,7 +69,9 @@ describe('tenant resolution', () => {
     assert.equal(res.body.tenant.name, 'Two');
   });
 
-  it('responds 404 for an unknown host', async () => {
+  it('responds 404 for an unknown host', async (t) => {
+    const api = suite.api(t);
+
     await create.tenant({ domain: 'coolfest.localhost' });
 
     const res = await api.get('/bootstrap', { host: 'nope.localhost' });
@@ -70,7 +82,9 @@ describe('tenant resolution', () => {
 });
 
 describe('manifest', () => {
-  it('serves a manifest built from the tenant theme', async () => {
+  it('serves a manifest built from the tenant theme', async (t) => {
+    const api = suite.api(t);
+
     await create.tenant({
       domain: 'coolfest.localhost',
       name: 'Cool Fest',
@@ -95,7 +109,9 @@ describe('manifest', () => {
     assert.deepEqual(res.body.icons, [{ src: '/files/abc', sizes: 'any', purpose: 'any' }]);
   });
 
-  it('falls back to the tenant name when the pwa name is unset', async () => {
+  it('falls back to the tenant name when the pwa name is unset', async (t) => {
+    const api = suite.api(t);
+
     await create.tenant({ domain: 'coolfest.localhost', name: 'Cool Fest' });
 
     const res = await api.get<Record<string, unknown>>('/manifest.webmanifest', { host: 'coolfest.localhost' });

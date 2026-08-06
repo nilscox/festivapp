@@ -76,17 +76,22 @@ packages/     contracts (type-only) · config (tsconfig/oxlint/oxfmt) · utils (
 ## Tests (`apps/api/test`)
 
 - **`node --test` + `node:assert/strict` only**, no framework, in `test/<subject>.test.ts`, with rows
-  built by `fixtures(api.db)` rather than raw inserts — `const create = fixtures(api.db)`, then
+  built by `fixtures(suite.db)` rather than raw inserts — `const create = fixtures(suite.db)`, then
   `create.tenant()`, `create.session(tenant, stage, { … })`. `create.theme()` is the one synchronous
   member; don't `await` it.
-- Tests hit a real database over real HTTP. Call **`TestApi.create()` once per file at the top
-  level** — it registers the `before`/`after`/`beforeEach`/`afterEach` hooks, and inside a `describe`
-  they would close the server for the other suites.
-- **Configure through `TestApi.create({ … })`, never the environment**: it takes a partial `Config`,
-  builds its own dependency graph from it and exposes `api.config/logger/db/storage/push` for
-  assertions (`api.push.sendToTenant(...)`, `api.db.query.…`). `beforeEach` truncates every table.
-- **The stub logger prints itself on a failing test** — `afterEach` dumps the recorded lines as
-  `diagnostic` output, so a failure comes with the server-side log that explains it.
+- Tests hit a real database over real HTTP. **`TestSuite.create()` once per file at the top level**
+  owns the two expensive things — the database and the listening socket — and registers the hooks;
+  inside a `describe` they would close the server for the other suites.
+- **Every test builds its own app: `const api = suite.api(t)`.** Building an app is pure memory
+  work, so config and dependencies are per-test, and cookies and log lines die with the test rather
+  than being cleared. The suite's `beforeEach` truncates every table, which stays shared.
+- **Override dependencies, don't mock modules** — `suite.api(t, { push: stubPush() })` (also
+  `config`, `storage`) is what the injected dependencies bought. Reach for `t.mock` only to test a
+  service's own internals, as `push.test.ts` does for `webpush` inside `sendToTenant`.
+- **Shared per-test setup is an explicit `setup(t)`**, returning `{ api, … }` for the test to
+  destructure, never a `beforeEach` writing module-level `let`s.
+- **The stub logger prints itself on a failing test** — `suite.api(t)` registers a `t.after` that
+  dumps the recorded lines as `diagnostic` output, so a failure comes with the log that explains it.
 - **A migrated database is built once per run and copied per file** (`test/helpers/template.ts`,
   wired through `--test-global-setup`): a pglite tarball replayed with `loadDataDir`, or a Postgres
   `create database … template …`. Never call `applyMigrations` from a test — copying costs ~0.3s

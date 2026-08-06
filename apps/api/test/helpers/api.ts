@@ -9,9 +9,10 @@ import {
   type RequestOptions as HttpRequestOptions,
   type IncomingHttpHeaders,
   type IncomingMessage,
+  type RequestListener,
 } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { after, afterEach, before, beforeEach, type SuiteContext, type TestContext } from 'node:test';
+import { after, before, beforeEach, type TestContext } from 'node:test';
 
 import { createApp } from '../../src/app.ts';
 import { type Config } from '../../src/config.ts';
@@ -23,7 +24,11 @@ import { testConfig } from './config.ts';
 import { StubLogger } from './logger.ts';
 import { createFileClient, dropFileDatabase, prepareFileDatabase } from './template.ts';
 
-type HookContext = TestContext | SuiteContext;
+export type TestDependencies = {
+  config?: Partial<Config>;
+  storage?: Storage;
+  push?: Push;
+};
 
 type RequestOptions = {
   host?: string;
@@ -36,54 +41,58 @@ export type ApiResponse<T> = {
   body: T;
 };
 
-export class TestApi {
-  public readonly config: Config;
-  public readonly logger: StubLogger;
+export class TestSuite {
   public readonly db: Database;
-  public readonly storage: Storage;
-  public readonly push: Push;
 
   private server: Server;
-  private cookies = new Map<string, string>();
+  private handler?: RequestListener;
   private port = 0;
 
-  static create(config: Partial<Config> = {}): TestApi {
-    const api = new TestApi(config);
+  static create(): TestSuite {
+    const suite = new TestSuite();
 
-    before(() => api.start());
-    after(() => api.stop());
+    before(() => suite.start());
+    after(() => suite.stop());
 
-    beforeEach(() => api.reset());
-    afterEach((t: HookContext) => {
-      if ('passed' in t && !t.passed) {
-        api.logger.dump((message) => t.diagnostic(message));
+    beforeEach(() => suite.truncate());
+
+    return suite;
+  }
+
+  private constructor() {
+    const config = testConfig();
+
+    if (config.databaseUrl !== undefined) {
+      assert(config.databaseUrl.includes('localhost'), new Error('TEST_DATABASE_URL must include "localhost"'));
+    }
+
+    this.db = createDatabase({
+      config,
+      logger: new StubLogger(config.logLevel),
+      client: createFileClient(),
+    });
+
+    this.server = createServer((req, res) => defined(this.handler)(req, res));
+  }
+
+  api(t: TestContext, dependencies: TestDependencies = {}): TestApi {
+    const config = testConfig(dependencies.config);
+    const logger = new StubLogger(config.logLevel);
+    const storage = dependencies.storage ?? createStorage({ config });
+    const push = dependencies.push ?? createPush({ config, logger, db: this.db });
+
+    this.handler = createApp({ config, logger, db: this.db, storage, push });
+
+    t.after(() => {
+      if (!t.passed) {
+        logger.dump((message) => t.diagnostic(message));
       }
     });
 
-    return api;
+    return new TestApi({ config, logger, storage, push, port: this.port });
   }
 
-  private constructor(config: Partial<Config> = {}) {
-    this.config = testConfig(config);
-
-    if (this.config.databaseUrl !== undefined) {
-      assert(this.config.databaseUrl.includes('localhost'), new Error('TEST_DATABASE_URL must include "localhost"'));
-    }
-
-    const logger = new StubLogger(this.config.logLevel);
-    const db = createDatabase({ config: this.config, logger, client: createFileClient() });
-    const storage = createStorage({ config: this.config });
-    const push = createPush({ config: this.config, logger, db });
-
-    this.logger = logger;
-    this.db = db;
-    this.storage = storage;
-    this.push = push;
-
-    this.server = createServer(createApp({ config: this.config, logger, db, storage, push }));
-  }
-
-  async start(): Promise<void> {
+  private async start(): Promise<void> {
     await prepareFileDatabase();
 
     await new Promise<void>((resolve) => this.server.listen(0, '127.0.0.1', resolve));
@@ -94,25 +103,50 @@ export class TestApi {
     this.port = address.port;
   }
 
-  async stop(): Promise<void> {
-    const server = defined(this.server);
-
+  private async stop(): Promise<void> {
     await new Promise<void>((resolve, reject) => {
-      server.close((err) => (err ? reject(err) : resolve()));
+      this.server.close((err) => (err ? reject(err) : resolve()));
     });
 
     await closeDatabase(this.db);
     await dropFileDatabase();
   }
 
-  async reset() {
+  private async truncate(): Promise<void> {
     const tables = Object.values(schema).filter((value) => is(value, PgTable));
     const names = tables.map((table) => sql.identifier(getTableName(table)));
 
     await this.db.execute(sql`truncate table ${sql.join(names, sql`, `)} cascade`);
+  }
+}
 
-    this.cookies.clear();
-    this.logger.clear();
+export class TestApi {
+  public readonly config: Config;
+  public readonly logger: StubLogger;
+  public readonly storage: Storage;
+  public readonly push: Push;
+
+  private port: number;
+  private cookies = new Map<string, string>();
+
+  constructor({
+    config,
+    logger,
+    storage,
+    push,
+    port,
+  }: {
+    config: Config;
+    logger: StubLogger;
+    storage: Storage;
+    push: Push;
+    port: number;
+  }) {
+    this.config = config;
+    this.logger = logger;
+    this.storage = storage;
+    this.push = push;
+    this.port = port;
   }
 
   get<T>(path: string, options?: RequestOptions) {

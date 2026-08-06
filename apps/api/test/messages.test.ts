@@ -2,29 +2,29 @@ import type { Message as MessageDto } from '@festivapp/contracts';
 import { get } from '@festivapp/utils';
 import { sub } from 'date-fns';
 import assert from 'node:assert/strict';
-import { beforeEach, describe, it } from 'node:test';
+import { describe, it, type TestContext } from 'node:test';
 
-import { TestApi } from './helpers/api.ts';
+import { TestSuite } from './helpers/api.ts';
 import { fixtures } from './helpers/fixtures.ts';
 
-import type { Tenant } from '../src/db/schema.ts';
+const suite = TestSuite.create();
+const create = fixtures(suite.db);
 
-const api = TestApi.create();
-const create = fixtures(api.db);
-
-let tenant: Tenant;
-let other: Tenant;
-
-beforeEach(async () => {
-  tenant = await create.tenant();
-  other = await create.tenant();
-
+async function setup(t: TestContext) {
+  const api = suite.api(t);
+  const tenant = await create.tenant();
+  const other = await create.tenant();
   const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant, other] });
+
   await api.login(organizer.email, 'hunter2');
-});
+
+  return { api, tenant, other };
+}
 
 describe('messages', () => {
-  it('publishes a message', async () => {
+  it('publishes a message', async (t) => {
+    const { api, tenant } = await setup(t);
+
     const res = await api.post<MessageDto>(`/admin/tenants/${tenant.id}/messages`, {
       title: '  Gates are open  ',
       body: '  Come on in.  ',
@@ -37,7 +37,9 @@ describe('messages', () => {
     });
   });
 
-  it('publishes a message asking for a notification', async () => {
+  it('publishes a message asking for a notification', async (t) => {
+    const { api, tenant } = await setup(t);
+
     const res = await api.post<MessageDto>(`/admin/tenants/${tenant.id}/messages`, {
       title: 'Gates are open',
       body: 'Come on in.',
@@ -47,7 +49,9 @@ describe('messages', () => {
     assert.equal(res.status, 201);
   });
 
-  it('lists the festival messages, newest first', async () => {
+  it('lists the festival messages, newest first', async (t) => {
+    const { api, tenant, other } = await setup(t);
+
     const older = await create.message(tenant, { title: 'Older', createdAt: sub(Date.now(), { hours: 1 }) });
     const newer = await create.message(tenant, { title: 'Newer' });
     await create.message(other, { title: 'Elsewhere' });
@@ -58,7 +62,9 @@ describe('messages', () => {
     assert.deepEqual(res.body.map(get('id')), [newer.id, older.id]);
   });
 
-  it('updates a message', async () => {
+  it('updates a message', async (t) => {
+    const { api, tenant } = await setup(t);
+
     const message = await create.message(tenant, { title: 'Gates are open', body: 'Come on in.' });
 
     const res = await api.patch<MessageDto>(`/admin/tenants/${tenant.id}/messages/${message.id}`, {
@@ -70,7 +76,9 @@ describe('messages', () => {
     assert.equal(res.body.body, 'Come on in.');
   });
 
-  it('deletes a message', async () => {
+  it('deletes a message', async (t) => {
+    const { api, tenant } = await setup(t);
+
     const message = await create.message(tenant);
 
     const res = await api.delete(`/admin/tenants/${tenant.id}/messages/${message.id}`);
@@ -80,7 +88,9 @@ describe('messages', () => {
     assert.deepEqual(list.body, []);
   });
 
-  it('rejects an invalid body with a validation tree', async () => {
+  it('rejects an invalid body with a validation tree', async (t) => {
+    const { api, tenant } = await setup(t);
+
     const res = await api.post<{ properties: Record<string, unknown> }>(`/admin/tenants/${tenant.id}/messages`, {
       title: '',
       body: '',
@@ -91,7 +101,9 @@ describe('messages', () => {
     assert.ok(res.body.properties?.body);
   });
 
-  it('refuses to notify from an update', async () => {
+  it('refuses to notify from an update', async (t) => {
+    const { api, tenant } = await setup(t);
+
     const message = await create.message(tenant);
 
     const res = await api.patch(`/admin/tenants/${tenant.id}/messages/${message.id}`, { notify: true });
@@ -101,7 +113,9 @@ describe('messages', () => {
 });
 
 describe('messages of another festival', () => {
-  it('are not reachable for update', async () => {
+  it('are not reachable for update', async (t) => {
+    const { api, tenant, other } = await setup(t);
+
     const message = await create.message(other, { title: 'Elsewhere' });
 
     const res = await api.patch(`/admin/tenants/${tenant.id}/messages/${message.id}`, { title: 'Hijacked' });
@@ -110,7 +124,9 @@ describe('messages of another festival', () => {
     assert.deepEqual(res.body, { error: 'not_found' });
   });
 
-  it('are not reachable for deletion', async () => {
+  it('are not reachable for deletion', async (t) => {
+    const { api, tenant, other } = await setup(t);
+
     const message = await create.message(other, { title: 'Elsewhere' });
 
     const res = await api.delete(`/admin/tenants/${tenant.id}/messages/${message.id}`);

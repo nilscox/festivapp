@@ -4,14 +4,16 @@ import { sub } from 'date-fns';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { TestApi } from './helpers/api.ts';
+import { TestSuite } from './helpers/api.ts';
 import { fixtures } from './helpers/fixtures.ts';
 
-const api = TestApi.create();
-const create = fixtures(api.db);
+const suite = TestSuite.create();
+const create = fixtures(suite.db);
 
 describe('GET /bootstrap', () => {
-  it('returns the whole festival, and nothing but the contract fields', async () => {
+  it('returns the whole festival, and nothing but the contract fields', async (t) => {
+    const api = suite.api(t);
+
     const tenant = await create.tenant({ domain: 'coolfest.localhost', name: 'Cool Fest', mapUrl: '/files/map' });
     const stage = await create.location(tenant, { name: 'Main stage', description: 'Outdoors', position: 1 });
     const artist = await create.participant(tenant, { name: 'Artist', origin: 'FR', styles: ['psytrance'] });
@@ -82,7 +84,9 @@ describe('GET /bootstrap', () => {
     });
   });
 
-  it('excludes the data of other tenants', async () => {
+  it('excludes the data of other tenants', async (t) => {
+    const api = suite.api(t);
+
     const tenant = await create.tenant({ domain: 'coolfest.localhost' });
     const other = await create.tenant({ domain: 'other.localhost' });
 
@@ -101,7 +105,9 @@ describe('GET /bootstrap', () => {
     assert.deepEqual(res.body.messages, []);
   });
 
-  it('sorts messages newest first', async () => {
+  it('sorts messages newest first', async (t) => {
+    const api = suite.api(t);
+
     const tenant = await create.tenant({ domain: 'coolfest.localhost' });
 
     const older = await create.message(tenant, { createdAt: sub(Date.now(), { hours: 1 }) });
@@ -112,7 +118,9 @@ describe('GET /bootstrap', () => {
     assert.deepEqual(res.body.messages.map(get('id')), [newer.id, older.id]);
   });
 
-  it('sorts locations by position, participants by name and sessions by start time', async () => {
+  it('sorts locations by position, participants by name and sessions by start time', async (t) => {
+    const api = suite.api(t);
+
     const tenant = await create.tenant({ domain: 'coolfest.localhost' });
 
     const second = await create.location(tenant, { name: 'Second', position: 2 });
@@ -131,7 +139,9 @@ describe('GET /bootstrap', () => {
     assert.deepEqual(res.body.sessions.map(get('id')), [early.id, late.id]);
   });
 
-  it('lists the participants of a session in their line-up order', async () => {
+  it('lists the participants of a session in their line-up order', async (t) => {
+    const api = suite.api(t);
+
     const tenant = await create.tenant({ domain: 'coolfest.localhost' });
     const stage = await create.location(tenant);
 

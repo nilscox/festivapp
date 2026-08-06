@@ -1,9 +1,9 @@
 import type { UploadedFile } from '@festivapp/contracts';
 import { get } from '@festivapp/utils';
 import assert from 'node:assert/strict';
-import { beforeEach, describe, it } from 'node:test';
+import { describe, it, type TestContext } from 'node:test';
 
-import { TestApi } from './helpers/api.ts';
+import { TestSuite } from './helpers/api.ts';
 import { fixtures } from './helpers/fixtures.ts';
 
 import type { Tenant } from '../src/db/schema.ts';
@@ -13,28 +13,30 @@ const png = Buffer.from(
   'base64',
 );
 
-const api = TestApi.create();
-const create = fixtures(api.db);
+const suite = TestSuite.create();
+const create = fixtures(suite.db);
 
-let tenant: Tenant;
-let other: Tenant;
-
-beforeEach(async () => {
-  tenant = await create.tenant();
-  other = await create.tenant();
-
+async function setup(t: TestContext) {
+  const api = suite.api(t);
+  const tenant = await create.tenant();
+  const other = await create.tenant();
   const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant, other] });
-  await api.login(organizer.email, 'hunter2');
-});
 
-function upload(target: Tenant, body: Buffer, contentType = 'image/png', query = '') {
-  return api.post<UploadedFile>(`/admin/tenants/${target.id}/files${query}`, body, {
-    headers: { 'content-type': contentType },
-  });
+  await api.login(organizer.email, 'hunter2');
+
+  function upload(target: Tenant, body: Buffer, contentType = 'image/png', query = '') {
+    return api.post<UploadedFile>(`/admin/tenants/${target.id}/files${query}`, body, {
+      headers: { 'content-type': contentType },
+    });
+  }
+
+  return { api, tenant, other, upload };
 }
 
 describe('file upload', () => {
-  it('stores an image and serves it back byte for byte', async () => {
+  it('stores an image and serves it back byte for byte', async (t) => {
+    const { api, tenant, upload } = await setup(t);
+
     const res = await upload(tenant, png, 'image/png', '?name=logo.png');
 
     assert.equal(res.status, 201);
@@ -55,7 +57,9 @@ describe('file upload', () => {
     assert.equal(download.headers['x-content-type-options'], 'nosniff');
   });
 
-  it('lists the festival files, most recent first', async () => {
+  it('lists the festival files, most recent first', async (t) => {
+    const { api, tenant, other, upload } = await setup(t);
+
     const first = await upload(tenant, png, 'image/png', '?name=first.png');
     const second = await upload(tenant, png, 'image/png', '?name=second.png');
     await upload(other, png);
@@ -65,28 +69,36 @@ describe('file upload', () => {
     assert.deepEqual(res.body.map(get('id')), [second.body.id, first.body.id]);
   });
 
-  it('rejects an unsupported content type', async () => {
+  it('rejects an unsupported content type', async (t) => {
+    const { tenant, upload } = await setup(t);
+
     const res = await upload(tenant, Buffer.from('hello'), 'text/plain');
 
     assert.equal(res.status, 415);
     assert.deepEqual(res.body, { error: 'unsupported_media_type' });
   });
 
-  it('rejects an empty file', async () => {
+  it('rejects an empty file', async (t) => {
+    const { tenant, upload } = await setup(t);
+
     const res = await upload(tenant, Buffer.alloc(0));
 
     assert.equal(res.status, 400);
     assert.deepEqual(res.body, { error: 'empty_file' });
   });
 
-  it('rejects a file above the size limit', async () => {
+  it('rejects a file above the size limit', async (t) => {
+    const { tenant, upload } = await setup(t);
+
     const res = await upload(tenant, Buffer.alloc(200 * 1024, 1));
 
     assert.equal(res.status, 413);
     assert.deepEqual(res.body, { error: 'file_too_large' });
   });
 
-  it('responds 404 for an unknown file', async () => {
+  it('responds 404 for an unknown file', async (t) => {
+    const { api } = await setup(t);
+
     const res = await api.get('/files/nope');
 
     assert.equal(res.status, 404);
@@ -94,7 +106,9 @@ describe('file upload', () => {
 });
 
 describe('file deletion', () => {
-  it('deletes an unused file', async () => {
+  it('deletes an unused file', async (t) => {
+    const { api, tenant, upload } = await setup(t);
+
     const { body: file } = await upload(tenant, png);
 
     const res = await api.delete(`/admin/tenants/${tenant.id}/files/${file.id}`);
@@ -104,7 +118,9 @@ describe('file deletion', () => {
     assert.equal(download.status, 404);
   });
 
-  it('refuses to delete a file used as a participant image', async () => {
+  it('refuses to delete a file used as a participant image', async (t) => {
+    const { api, tenant, upload } = await setup(t);
+
     const { body: file } = await upload(tenant, png);
     await create.participant(tenant, { imageUrl: file.url });
 
@@ -114,7 +130,9 @@ describe('file deletion', () => {
     assert.deepEqual(res.body, { error: 'file_in_use' });
   });
 
-  it('refuses to delete a file used by the theme', async () => {
+  it('refuses to delete a file used by the theme', async (t) => {
+    const { api, tenant, upload } = await setup(t);
+
     const { body: file } = await upload(tenant, png);
 
     await api.put(
@@ -128,7 +146,9 @@ describe('file deletion', () => {
     assert.deepEqual(res.body, { error: 'file_in_use' });
   });
 
-  it('does not reach a file of another festival', async () => {
+  it('does not reach a file of another festival', async (t) => {
+    const { api, tenant, other, upload } = await setup(t);
+
     const { body: file } = await upload(other, png);
 
     const res = await api.delete(`/admin/tenants/${tenant.id}/files/${file.id}`);

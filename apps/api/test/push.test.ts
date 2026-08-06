@@ -2,18 +2,20 @@ import assert from 'node:assert/strict';
 import { describe, it, type TestContext } from 'node:test';
 import webpush, { WebPushError } from 'web-push';
 
-import { TestApi } from './helpers/api.ts';
+import { TestSuite } from './helpers/api.ts';
 import { fixtures } from './helpers/fixtures.ts';
+import { stubPush } from './helpers/push.ts';
 
 const vapid = webpush.generateVAPIDKeys();
 
-const api = TestApi.create({
+const withVapid = {
   vapidPublicKey: vapid.publicKey,
   vapidPrivateKey: vapid.privateKey,
   vapidSubject: 'mailto:test',
-});
+};
 
-const create = fixtures(api.db);
+const suite = TestSuite.create();
+const create = fixtures(suite.db);
 
 const subscription = {
   endpoint: 'https://push.test.local/device',
@@ -23,21 +25,23 @@ const subscription = {
 const payload = { title: 'Gates open', body: 'The site is open.' };
 
 describe('POST /push/subscriptions', () => {
-  it('registers a device', async () => {
+  it('registers a device', async (t) => {
+    const api = suite.api(t, { config: withVapid });
     const tenant = await create.tenant({ domain: 'coolfest.localhost' });
 
     const res = await api.post('/push/subscriptions', subscription, { host: tenant.domain });
 
     assert.equal(res.status, 204);
 
-    const rows = await api.db.query.pushSubscriptions.findMany();
+    const rows = await suite.db.query.pushSubscriptions.findMany();
 
     assert.equal(rows.length, 1);
     assert.equal(rows[0]?.tenantId, tenant.id);
     assert.equal(rows[0]?.endpoint, subscription.endpoint);
   });
 
-  it.skip('refuses to register a device when the deployment has no VAPID keys', async () => {
+  it('refuses to register a device when the deployment has no VAPID keys', async (t) => {
+    const api = suite.api(t);
     const tenant = await create.tenant({ domain: 'coolfest.localhost' });
 
     const res = await api.post('/push/subscriptions', subscription, { host: tenant.domain });
@@ -46,7 +50,9 @@ describe('POST /push/subscriptions', () => {
     assert.deepEqual(res.body, { error: 'push_disabled' });
   });
 
-  it('resolves the tenant from the host', async () => {
+  it('resolves the tenant from the host', async (t) => {
+    const api = suite.api(t, { config: withVapid });
+
     const res = await api.post('/push/subscriptions', subscription, { host: 'nowhere.localhost' });
 
     assert.equal(res.status, 404);
@@ -54,17 +60,19 @@ describe('POST /push/subscriptions', () => {
 });
 
 describe('DELETE /push/subscriptions', () => {
-  it('unregisters a device', async () => {
+  it('unregisters a device', async (t) => {
+    const api = suite.api(t, { config: withVapid });
     const tenant = await create.tenant({ domain: 'coolfest.localhost' });
     const registered = await create.pushSubscription(tenant);
 
     const res = await api.delete('/push/subscriptions', { endpoint: registered.endpoint }, { host: tenant.domain });
 
     assert.equal(res.status, 204);
-    assert.deepEqual(await api.db.query.pushSubscriptions.findMany(), []);
+    assert.deepEqual(await suite.db.query.pushSubscriptions.findMany(), []);
   });
 
-  it('rejects an invalid body', async () => {
+  it('rejects an invalid body', async (t) => {
+    const api = suite.api(t, { config: withVapid });
     const tenant = await create.tenant({ domain: 'coolfest.localhost' });
 
     const res = await api.delete('/push/subscriptions', { endpoint: 'not-a-url' }, { host: tenant.domain });
@@ -75,6 +83,7 @@ describe('DELETE /push/subscriptions', () => {
 
 describe('sendToTenant', () => {
   it('notifies every device of the festival', async (t) => {
+    const api = suite.api(t, { config: withVapid });
     const tenant = await create.tenant();
     const first = await create.pushSubscription(tenant);
     const second = await create.pushSubscription(tenant);
@@ -87,6 +96,7 @@ describe('sendToTenant', () => {
   });
 
   it('leaves the devices of another festival alone', async (t) => {
+    const api = suite.api(t, { config: withVapid });
     const tenant = await create.tenant();
     const other = await create.tenant();
     const registered = await create.pushSubscription(tenant);
@@ -101,6 +111,7 @@ describe('sendToTenant', () => {
   });
 
   it('sends to a single device when given a subscription id', async (t) => {
+    const api = suite.api(t, { config: withVapid });
     const tenant = await create.tenant();
     const registered = await create.pushSubscription(tenant);
 
@@ -115,6 +126,7 @@ describe('sendToTenant', () => {
 
   for (const statusCode of [404, 410]) {
     it(`prunes a device whose push service answers ${statusCode}`, async (t) => {
+      const api = suite.api(t, { config: withVapid });
       const tenant = await create.tenant();
       const gone = await create.pushSubscription(tenant);
       const alive = await create.pushSubscription(tenant);
@@ -127,7 +139,7 @@ describe('sendToTenant', () => {
 
       await api.push.sendToTenant(tenant.id, payload);
 
-      const rows = await api.db.query.pushSubscriptions.findMany();
+      const rows = await suite.db.query.pushSubscriptions.findMany();
 
       assert.deepEqual(
         rows.map((row) => row.endpoint),
@@ -137,6 +149,7 @@ describe('sendToTenant', () => {
   }
 
   it('keeps a device that failed for any other reason', async (t) => {
+    const api = suite.api(t, { config: withVapid });
     const tenant = await create.tenant();
     const registered = await create.pushSubscription(tenant);
 
@@ -146,7 +159,7 @@ describe('sendToTenant', () => {
 
     await api.push.sendToTenant(tenant.id, payload);
 
-    const rows = await api.db.query.pushSubscriptions.findMany();
+    const rows = await suite.db.query.pushSubscriptions.findMany();
 
     assert.deepEqual(
       rows.map((row) => row.endpoint),
@@ -157,12 +170,10 @@ describe('sendToTenant', () => {
 
 describe('publishing a message', () => {
   it('notifies the festival when asked to', async (t) => {
+    const push = stubPush();
+    const api = suite.api(t, { push });
     const tenant = await create.tenant();
-
-    await create.pushSubscription(tenant);
-
     const organizer = await create.organizer({ tenants: [tenant] });
-    const send = stubSend(t);
 
     await api.login(organizer.email, organizer.password);
 
@@ -175,18 +186,16 @@ describe('publishing a message', () => {
     assert.equal(res.status, 201);
 
     /** The route answers before sending, so the notification lands after the response. */
-    await waitFor(() => send.mock.callCount() === 1);
+    await waitFor(() => push.sent.length === 1);
 
-    assert.equal(send.mock.calls[0]?.arguments[1], JSON.stringify(payload));
+    assert.deepEqual(push.sent, [{ tenantId: tenant.id, payload, subscriptionId: undefined }]);
   });
 
   it('stays quiet when not asked to', async (t) => {
+    const push = stubPush();
+    const api = suite.api(t, { push });
     const tenant = await create.tenant();
-
-    await create.pushSubscription(tenant);
-
     const organizer = await create.organizer({ tenants: [tenant] });
-    const send = stubSend(t);
 
     await api.login(organizer.email, organizer.password);
 
@@ -196,7 +205,7 @@ describe('publishing a message', () => {
     });
 
     assert.equal(res.status, 201);
-    assert.equal(send.mock.callCount(), 0);
+    assert.deepEqual(push.sent, []);
   });
 });
 
