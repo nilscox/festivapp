@@ -92,14 +92,13 @@ packages/     contracts (type-only) · config (tsconfig/oxlint/oxfmt) · utils (
   destructure, never a `beforeEach` writing module-level `let`s.
 - **The stub logger prints itself on a failing test** — `suite.api(t)` registers a `t.after` that
   dumps the recorded lines as `diagnostic` output, so a failure comes with the log that explains it.
-- **A migrated database is built once per run and copied per file** (`test/helpers/template.ts`,
-  wired through `--test-global-setup`): a pglite tarball replayed with `loadDataDir`, or a Postgres
-  `create database … template …`. Never call `applyMigrations` from a test — copying costs ~0.3s
-  against ~2.6s of drizzle-kit, which then never loads in a test process. The template is cached
-  under `node_modules/.cache/test-db` and keyed by a hash of `db/schema.ts`.
-- **`TEST_DATABASE_URL`, never `DATABASE_URL`, switches the tests to a real Postgres**, so a normal
-  `.env` cannot silently change what the suite exercises. Each file then gets its own database named
-  after it, dropped afterwards; stale ones are swept at global setup.
+- **The suite always runs on wasm Postgres**, never a real one, so no environment variable changes
+  what it exercises. A migrated pglite database is dumped once per run (`test/helpers/template.ts`,
+  wired through `--test-global-setup`, which is what keeps the files from racing to build it) and
+  each file boots from a copy with `loadDataDir`. Never call `applyMigrations` from a test —
+  replaying the dump costs ~0.3s against ~2.6s of drizzle-kit, which then never loads in a test
+  process. The dump is cached under `node_modules/.cache/test-db`, keyed by a hash of
+  `db/schema.ts`, so a schema edit invalidates it.
 - **Critical paths only** — tenant resolution and isolation, auth and membership, validation
   rejections, and each read's body. `deepEqual` a full payload at least once per endpoint, and give
   every resource route its tenant-scoping test (another festival's row answers 404).

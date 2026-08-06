@@ -88,10 +88,10 @@ describe('participants', () => {
   it('rejects an invalid body with a validation tree', async (t) => {
     const { api, tenant } = await setup(t);
 
-    const res = await api.post<{ properties: Record<string, unknown> }>(
-      `/admin/tenants/${tenant.id}/participants`,
-      { name: '', socialLinks: ['not-a-url'] },
-    );
+    const res = await api.post<{ properties: Record<string, unknown> }>(`/admin/tenants/${tenant.id}/participants`, {
+      name: '',
+      socialLinks: ['not-a-url'],
+    });
 
     assert.equal(res.status, 400);
     assert.ok(res.body.properties?.name);

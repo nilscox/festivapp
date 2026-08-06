@@ -6,7 +6,7 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     host: '',
     port: NaN,
     logLevel: 'info',
-    databaseUrl: process.env.TEST_DATABASE_URL,
+    databaseUrl: undefined,
     storageDir: undefined,
     uploadMaxBytes: undefined,
     vapidPublicKey: undefined,

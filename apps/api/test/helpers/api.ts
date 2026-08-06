@@ -22,7 +22,7 @@ import { createPush, type Push } from '../../src/push.ts';
 import { createStorage, type Storage } from '../../src/storage.ts';
 import { testConfig } from './config.ts';
 import { StubLogger } from './logger.ts';
-import { createFileClient, dropFileDatabase, prepareFileDatabase } from './template.ts';
+import { createFileClient } from './template.ts';
 
 export type TestDependencies = {
   config?: Partial<Config>;
@@ -62,10 +62,6 @@ export class TestSuite {
   private constructor() {
     const config = testConfig();
 
-    if (config.databaseUrl !== undefined) {
-      assert(config.databaseUrl.includes('localhost'), new Error('TEST_DATABASE_URL must include "localhost"'));
-    }
-
     this.db = createDatabase({
       config,
       logger: new StubLogger(config.logLevel),
@@ -93,8 +89,6 @@ export class TestSuite {
   }
 
   private async start(): Promise<void> {
-    await prepareFileDatabase();
-
     await new Promise<void>((resolve) => this.server.listen(0, '127.0.0.1', resolve));
 
     const address = this.server.address() as AddressInfo | null;
@@ -109,7 +103,6 @@ export class TestSuite {
     });
 
     await closeDatabase(this.db);
-    await dropFileDatabase();
   }
 
   private async truncate(): Promise<void> {
