@@ -12,15 +12,16 @@ import {
 } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { after, afterEach, before, beforeEach, type SuiteContext, type TestContext } from 'node:test';
-import { inspect } from 'node:util';
 
 import { createApp } from '../../src/app.ts';
 import { type Config } from '../../src/config.ts';
-import { applyMigrations, closeDatabase, createDatabase, type Database } from '../../src/db/client.ts';
+import { closeDatabase, createDatabase, type Database } from '../../src/db/client.ts';
 import * as schema from '../../src/db/schema.ts';
-import { isLogLevel, type LogContext, type Logger, type LogLevel } from '../../src/logger.ts';
 import { createPush, type Push } from '../../src/push.ts';
 import { createStorage, type Storage } from '../../src/storage.ts';
+import { testConfig } from './config.ts';
+import { StubLogger } from './logger.ts';
+import { createFileClient, dropFileDatabase, prepareFileDatabase } from './template.ts';
 
 type HookContext = TestContext | SuiteContext;
 
@@ -36,19 +37,6 @@ export type ApiResponse<T> = {
 };
 
 export class TestApi {
-  static defaultConfig: Config = {
-    env: 'test',
-    host: '',
-    port: NaN,
-    logLevel: 'info',
-    databaseUrl: process.env.DATABASE_URL,
-    storageDir: undefined,
-    uploadMaxBytes: undefined,
-    vapidPublicKey: undefined,
-    vapidPrivateKey: undefined,
-    vapidSubject: '',
-  };
-
   public readonly config: Config;
   public readonly logger: StubLogger;
   public readonly db: Database;
@@ -66,20 +54,24 @@ export class TestApi {
     after(() => api.stop());
 
     beforeEach(() => api.reset());
-    afterEach((t) => api.logger.dump(t));
+    afterEach((t: HookContext) => {
+      if ('passed' in t && !t.passed) {
+        api.logger.dump((message) => t.diagnostic(message));
+      }
+    });
 
     return api;
   }
 
   private constructor(config: Partial<Config> = {}) {
-    this.config = { ...TestApi.defaultConfig, ...config };
+    this.config = testConfig(config);
 
     if (this.config.databaseUrl !== undefined) {
-      assert(this.config.databaseUrl.includes('localhost'), new Error('DATABASE_URL must include "localhost"'));
+      assert(this.config.databaseUrl.includes('localhost'), new Error('TEST_DATABASE_URL must include "localhost"'));
     }
 
     const logger = new StubLogger(this.config.logLevel);
-    const db = createDatabase({ config: this.config, logger });
+    const db = createDatabase({ config: this.config, logger, client: createFileClient() });
     const storage = createStorage({ config: this.config });
     const push = createPush({ config: this.config, logger, db });
 
@@ -92,7 +84,7 @@ export class TestApi {
   }
 
   async start(): Promise<void> {
-    await applyMigrations(this.db);
+    await prepareFileDatabase();
 
     await new Promise<void>((resolve) => this.server.listen(0, '127.0.0.1', resolve));
 
@@ -110,6 +102,7 @@ export class TestApi {
     });
 
     await closeDatabase(this.db);
+    await dropFileDatabase();
   }
 
   async reset() {
@@ -209,47 +202,6 @@ export class TestApi {
         this.cookies.set(name, value);
       }
     }
-  }
-}
-
-class StubLogger implements Logger {
-  public level: LogLevel;
-  public lines: Array<{ level: LogLevel; message: string; context?: LogContext }> = [];
-
-  constructor(level: string) {
-    assert(isLogLevel(level));
-
-    this.level = level;
-  }
-
-  debug = this.log('debug');
-  info = this.log('info');
-  warn = this.log('warn');
-  error = this.log('error');
-
-  clear() {
-    this.lines = [];
-  }
-
-  dump(t: HookContext) {
-    if (!('passed' in t) || t.passed || this.lines.length === 0) {
-      return;
-    }
-
-    t.diagnostic(`${this.lines.length} log lines recorded during this test:`);
-
-    for (const { level, message, context } of this.lines) {
-      const entries = Object.entries(context ?? {}).filter(([, value]) => value !== undefined);
-      const extra = entries.map(([key, value]) => ` ${key}=${inspect(value, { breakLength: Infinity })}`).join('');
-
-      t.diagnostic(`  ${level.padEnd(5)} ${message}${extra}`);
-    }
-  }
-
-  private log(level: LogLevel) {
-    return (message: string, context?: LogContext) => {
-      this.lines.push({ level, message, context });
-    };
   }
 }
 

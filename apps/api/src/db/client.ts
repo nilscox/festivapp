@@ -18,9 +18,15 @@ type TQueryResult = PgQueryResultHKT;
 type TFullSchema = Record<string, never>;
 type TRelations = typeof schema.relations;
 
-export function createDatabase({ config, logger }: { config: Config; logger: Logger }): Database {
-  const client = createDatabaseClient(config.databaseUrl);
-
+export function createDatabase({
+  config,
+  logger,
+  client = createDatabaseClient(config.databaseUrl),
+}: {
+  config: Config;
+  logger: Logger;
+  client?: DatabaseClient;
+}): Database {
   const options: DrizzleConfig<TFullSchema, TRelations> = {
     logger: toDrizzleLogger(logger),
     casing: 'snake_case',
