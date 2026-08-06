@@ -5,25 +5,29 @@ import { Router } from 'express';
 import { tenants } from '../../db/schema.ts';
 import { themeSchema } from '../../theme.ts';
 
-export const themeRouter = Router({ mergeParams: true });
+import type { Database } from '../../db/client.ts';
 
-themeRouter.get('/', (req, res) => {
-  assert(req.tenant);
-  res.json(req.tenant.theme);
-});
+export function themeRoutes({ db }: { db: Database }) {
+  const router = Router({ mergeParams: true });
 
-themeRouter.put('/', async (req, res) => {
-  const db = req.container.resolve('db');
+  router.get('/', (req, res) => {
+    assert(req.tenant);
+    res.json(req.tenant.theme);
+  });
 
-  assert(req.tenant);
+  router.put('/', async (req, res) => {
+    assert(req.tenant);
 
-  const theme = themeSchema.parse(req.body);
+    const theme = themeSchema.parse(req.body);
 
-  const [row] = await db
-    .update(tenants)
-    .set({ theme, updatedAt: new Date() })
-    .where(eq(tenants.id, req.tenant.id))
-    .returning();
+    const [row] = await db
+      .update(tenants)
+      .set({ theme, updatedAt: new Date() })
+      .where(eq(tenants.id, req.tenant.id))
+      .returning();
 
-  res.json(defined(row).theme);
-});
+    res.json(defined(row).theme);
+  });
+
+  return router;
+}

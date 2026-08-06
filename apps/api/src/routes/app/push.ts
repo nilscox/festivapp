@@ -5,49 +5,51 @@ import { z } from 'zod';
 
 import { pushSubscriptions } from '../../db/schema.ts';
 
-export const pushRouter = Router();
+import type { Database } from '../../db/client.ts';
+import type { Push } from '../../push.ts';
 
-const subscriptionSchema = z.strictObject({
-  endpoint: z.url().max(1000),
-  keys: z.strictObject({
-    p256dh: z.string().min(1).max(200),
-    auth: z.string().min(1).max(200),
-  }),
-});
+export function pushRoutes({ db, push }: { db: Database; push: Push }) {
+  const router = Router();
 
-pushRouter.post('/', async (req, res) => {
-  const db = req.container.resolve('db');
-  const push = req.container.resolve('push');
+  const subscriptionSchema = z.strictObject({
+    endpoint: z.url().max(1000),
+    keys: z.strictObject({
+      p256dh: z.string().min(1).max(200),
+      auth: z.string().min(1).max(200),
+    }),
+  });
 
-  assert(req.tenant);
+  router.post('/', async (req, res) => {
+    assert(req.tenant);
 
-  if (!push.enabled) {
-    return res.status(503).json({ error: 'push_disabled' });
-  }
+    if (!push.enabled) {
+      return res.status(503).json({ error: 'push_disabled' });
+    }
 
-  const { endpoint, keys } = subscriptionSchema.parse(req.body);
+    const { endpoint, keys } = subscriptionSchema.parse(req.body);
 
-  await db
-    .insert(pushSubscriptions)
-    .values({ tenantId: req.tenant.id, endpoint, ...keys })
-    .onConflictDoUpdate({
-      target: pushSubscriptions.endpoint,
-      set: { tenantId: req.tenant.id, ...keys },
-    });
+    await db
+      .insert(pushSubscriptions)
+      .values({ tenantId: req.tenant.id, endpoint, ...keys })
+      .onConflictDoUpdate({
+        target: pushSubscriptions.endpoint,
+        set: { tenantId: req.tenant.id, ...keys },
+      });
 
-  res.status(204).end();
-});
+    res.status(204).end();
+  });
 
-pushRouter.delete('/', async (req, res) => {
-  const db = req.container.resolve('db');
+  router.delete('/', async (req, res) => {
+    assert(req.tenant);
 
-  assert(req.tenant);
+    const { endpoint } = subscriptionSchema.pick({ endpoint: true }).parse(req.body);
 
-  const { endpoint } = subscriptionSchema.pick({ endpoint: true }).parse(req.body);
+    await db
+      .delete(pushSubscriptions)
+      .where(and(eq(pushSubscriptions.endpoint, endpoint), eq(pushSubscriptions.tenantId, req.tenant.id)));
 
-  await db
-    .delete(pushSubscriptions)
-    .where(and(eq(pushSubscriptions.endpoint, endpoint), eq(pushSubscriptions.tenantId, req.tenant.id)));
+    res.status(204).end();
+  });
 
-  res.status(204).end();
-});
+  return router;
+}

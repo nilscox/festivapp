@@ -4,21 +4,22 @@ import { sub } from 'date-fns';
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 
-import { useApi } from './helpers/api.ts';
-import { createMessage, createOrganizer, createTenant } from './helpers/fixtures.ts';
+import { TestApi } from './helpers/api.ts';
+import { fixtures } from './helpers/fixtures.ts';
 
 import type { Tenant } from '../src/db/schema.ts';
 
-const api = useApi();
+const api = TestApi.create();
+const create = fixtures(api.db);
 
 let tenant: Tenant;
 let other: Tenant;
 
 beforeEach(async () => {
-  tenant = await createTenant();
-  other = await createTenant();
+  tenant = await create.tenant();
+  other = await create.tenant();
 
-  const organizer = await createOrganizer({ password: 'hunter2', tenants: [tenant, other] });
+  const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant, other] });
   await api.login(organizer.email, 'hunter2');
 });
 
@@ -47,9 +48,9 @@ describe('messages', () => {
   });
 
   it('lists the festival messages, newest first', async () => {
-    const older = await createMessage(tenant, { title: 'Older', createdAt: sub(Date.now(), { hours: 1 }) });
-    const newer = await createMessage(tenant, { title: 'Newer' });
-    await createMessage(other, { title: 'Elsewhere' });
+    const older = await create.message(tenant, { title: 'Older', createdAt: sub(Date.now(), { hours: 1 }) });
+    const newer = await create.message(tenant, { title: 'Newer' });
+    await create.message(other, { title: 'Elsewhere' });
 
     const res = await api.get<MessageDto[]>(`/admin/tenants/${tenant.id}/messages`);
 
@@ -58,7 +59,7 @@ describe('messages', () => {
   });
 
   it('updates a message', async () => {
-    const message = await createMessage(tenant, { title: 'Gates are open', body: 'Come on in.' });
+    const message = await create.message(tenant, { title: 'Gates are open', body: 'Come on in.' });
 
     const res = await api.patch<MessageDto>(`/admin/tenants/${tenant.id}/messages/${message.id}`, {
       title: 'Gates are closed',
@@ -70,7 +71,7 @@ describe('messages', () => {
   });
 
   it('deletes a message', async () => {
-    const message = await createMessage(tenant);
+    const message = await create.message(tenant);
 
     const res = await api.delete(`/admin/tenants/${tenant.id}/messages/${message.id}`);
     assert.equal(res.status, 204);
@@ -91,7 +92,7 @@ describe('messages', () => {
   });
 
   it('refuses to notify from an update', async () => {
-    const message = await createMessage(tenant);
+    const message = await create.message(tenant);
 
     const res = await api.patch(`/admin/tenants/${tenant.id}/messages/${message.id}`, { notify: true });
 
@@ -101,7 +102,7 @@ describe('messages', () => {
 
 describe('messages of another festival', () => {
   it('are not reachable for update', async () => {
-    const message = await createMessage(other, { title: 'Elsewhere' });
+    const message = await create.message(other, { title: 'Elsewhere' });
 
     const res = await api.patch(`/admin/tenants/${tenant.id}/messages/${message.id}`, { title: 'Hijacked' });
 
@@ -110,7 +111,7 @@ describe('messages of another festival', () => {
   });
 
   it('are not reachable for deletion', async () => {
-    const message = await createMessage(other, { title: 'Elsewhere' });
+    const message = await create.message(other, { title: 'Elsewhere' });
 
     const res = await api.delete(`/admin/tenants/${tenant.id}/messages/${message.id}`);
 

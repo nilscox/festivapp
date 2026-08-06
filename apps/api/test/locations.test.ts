@@ -3,21 +3,22 @@ import { get } from '@festivapp/utils';
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 
-import { useApi } from './helpers/api.ts';
-import { createLocation, createOrganizer, createTenant } from './helpers/fixtures.ts';
+import { TestApi } from './helpers/api.ts';
+import { fixtures } from './helpers/fixtures.ts';
 
 import type { Tenant } from '../src/db/schema.ts';
 
-const api = useApi();
+const api = TestApi.create();
+const create = fixtures(api.db);
 
 let tenant: Tenant;
 let other: Tenant;
 
 beforeEach(async () => {
-  tenant = await createTenant();
-  other = await createTenant();
+  tenant = await create.tenant();
+  other = await create.tenant();
 
-  const organizer = await createOrganizer({ password: 'hunter2', tenants: [tenant, other] });
+  const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant, other] });
   await api.login(organizer.email, 'hunter2');
 });
 
@@ -39,9 +40,9 @@ describe('locations', () => {
   });
 
   it('lists the festival locations by position', async () => {
-    const second = await createLocation(tenant, { name: 'Second', position: 2 });
-    const first = await createLocation(tenant, { name: 'First', position: 1 });
-    await createLocation(other, { name: 'Elsewhere' });
+    const second = await create.location(tenant, { name: 'Second', position: 2 });
+    const first = await create.location(tenant, { name: 'First', position: 1 });
+    await create.location(other, { name: 'Elsewhere' });
 
     const res = await api.get<LocationDto[]>(`/admin/tenants/${tenant.id}/locations`);
 
@@ -50,7 +51,7 @@ describe('locations', () => {
   });
 
   it('updates a location, flattening the map pin', async () => {
-    const location = await createLocation(tenant, { name: 'Main stage' });
+    const location = await create.location(tenant, { name: 'Main stage' });
 
     const res = await api.patch<LocationDto>(`/admin/tenants/${tenant.id}/locations/${location.id}`, {
       name: 'Second stage',
@@ -63,7 +64,7 @@ describe('locations', () => {
   });
 
   it('keeps the fields a patch omits', async () => {
-    const location = await createLocation(tenant, { name: 'Main stage', description: 'Outdoors', position: 3 });
+    const location = await create.location(tenant, { name: 'Main stage', description: 'Outdoors', position: 3 });
 
     const res = await api.patch<LocationDto>(`/admin/tenants/${tenant.id}/locations/${location.id}`, {
       mapPin: { x: 10, y: 20 },
@@ -78,7 +79,7 @@ describe('locations', () => {
   });
 
   it('deletes a location', async () => {
-    const location = await createLocation(tenant);
+    const location = await create.location(tenant);
 
     const res = await api.delete(`/admin/tenants/${tenant.id}/locations/${location.id}`);
     assert.equal(res.status, 204);
@@ -111,7 +112,7 @@ describe('locations', () => {
 
 describe('locations of another festival', () => {
   it('are not reachable for update', async () => {
-    const location = await createLocation(other, { name: 'Elsewhere' });
+    const location = await create.location(other, { name: 'Elsewhere' });
 
     const res = await api.patch(`/admin/tenants/${tenant.id}/locations/${location.id}`, { name: 'Hijacked' });
 
@@ -120,7 +121,7 @@ describe('locations of another festival', () => {
   });
 
   it('are not reachable for deletion', async () => {
-    const location = await createLocation(other, { name: 'Elsewhere' });
+    const location = await create.location(other, { name: 'Elsewhere' });
 
     const res = await api.delete(`/admin/tenants/${tenant.id}/locations/${location.id}`);
 

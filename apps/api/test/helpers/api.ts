@@ -1,22 +1,28 @@
 import type { MeResponse } from '@festivapp/contracts';
 import { assert, defined } from '@festivapp/utils';
-import { asValue } from 'awilix';
+import { getTableName, is, sql } from 'drizzle-orm';
+import { PgTable } from 'drizzle-orm/pg-core';
 import {
   createServer,
   request,
+  Server,
   type RequestOptions as HttpRequestOptions,
   type IncomingHttpHeaders,
   type IncomingMessage,
 } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { after, before, beforeEach } from 'node:test';
+import { after, afterEach, before, beforeEach, type SuiteContext, type TestContext } from 'node:test';
+import { inspect } from 'node:util';
 
 import { createApp } from '../../src/app.ts';
-import { envConfig, type Config } from '../../src/config.ts';
-import { container, initContainer } from '../../src/container.ts';
-import { applyMigrations } from '../../src/db/client.ts';
-import { consoleLogger } from '../../src/logger.ts';
-import { resetDatabase } from './database.ts';
+import { type Config } from '../../src/config.ts';
+import { applyMigrations, closeDatabase, createDatabase, type Database } from '../../src/db/client.ts';
+import * as schema from '../../src/db/schema.ts';
+import { isLogLevel, type LogContext, type Logger, type LogLevel } from '../../src/logger.ts';
+import { createPush, type Push } from '../../src/push.ts';
+import { createStorage, type Storage } from '../../src/storage.ts';
+
+type HookContext = TestContext | SuiteContext;
 
 type RequestOptions = {
   host?: string;
@@ -29,54 +35,64 @@ export type ApiResponse<T> = {
   body: T;
 };
 
-export function useApi(config: Partial<Config> = {}): TestApi {
-  const api = new TestApi(config);
-
-  before(() => api.start());
-
-  beforeEach(async () => {
-    initContainer();
-    registerTestDependencies(config);
-    await resetDatabase();
-  });
-
-  after(async () => {
-    await api.stop();
-    await container.dispose();
-  });
-
-  return api;
-}
-
-export function registerTestDependencies(overrides: Partial<Config> = {}): void {
-  const config: Config = { ...envConfig(), logLevel: 'silent', ...overrides };
-
-  container.register({
-    config: asValue(config),
-    logger: asValue(consoleLogger({ level: config.logLevel })),
-  });
-}
-
 export class TestApi {
-  private server = createServer(createApp());
+  static defaultConfig: Config = {
+    env: 'test',
+    host: '',
+    port: NaN,
+    logLevel: 'info',
+    databaseUrl: process.env.DATABASE_URL,
+    storageDir: undefined,
+    uploadMaxBytes: undefined,
+    vapidPublicKey: undefined,
+    vapidPrivateKey: undefined,
+    vapidSubject: '',
+  };
+
+  public readonly config: Config;
+  public readonly logger: StubLogger;
+  public readonly db: Database;
+  public readonly storage: Storage;
+  public readonly push: Push;
+
+  private server: Server;
   private cookies = new Map<string, string>();
   private port = 0;
-  private config: Partial<Config>;
 
-  constructor(config: Partial<Config> = {}) {
-    this.config = config;
+  static create(config: Partial<Config> = {}): TestApi {
+    const api = new TestApi(config);
+
+    before(() => api.start());
+    after(() => api.stop());
+
+    beforeEach(() => api.reset());
+    afterEach((t) => api.logger.dump(t));
+
+    return api;
+  }
+
+  private constructor(config: Partial<Config> = {}) {
+    this.config = { ...TestApi.defaultConfig, ...config };
+
+    if (this.config.databaseUrl !== undefined) {
+      assert(this.config.databaseUrl.includes('localhost'), new Error('DATABASE_URL must include "localhost"'));
+    }
+
+    const logger = new StubLogger(this.config.logLevel);
+    const db = createDatabase({ config: this.config, logger });
+    const storage = createStorage({ config: this.config });
+    const push = createPush({ config: this.config, logger, db });
+
+    this.logger = logger;
+    this.db = db;
+    this.storage = storage;
+    this.push = push;
+
+    this.server = createServer(createApp({ config: this.config, logger, db, storage, push }));
   }
 
   async start(): Promise<void> {
-    registerTestDependencies(this.config);
-
-    const { databaseUrl } = container.resolve('config');
-
-    if (databaseUrl !== undefined) {
-      assert(databaseUrl.includes('localhost'), new Error('DATABASE_URL must include "localhost"'));
-    }
-
-    await applyMigrations(container.resolve('db'));
+    await applyMigrations(this.db);
 
     await new Promise<void>((resolve) => this.server.listen(0, '127.0.0.1', resolve));
 
@@ -92,6 +108,18 @@ export class TestApi {
     await new Promise<void>((resolve, reject) => {
       server.close((err) => (err ? reject(err) : resolve()));
     });
+
+    await closeDatabase(this.db);
+  }
+
+  async reset() {
+    const tables = Object.values(schema).filter((value) => is(value, PgTable));
+    const names = tables.map((table) => sql.identifier(getTableName(table)));
+
+    await this.db.execute(sql`truncate table ${sql.join(names, sql`, `)} cascade`);
+
+    this.cookies.clear();
+    this.logger.clear();
   }
 
   get<T>(path: string, options?: RequestOptions) {
@@ -116,10 +144,6 @@ export class TestApi {
 
   login(email: string, password: string) {
     return this.post<MeResponse>('/admin/auth/login', { email, password });
-  }
-
-  clearCookies(): void {
-    this.cookies.clear();
   }
 
   private async request<T>(
@@ -185,6 +209,47 @@ export class TestApi {
         this.cookies.set(name, value);
       }
     }
+  }
+}
+
+class StubLogger implements Logger {
+  public level: LogLevel;
+  public lines: Array<{ level: LogLevel; message: string; context?: LogContext }> = [];
+
+  constructor(level: string) {
+    assert(isLogLevel(level));
+
+    this.level = level;
+  }
+
+  debug = this.log('debug');
+  info = this.log('info');
+  warn = this.log('warn');
+  error = this.log('error');
+
+  clear() {
+    this.lines = [];
+  }
+
+  dump(t: HookContext) {
+    if (!('passed' in t) || t.passed || this.lines.length === 0) {
+      return;
+    }
+
+    t.diagnostic(`${this.lines.length} log lines recorded during this test:`);
+
+    for (const { level, message, context } of this.lines) {
+      const entries = Object.entries(context ?? {}).filter(([, value]) => value !== undefined);
+      const extra = entries.map(([key, value]) => ` ${key}=${inspect(value, { breakLength: Infinity })}`).join('');
+
+      t.diagnostic(`  ${level.padEnd(5)} ${message}${extra}`);
+    }
+  }
+
+  private log(level: LogLevel) {
+    return (message: string, context?: LogContext) => {
+      this.lines.push({ level, message, context });
+    };
   }
 }
 

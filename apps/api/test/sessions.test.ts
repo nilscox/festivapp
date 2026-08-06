@@ -2,12 +2,13 @@ import type { Session as SessionDto } from '@festivapp/contracts';
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 
-import { useApi } from './helpers/api.ts';
-import { createLocation, createOrganizer, createParticipant, createSession, createTenant } from './helpers/fixtures.ts';
+import { TestApi } from './helpers/api.ts';
+import { fixtures } from './helpers/fixtures.ts';
 
 import type { Location, Participant, Tenant } from '../src/db/schema.ts';
 
-const api = useApi();
+const api = TestApi.create();
+const create = fixtures(api.db);
 
 let tenant: Tenant;
 let other: Tenant;
@@ -16,26 +17,26 @@ let johnny: Participant;
 let nova: Participant;
 
 beforeEach(async () => {
-  tenant = await createTenant();
-  other = await createTenant();
-  location = await createLocation(tenant, { name: 'Main stage' });
-  johnny = await createParticipant(tenant, { name: 'Johnny Purple' });
-  nova = await createParticipant(tenant, { name: 'Nova Twins' });
+  tenant = await create.tenant();
+  other = await create.tenant();
+  location = await create.location(tenant, { name: 'Main stage' });
+  johnny = await create.participant(tenant, { name: 'Johnny Purple' });
+  nova = await create.participant(tenant, { name: 'Nova Twins' });
 
-  const organizer = await createOrganizer({ password: 'hunter2', tenants: [tenant, other] });
+  const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant, other] });
   await api.login(organizer.email, 'hunter2');
 });
 
 describe('sessions', () => {
   it('lists the festival sessions by start, line-up in order', async () => {
-    const later = await createSession(tenant, location, {
+    const later = await create.session(tenant, location, {
       title: 'Closing set',
       startsAt: new Date('2026-07-01T23:00:00Z'),
       endsAt: new Date('2026-07-02T01:00:00Z'),
       participants: [nova, johnny],
     });
 
-    const earlier = await createSession(tenant, location, {
+    const earlier = await create.session(tenant, location, {
       type: 'talk',
       title: 'Opening ceremony',
       description: 'Doors open.',
@@ -43,7 +44,7 @@ describe('sessions', () => {
       endsAt: new Date('2026-07-01T19:00:00Z'),
     });
 
-    await createSession(other, await createLocation(other));
+    await create.session(other, await create.location(other));
 
     const res = await api.get<SessionDto[]>(`/admin/tenants/${tenant.id}/sessions`);
 
@@ -127,7 +128,7 @@ describe('sessions', () => {
   });
 
   it('replaces a session whole, line-up included', async () => {
-    const session = await createSession(tenant, location, {
+    const session = await create.session(tenant, location, {
       title: 'Closing set',
       description: 'Dropped on replace.',
       participants: [johnny],
@@ -159,7 +160,7 @@ describe('sessions', () => {
   });
 
   it('deletes a session and its line-up', async () => {
-    const session = await createSession(tenant, location, { participants: [johnny] });
+    const session = await create.session(tenant, location, { participants: [johnny] });
 
     const res = await api.delete(`/admin/tenants/${tenant.id}/sessions/${session.id}`);
     assert.equal(res.status, 204);
@@ -169,7 +170,7 @@ describe('sessions', () => {
   });
 
   it('allows two sessions to overlap at the same location', async () => {
-    await createSession(tenant, location, { title: 'First' });
+    await create.session(tenant, location, { title: 'First' });
 
     const res = await api.post(`/admin/tenants/${tenant.id}/sessions`, {
       locationId: location.id,
@@ -228,7 +229,7 @@ describe('session validation', () => {
   });
 
   it('rejects a replacement that leaves neither a title nor a line-up', async () => {
-    const session = await createSession(tenant, location, { participants: [johnny] });
+    const session = await create.session(tenant, location, { participants: [johnny] });
 
     const res = await api.put(`/admin/tenants/${tenant.id}/sessions/${session.id}`, {
       locationId: location.id,
@@ -271,7 +272,7 @@ describe('session validation', () => {
 
 describe('sessions of another festival', () => {
   it('are not listed', async () => {
-    await createSession(other, await createLocation(other), { title: 'Elsewhere' });
+    await create.session(other, await create.location(other), { title: 'Elsewhere' });
 
     const res = await api.get<SessionDto[]>(`/admin/tenants/${tenant.id}/sessions`);
 
@@ -279,7 +280,7 @@ describe('sessions of another festival', () => {
   });
 
   it('are not reachable for replacement', async () => {
-    const session = await createSession(other, await createLocation(other), { title: 'Elsewhere' });
+    const session = await create.session(other, await create.location(other), { title: 'Elsewhere' });
 
     const res = await api.put(`/admin/tenants/${tenant.id}/sessions/${session.id}`, {
       locationId: location.id,
@@ -295,7 +296,7 @@ describe('sessions of another festival', () => {
   });
 
   it('are not reachable for deletion', async () => {
-    const session = await createSession(other, await createLocation(other), { title: 'Elsewhere' });
+    const session = await create.session(other, await create.location(other), { title: 'Elsewhere' });
 
     const res = await api.delete(`/admin/tenants/${tenant.id}/sessions/${session.id}`);
 
@@ -303,7 +304,7 @@ describe('sessions of another festival', () => {
   });
 
   it('cannot lend their location to a session', async () => {
-    const elsewhere = await createLocation(other, { name: 'Elsewhere' });
+    const elsewhere = await create.location(other, { name: 'Elsewhere' });
 
     const res = await api.post(`/admin/tenants/${tenant.id}/sessions`, {
       locationId: elsewhere.id,
@@ -319,7 +320,7 @@ describe('sessions of another festival', () => {
   });
 
   it('cannot lend their people to a line-up', async () => {
-    const stranger = await createParticipant(other, { name: 'Stranger' });
+    const stranger = await create.participant(other, { name: 'Stranger' });
 
     const res = await api.post(`/admin/tenants/${tenant.id}/sessions`, {
       locationId: location.id,

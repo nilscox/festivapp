@@ -12,3 +12,7 @@ export function falsyToNull<T>(value: T) {
 export function optionalString() {
   return z.string().trim().nullish().transform(falsyToNull);
 }
+
+export function filterEmptyStrings(values: string[]) {
+  return values.filter((value) => value.length > 0);
+}

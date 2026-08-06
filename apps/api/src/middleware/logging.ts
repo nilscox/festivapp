@@ -1,22 +1,26 @@
 import type { RequestHandler } from 'express';
 
-export const requestLogger: RequestHandler = (req, res, next) => {
-  const startedAt = performance.now();
+import type { Logger } from '../logger.ts';
 
-  res.on('finish', () => {
-    const logger = req.container.resolve('logger');
-    const duration = Math.round(performance.now() - startedAt);
+export function requestLogger({ logger }: { logger: Logger }): RequestHandler {
+  return (req, res, next) => {
+    const startedAt = performance.now();
 
-    logger[levelOf(res.statusCode)](`${req.method} ${req.originalUrl}`, {
-      status: res.statusCode,
-      duration: `${duration}ms`,
-      tenant: req.tenant?.domain,
-      organizer: req.organizer?.email,
+    res.on('finish', () => {
+      const duration = Math.round(performance.now() - startedAt);
+
+      logger[levelOf(res.statusCode)](`${req.method} ${req.originalUrl}`, {
+        requestId: req.requestId,
+        status: res.statusCode,
+        duration: `${duration}ms`,
+        tenant: req.tenant?.domain,
+        organizer: req.organizer?.email,
+      });
     });
-  });
 
-  next();
-};
+    next();
+  };
+}
 
 function levelOf(status: number) {
   if (status >= 500) {

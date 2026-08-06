@@ -19,7 +19,7 @@ export type PushPayload = {
   body: string;
 };
 
-export function createPush({ config, db, logger }: { config: Config; db: Database; logger: Logger }): Push {
+export function createPush({ config, logger, db }: { config: Config; logger: Logger; db: Database }): Push {
   const enabled = Boolean(config.vapidPublicKey && config.vapidPrivateKey);
 
   if (enabled) {

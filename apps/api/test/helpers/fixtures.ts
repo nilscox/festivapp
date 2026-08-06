@@ -3,7 +3,6 @@ import { defined } from '@festivapp/utils';
 import { add } from 'date-fns';
 
 import { hashPassword } from '../../src/auth/password.ts';
-import { container } from '../../src/container.ts';
 import {
   authSessions,
   locations,
@@ -24,186 +23,184 @@ import {
   type Tenant,
 } from '../../src/db/schema.ts';
 
-type Values<T> = Partial<T>;
+import type { Database } from '../../src/db/client.ts';
 
-let counter = 0;
+export function fixtures(db: Database) {
+  let counter = 0;
 
-export const theme: TenantTheme = {
-  backgroundColor: '#101014',
-  accentColor: '#f0f0ff',
-  fonts: { display: 'sans-serif', body: 'sans-serif', mono: 'monospace' },
-  logo: { wordmarkUrl: null, iconUrl: null },
-  backgroundImage: null,
-  pwa: { name: null, shortName: null },
-  customCss: null,
-};
+  return {
+    theme,
+    tenant,
+    organizer,
+    authSession,
+    location,
+    participant,
+    message,
+    pushSubscription,
+    session,
+  };
 
-export async function createTenant(values: Values<Tenant> = {}): Promise<Tenant> {
-  const db = container.resolve('db');
+  async function tenant(values: Partial<Tenant> = {}): Promise<Tenant> {
+    const index = ++counter;
 
-  const index = ++counter;
+    const [row] = await db
+      .insert(tenants)
+      .values({
+        name: `Festival ${index}`,
+        domain: `festival-${index}.localhost`,
+        timezone: 'Europe/Paris',
+        theme: theme(),
+        ...values,
+      })
+      .returning();
 
-  const [row] = await db
-    .insert(tenants)
-    .values({
-      name: `Festival ${index}`,
-      domain: `festival-${index}.localhost`,
-      timezone: 'Europe/Paris',
-      theme,
-      ...values,
-    })
-    .returning();
-
-  return defined(row);
-}
-
-export async function createOrganizer(
-  values: Values<Organizer> & { password?: string; tenants?: Tenant[] } = {},
-): Promise<Organizer & { password: string }> {
-  const db = container.resolve('db');
-
-  const { password = 'password', tenants: memberships = [], ...rest } = values;
-  const index = ++counter;
-
-  const [row] = await db
-    .insert(organizers)
-    .values({
-      email: `organizer-${index}@test.local`,
-      passwordHash: hashPassword(password),
-      ...rest,
-    })
-    .returning();
-
-  const organizer = defined(row);
-
-  if (memberships.length > 0) {
-    await db
-      .insert(organizerTenants)
-      .values(memberships.map((tenant) => ({ organizerId: organizer.id, tenantId: tenant.id })));
+    return defined(row);
   }
 
-  return { ...organizer, password };
-}
+  async function organizer(
+    values: Partial<Organizer> & { password?: string; tenants?: Tenant[] } = {},
+  ): Promise<Organizer & { password: string }> {
+    const { password = 'password', tenants: memberships = [], ...rest } = values;
+    const index = ++counter;
 
-export async function createAuthSession(
-  organizer: Organizer,
-  values: Values<{ token: string; expiresAt: Date }> = {},
-): Promise<string> {
-  const db = container.resolve('db');
+    const [row] = await db
+      .insert(organizers)
+      .values({
+        email: `organizer-${index}@test.local`,
+        passwordHash: hashPassword(password),
+        ...rest,
+      })
+      .returning();
 
-  const token = values.token ?? `token-${++counter}`;
+    const organizer = defined(row);
 
-  await db.insert(authSessions).values({
-    token,
-    organizerId: organizer.id,
-    expiresAt: values.expiresAt ?? new Date(add(Date.now(), { months: 3 })),
-  });
+    if (memberships.length > 0) {
+      await db
+        .insert(organizerTenants)
+        .values(memberships.map((tenant) => ({ organizerId: organizer.id, tenantId: tenant.id })));
+    }
 
-  return token;
-}
-
-export async function createLocation(tenant: Tenant, values: Values<Location> = {}): Promise<Location> {
-  const db = container.resolve('db');
-
-  const [row] = await db
-    .insert(locations)
-    .values({
-      tenantId: tenant.id,
-      name: `Location ${++counter}`,
-      ...values,
-    })
-    .returning();
-
-  return defined(row);
-}
-
-export async function createParticipant(tenant: Tenant, values: Values<Participant> = {}): Promise<Participant> {
-  const db = container.resolve('db');
-
-  const [row] = await db
-    .insert(participants)
-    .values({
-      tenantId: tenant.id,
-      name: `Participant ${++counter}`,
-      ...values,
-    })
-    .returning();
-
-  return defined(row);
-}
-
-export async function createMessage(tenant: Tenant, values: Values<Message> = {}): Promise<Message> {
-  const db = container.resolve('db');
-
-  const index = ++counter;
-
-  const [row] = await db
-    .insert(messages)
-    .values({
-      tenantId: tenant.id,
-      title: `Message ${index}`,
-      body: `Body ${index}`,
-      ...values,
-    })
-    .returning();
-
-  return defined(row);
-}
-
-export async function createPushSubscription(
-  tenant: Tenant,
-  values: Values<PushSubscription> = {},
-): Promise<PushSubscription> {
-  const db = container.resolve('db');
-
-  const index = ++counter;
-
-  const [row] = await db
-    .insert(pushSubscriptions)
-    .values({
-      tenantId: tenant.id,
-      endpoint: `https://push.test.local/${index}`,
-      p256dh: `p256dh-${index}`,
-      auth: `auth-${index}`,
-      ...values,
-    })
-    .returning();
-
-  return defined(row);
-}
-
-export async function createSession(
-  tenant: Tenant,
-  location: Location,
-  values: Values<Session> & { participants?: Participant[] } = {},
-): Promise<Session> {
-  const db = container.resolve('db');
-
-  const { participants: lineup = [], ...rest } = values;
-
-  const [row] = await db
-    .insert(sessions)
-    .values({
-      tenantId: tenant.id,
-      locationId: location.id,
-      type: 'live',
-      startsAt: new Date('2026-07-01T20:00:00Z'),
-      endsAt: new Date('2026-07-01T21:00:00Z'),
-      ...rest,
-    })
-    .returning();
-
-  const session = defined(row);
-
-  if (lineup.length > 0) {
-    await db.insert(sessionParticipants).values(
-      lineup.map((participant, position) => ({
-        sessionId: session.id,
-        participantId: participant.id,
-        position,
-      })),
-    );
+    return { ...organizer, password };
   }
 
-  return session;
+  async function authSession(
+    organizer: Organizer,
+    values: Partial<{ token: string; expiresAt: Date }> = {},
+  ): Promise<string> {
+    const token = values.token ?? `token-${++counter}`;
+
+    await db.insert(authSessions).values({
+      token,
+      organizerId: organizer.id,
+      expiresAt: values.expiresAt ?? new Date(add(Date.now(), { months: 3 })),
+    });
+
+    return token;
+  }
+
+  async function location(tenant: Tenant, values: Partial<Location> = {}): Promise<Location> {
+    const [row] = await db
+      .insert(locations)
+      .values({
+        tenantId: tenant.id,
+        name: `Location ${++counter}`,
+        ...values,
+      })
+      .returning();
+
+    return defined(row);
+  }
+
+  async function participant(tenant: Tenant, values: Partial<Participant> = {}): Promise<Participant> {
+    const [row] = await db
+      .insert(participants)
+      .values({
+        tenantId: tenant.id,
+        name: `Participant ${++counter}`,
+        ...values,
+      })
+      .returning();
+
+    return defined(row);
+  }
+
+  async function message(tenant: Tenant, values: Partial<Message> = {}): Promise<Message> {
+    const index = ++counter;
+
+    const [row] = await db
+      .insert(messages)
+      .values({
+        tenantId: tenant.id,
+        title: `Message ${index}`,
+        body: `Body ${index}`,
+        ...values,
+      })
+      .returning();
+
+    return defined(row);
+  }
+
+  async function pushSubscription(tenant: Tenant, values: Partial<PushSubscription> = {}): Promise<PushSubscription> {
+    const index = ++counter;
+
+    const [row] = await db
+      .insert(pushSubscriptions)
+      .values({
+        tenantId: tenant.id,
+        endpoint: `https://push.test.local/${index}`,
+        p256dh: `p256dh-${index}`,
+        auth: `auth-${index}`,
+        ...values,
+      })
+      .returning();
+
+    return defined(row);
+  }
+
+  async function session(
+    tenant: Tenant,
+    location: Location,
+    values: Partial<Session> & { participants?: Participant[] } = {},
+  ): Promise<Session> {
+    const { participants: lineup = [], ...rest } = values;
+
+    const [row] = await db
+      .insert(sessions)
+      .values({
+        tenantId: tenant.id,
+        locationId: location.id,
+        type: 'live',
+        startsAt: new Date('2026-07-01T20:00:00Z'),
+        endsAt: new Date('2026-07-01T21:00:00Z'),
+        ...rest,
+      })
+      .returning();
+
+    const session = defined(row);
+
+    if (lineup.length > 0) {
+      await db.insert(sessionParticipants).values(
+        lineup.map((participant, position) => ({
+          sessionId: session.id,
+          participantId: participant.id,
+          position,
+        })),
+      );
+    }
+
+    return session;
+  }
+}
+
+function theme(values: Partial<TenantTheme> = {}) {
+  return {
+    backgroundColor: '#000000',
+    accentColor: '#ffffff',
+    fonts: { display: 'sans-serif', body: 'sans-serif', mono: 'monospace' },
+    logo: { wordmarkUrl: null, iconUrl: null },
+    backgroundImage: null,
+    pwa: { name: null, shortName: null },
+    customCss: null,
+    ...values,
+  };
 }

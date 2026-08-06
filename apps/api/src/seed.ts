@@ -5,10 +5,13 @@ import { readFile } from 'node:fs/promises';
 import { basename, dirname, extname, resolve } from 'node:path';
 import z from 'zod';
 
-import { container } from './container.ts';
 import * as schema from './db/schema.ts';
 import { themeSchema } from './theme.ts';
 import { createId } from './utils.ts';
+
+import type { Database } from './db/client.ts';
+import type { Logger } from './logger.ts';
+import type { Storage } from './storage.ts';
 
 const contentTypes: Record<string, string> = {
   '.png': 'image/png',
@@ -84,10 +87,11 @@ const dataSchema = z.strictObject({
   ),
 });
 
-export async function seed(input: string, drop = false): Promise<void> {
-  const db = container.resolve('db');
-  const storage = container.resolve('storage');
-
+export async function seed(
+  { logger, db, storage }: { logger: Logger; db: Database; storage: Storage },
+  input: string,
+  drop = false,
+): Promise<void> {
   const data = dataSchema.parse(JSON.parse(await readFile(input, 'utf8')));
 
   const tenantId = createId();
@@ -259,13 +263,10 @@ export async function seed(input: string, drop = false): Promise<void> {
 
     return `/files/${id}`;
   }
-}
 
-async function deleteFile(storageKey: string) {
-  const storage = container.resolve('storage');
-  const logger = container.resolve('logger');
-
-  await storage.delete(storageKey).catch((error: unknown) => {
-    logger.error('failed to delete an orphaned upload', { storageKey, error });
-  });
+  async function deleteFile(storageKey: string) {
+    await storage.delete(storageKey).catch((error: unknown) => {
+      logger.error('failed to delete an orphaned upload', { storageKey, error });
+    });
+  }
 }

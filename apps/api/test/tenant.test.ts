@@ -2,14 +2,15 @@ import type { BootstrapResponse } from '@festivapp/contracts';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { useApi } from './helpers/api.ts';
-import { createTenant } from './helpers/fixtures.ts';
+import { TestApi } from './helpers/api.ts';
+import { fixtures } from './helpers/fixtures.ts';
 
-const api = useApi();
+const api = TestApi.create();
+const create = fixtures(api.db);
 
 describe('tenant resolution', () => {
   it('resolves the tenant from the Host header', async () => {
-    const tenant = await createTenant({ domain: 'coolfest.localhost' });
+    const tenant = await create.tenant({ domain: 'coolfest.localhost' });
 
     const res = await api.get<BootstrapResponse>('/bootstrap', { host: 'coolfest.localhost' });
 
@@ -18,7 +19,7 @@ describe('tenant resolution', () => {
   });
 
   it('ignores the port in the Host header', async () => {
-    await createTenant({ domain: 'coolfest.localhost' });
+    await create.tenant({ domain: 'coolfest.localhost' });
 
     const res = await api.get<BootstrapResponse>('/bootstrap', { host: 'coolfest.localhost:8000' });
 
@@ -27,7 +28,7 @@ describe('tenant resolution', () => {
   });
 
   it('resolves the tenant from the x-tenant-domain header', async () => {
-    const tenant = await createTenant({ domain: 'coolfest.localhost' });
+    const tenant = await create.tenant({ domain: 'coolfest.localhost' });
 
     const res = await api.get<BootstrapResponse>('/bootstrap', {
       host: 'unknown.localhost',
@@ -39,7 +40,7 @@ describe('tenant resolution', () => {
   });
 
   it('resolves the tenant from the __tenant query param', async () => {
-    const tenant = await createTenant({ domain: 'coolfest.localhost' });
+    const tenant = await create.tenant({ domain: 'coolfest.localhost' });
 
     const res = await api.get<BootstrapResponse>('/bootstrap?__tenant=coolfest.localhost', {
       host: 'unknown.localhost',
@@ -50,8 +51,8 @@ describe('tenant resolution', () => {
   });
 
   it('serves the tenant matching the host when several exist', async () => {
-    await createTenant({ domain: 'one.localhost', name: 'One' });
-    await createTenant({ domain: 'two.localhost', name: 'Two' });
+    await create.tenant({ domain: 'one.localhost', name: 'One' });
+    await create.tenant({ domain: 'two.localhost', name: 'Two' });
 
     const res = await api.get<BootstrapResponse>('/bootstrap', { host: 'two.localhost' });
 
@@ -59,7 +60,7 @@ describe('tenant resolution', () => {
   });
 
   it('responds 404 for an unknown host', async () => {
-    await createTenant({ domain: 'coolfest.localhost' });
+    await create.tenant({ domain: 'coolfest.localhost' });
 
     const res = await api.get('/bootstrap', { host: 'nope.localhost' });
 
@@ -70,7 +71,7 @@ describe('tenant resolution', () => {
 
 describe('manifest', () => {
   it('serves a manifest built from the tenant theme', async () => {
-    await createTenant({
+    await create.tenant({
       domain: 'coolfest.localhost',
       name: 'Cool Fest',
       theme: {
@@ -95,7 +96,7 @@ describe('manifest', () => {
   });
 
   it('falls back to the tenant name when the pwa name is unset', async () => {
-    await createTenant({ domain: 'coolfest.localhost', name: 'Cool Fest' });
+    await create.tenant({ domain: 'coolfest.localhost', name: 'Cool Fest' });
 
     const res = await api.get<Record<string, unknown>>('/manifest.webmanifest', { host: 'coolfest.localhost' });
 

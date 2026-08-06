@@ -1,37 +1,65 @@
-import express, { type Express, type Request, type Response } from 'express';
+import express, { type Express, type RequestHandler } from 'express';
 
-import { container } from './container.ts';
-import { provideContainer } from './middleware/container.ts';
 import { errorHandler, payloadErrorHandler, zodErrorHandler } from './middleware/error.ts';
 import { requestLogger } from './middleware/logging.ts';
-import { adminRouter } from './routes/admin/index.ts';
-import { tenantRouter } from './routes/app/index.ts';
-import { filesRouter } from './routes/files.ts';
+import { requestContext } from './middleware/request-context.ts';
+import { adminRoutes } from './routes/admin/index.ts';
+import { appRoutes } from './routes/app/index.ts';
+import { publicFilesRoutes } from './routes/public-files.ts';
 
-export function createApp(): Express {
+import type { Config } from './config.ts';
+import type { Database } from './db/client.ts';
+import type { Logger } from './logger.ts';
+import type { Push } from './push.ts';
+import type { Storage } from './storage.ts';
+
+export function createApp({
+  config,
+  logger,
+  db,
+  storage,
+  push,
+}: {
+  config: Config;
+  logger: Logger;
+  db: Database;
+  storage: Storage;
+  push: Push;
+}): Express {
   const app = express();
 
-  app.use(provideContainer(container));
-  app.use(requestLogger);
+  app.use(requestContext());
+  app.use(requestLogger({ logger }));
   app.use(express.json());
 
-  app.get('/health', health);
-  app.use('/files', filesRouter);
-  app.use('/admin', adminRouter);
-  app.use(tenantRouter);
-  app.use(notFound);
+  app.get('/health', health({ logger, db }));
+  app.use('/files', publicFilesRoutes({ db, storage }));
+  app.use('/admin', adminRoutes({ config, logger, db, storage, push }));
+  app.use(appRoutes({ config, logger, db, push }));
+  app.use(notFound());
 
-  app.use(payloadErrorHandler);
-  app.use(zodErrorHandler);
-  app.use(errorHandler);
+  app.use(payloadErrorHandler());
+  app.use(zodErrorHandler({ logger }));
+  app.use(errorHandler({ logger }));
 
   return app;
 }
 
-function health(_req: Request, res: Response) {
-  res.json({ status: 'ok' });
+function health({ logger, db }: { logger: Logger; db: Database }): RequestHandler {
+  return async (_req, res) => {
+    try {
+      await db.execute('SELECT 1');
+    } catch (error) {
+      logger.error('health check could not reach the database', { error });
+      return res.status(503).json({ status: 'degraded' });
+    }
+
+    res.json({ status: 'ok' });
+  };
 }
 
-function notFound(_req: Request, res: Response) {
-  res.status(404).json({ error: 'not_found' });
+function notFound(): RequestHandler {
+  return (_req, res) => {
+    res.status(404).json({ error: 'not_found' });
+  };
 }

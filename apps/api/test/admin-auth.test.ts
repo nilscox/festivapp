@@ -2,19 +2,18 @@ import type { MeResponse } from '@festivapp/contracts';
 import { get } from '@festivapp/utils';
 import { sub } from 'date-fns';
 import assert from 'node:assert/strict';
-import { beforeEach, describe, it } from 'node:test';
+import { describe, it } from 'node:test';
 
-import { useApi } from './helpers/api.ts';
-import { createAuthSession, createOrganizer, createTenant } from './helpers/fixtures.ts';
+import { TestApi } from './helpers/api.ts';
+import { fixtures } from './helpers/fixtures.ts';
 
-const api = useApi();
-
-beforeEach(() => api.clearCookies());
+const api = TestApi.create();
+const create = fixtures(api.db);
 
 describe('POST /admin/auth/login', () => {
   it('signs the organizer in and returns their festivals', async () => {
-    const tenant = await createTenant({ name: 'Cool Fest', domain: 'coolfest.localhost' });
-    const organizer = await createOrganizer({ email: 'jane@test.local', password: 'hunter2', tenants: [tenant] });
+    const tenant = await create.tenant({ name: 'Cool Fest', domain: 'coolfest.localhost' });
+    const organizer = await create.organizer({ email: 'jane@test.local', password: 'hunter2', tenants: [tenant] });
 
     const res = await api.login('jane@test.local', 'hunter2');
 
@@ -26,7 +25,7 @@ describe('POST /admin/auth/login', () => {
   });
 
   it('sets an http-only session cookie', async () => {
-    await createOrganizer({ email: 'jane@test.local', password: 'hunter2' });
+    await create.organizer({ email: 'jane@test.local', password: 'hunter2' });
 
     const res = await api.login('jane@test.local', 'hunter2');
     const [cookie] = res.headers['set-cookie'] ?? [];
@@ -37,7 +36,7 @@ describe('POST /admin/auth/login', () => {
   });
 
   it('lowercases the email before looking the organizer up', async () => {
-    await createOrganizer({ email: 'jane@test.local', password: 'hunter2' });
+    await create.organizer({ email: 'jane@test.local', password: 'hunter2' });
 
     const res = await api.login('JANE@Test.Local', 'hunter2');
 
@@ -45,7 +44,7 @@ describe('POST /admin/auth/login', () => {
   });
 
   it('rejects a wrong password without setting a cookie', async () => {
-    await createOrganizer({ email: 'jane@test.local', password: 'hunter2' });
+    await create.organizer({ email: 'jane@test.local', password: 'hunter2' });
 
     const res = await api.login('jane@test.local', 'wrong');
 
@@ -75,8 +74,8 @@ describe('POST /admin/auth/login', () => {
 
 describe('GET /admin/auth/me', () => {
   it('returns the signed-in organizer', async () => {
-    const tenant = await createTenant();
-    const organizer = await createOrganizer({ password: 'hunter2', tenants: [tenant] });
+    const tenant = await create.tenant();
+    const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant] });
 
     await api.login(organizer.email, 'hunter2');
     const res = await api.get<MeResponse>('/admin/auth/me');
@@ -100,8 +99,8 @@ describe('GET /admin/auth/me', () => {
   });
 
   it('responds 401 for an expired session', async () => {
-    const organizer = await createOrganizer();
-    const token = await createAuthSession(organizer, { expiresAt: new Date(sub(Date.now(), { days: 1 })) });
+    const organizer = await create.organizer();
+    const token = await create.authSession(organizer, { expiresAt: new Date(sub(Date.now(), { days: 1 })) });
 
     const res = await api.get('/admin/auth/me', { headers: { cookie: `token=${token}` } });
 
@@ -111,7 +110,7 @@ describe('GET /admin/auth/me', () => {
 
 describe('POST /admin/auth/logout', () => {
   it('destroys the session', async () => {
-    const organizer = await createOrganizer({ password: 'hunter2' });
+    const organizer = await create.organizer({ password: 'hunter2' });
 
     await api.login(organizer.email, 'hunter2');
 
@@ -123,7 +122,7 @@ describe('POST /admin/auth/logout', () => {
   });
 
   it('makes the session token unusable even if the client keeps the cookie', async () => {
-    const organizer = await createOrganizer({ password: 'hunter2' });
+    const organizer = await create.organizer({ password: 'hunter2' });
     const login = await api.login(organizer.email, 'hunter2');
 
     const cookie = String((login.headers['set-cookie'] ?? [])[0]?.split(';')[0]);
@@ -137,8 +136,8 @@ describe('POST /admin/auth/logout', () => {
 
 describe('tenant membership', () => {
   it('lets a member read the festival', async () => {
-    const tenant = await createTenant({ name: 'Cool Fest' });
-    const organizer = await createOrganizer({ password: 'hunter2', tenants: [tenant] });
+    const tenant = await create.tenant({ name: 'Cool Fest' });
+    const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant] });
 
     await api.login(organizer.email, 'hunter2');
     const res = await api.get<{ name: string }>(`/admin/tenants/${tenant.id}`);
@@ -148,9 +147,9 @@ describe('tenant membership', () => {
   });
 
   it('responds 403 for a festival the organizer does not belong to', async () => {
-    const tenant = await createTenant();
-    const other = await createTenant();
-    const organizer = await createOrganizer({ password: 'hunter2', tenants: [tenant] });
+    const tenant = await create.tenant();
+    const other = await create.tenant();
+    const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant] });
 
     await api.login(organizer.email, 'hunter2');
     const res = await api.get(`/admin/tenants/${other.id}`);
@@ -160,7 +159,7 @@ describe('tenant membership', () => {
   });
 
   it('responds 401 before 403 when unauthenticated', async () => {
-    const tenant = await createTenant();
+    const tenant = await create.tenant();
 
     const res = await api.get(`/admin/tenants/${tenant.id}`);
 
@@ -168,9 +167,9 @@ describe('tenant membership', () => {
   });
 
   it('never reads the tenant from the Host header', async () => {
-    const tenant = await createTenant({ domain: 'coolfest.localhost' });
-    const other = await createTenant({ domain: 'other.localhost', name: 'Other' });
-    const organizer = await createOrganizer({ password: 'hunter2', tenants: [tenant] });
+    const tenant = await create.tenant({ domain: 'coolfest.localhost' });
+    const other = await create.tenant({ domain: 'other.localhost', name: 'Other' });
+    const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant] });
 
     await api.login(organizer.email, 'hunter2');
     const res = await api.get(`/admin/tenants/${other.id}`, { host: 'other.localhost' });

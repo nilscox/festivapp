@@ -1,13 +1,8 @@
-function env(name: string): string | undefined;
-function env(name: string, defaultValue: string): string;
-function env(name: string, defaultValue?: string) {
-  return process.env[name] || defaultValue;
-}
-
 export type Config = ReturnType<typeof envConfig>;
 
 export function envConfig() {
   return {
+    env: env('NODE_ENV', 'development'),
     host: env('HOST', '127.0.0.1'),
     port: Number(env('PORT', '3000')),
     logLevel: env('LOG_LEVEL', 'info'),
@@ -18,4 +13,10 @@ export function envConfig() {
     vapidPrivateKey: env('VAPID_PRIVATE_KEY'),
     vapidSubject: env('VAPID_SUBJECT', 'mailto:admin@festivapp.local'),
   };
+}
+
+function env(name: string): string | undefined;
+function env(name: string, defaultValue: string): string;
+function env(name: string, defaultValue?: string) {
+  return process.env[name] || defaultValue;
 }

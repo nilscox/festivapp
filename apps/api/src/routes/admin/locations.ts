@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { locations, type Location } from '../../db/schema.ts';
 import { optionalString } from '../../utils.ts';
 
-export const locationsRouter = Router({ mergeParams: true });
+import type { Database } from '../../db/client.ts';
 
 const createSchema = z.strictObject({
   name: z.string().trim().min(1),
@@ -27,6 +27,78 @@ const updateSchema = createSchema
   })
   .partial();
 
+export function locationsRoutes({ db }: { db: Database }) {
+  const router = Router({ mergeParams: true });
+
+  router.get('/', async (req, res) => {
+    assert(req.tenant);
+
+    const locations = await db.query.locations.findMany({
+      where: { tenantId: req.tenant.id },
+      orderBy: { position: 'asc' },
+    });
+
+    res.json(locations.map(toLocationDto));
+  });
+
+  router.post('/', async (req, res) => {
+    assert(req.tenant);
+
+    const values = createSchema.parse(req.body);
+
+    const [row] = await db
+      .insert(locations)
+      .values({
+        tenantId: req.tenant.id,
+        ...values,
+      })
+      .returning();
+
+    res.status(201).json(toLocationDto(defined(row)));
+  });
+
+  router.patch('/:id', async (req, res) => {
+    assert(req.tenant);
+
+    const { mapPin, ...values } = updateSchema.parse(req.body);
+
+    const [row] = await db
+      .update(locations)
+      .set({
+        ...values,
+        mapX: mapPin?.x,
+        mapY: mapPin?.y,
+        mapLabelPosition: mapPin?.labelPosition,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(locations.id, req.params.id), eq(locations.tenantId, req.tenant.id)))
+      .returning();
+
+    if (!row) {
+      return res.status(404).json({ error: 'not_found' });
+    }
+
+    res.json(toLocationDto(row));
+  });
+
+  router.delete('/:id', async (req, res) => {
+    assert(req.tenant);
+
+    const [row] = await db
+      .delete(locations)
+      .where(and(eq(locations.id, req.params.id), eq(locations.tenantId, req.tenant.id)))
+      .returning();
+
+    if (!row) {
+      return res.status(404).json({ error: 'not_found' });
+    }
+
+    res.status(204).end();
+  });
+
+  return router;
+}
+
 function toLocationDto(row: Location): LocationDto {
   return {
     id: row.id,
@@ -36,77 +108,3 @@ function toLocationDto(row: Location): LocationDto {
     mapPin: { x: row.mapX, y: row.mapY, labelPosition: row.mapLabelPosition },
   };
 }
-
-locationsRouter.get('/', async (req, res) => {
-  const db = req.container.resolve('db');
-
-  assert(req.tenant);
-
-  const locations = await db.query.locations.findMany({
-    where: { tenantId: req.tenant.id },
-    orderBy: { position: 'asc' },
-  });
-
-  res.json(locations.map(toLocationDto));
-});
-
-locationsRouter.post('/', async (req, res) => {
-  const db = req.container.resolve('db');
-
-  assert(req.tenant);
-
-  const values = createSchema.parse(req.body);
-
-  const [row] = await db
-    .insert(locations)
-    .values({
-      tenantId: req.tenant.id,
-      ...values,
-    })
-    .returning();
-
-  res.status(201).json(toLocationDto(defined(row)));
-});
-
-locationsRouter.patch('/:id', async (req, res) => {
-  const db = req.container.resolve('db');
-
-  assert(req.tenant);
-
-  const { mapPin, ...values } = updateSchema.parse(req.body);
-
-  const [row] = await db
-    .update(locations)
-    .set({
-      ...values,
-      mapX: mapPin?.x,
-      mapY: mapPin?.y,
-      mapLabelPosition: mapPin?.labelPosition,
-      updatedAt: new Date(),
-    })
-    .where(and(eq(locations.id, req.params.id), eq(locations.tenantId, req.tenant.id)))
-    .returning();
-
-  if (!row) {
-    return res.status(404).json({ error: 'not_found' });
-  }
-
-  res.json(toLocationDto(row));
-});
-
-locationsRouter.delete('/:id', async (req, res) => {
-  const db = req.container.resolve('db');
-
-  assert(req.tenant);
-
-  const [row] = await db
-    .delete(locations)
-    .where(and(eq(locations.id, req.params.id), eq(locations.tenantId, req.tenant.id)))
-    .returning();
-
-  if (!row) {
-    return res.status(404).json({ error: 'not_found' });
-  }
-
-  res.status(204).end();
-});

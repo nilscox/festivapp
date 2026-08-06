@@ -3,8 +3,8 @@ import { get } from '@festivapp/utils';
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 
-import { useApi } from './helpers/api.ts';
-import { createOrganizer, createParticipant, createTenant, theme } from './helpers/fixtures.ts';
+import { TestApi } from './helpers/api.ts';
+import { fixtures } from './helpers/fixtures.ts';
 
 import type { Tenant } from '../src/db/schema.ts';
 
@@ -13,16 +13,17 @@ const png = Buffer.from(
   'base64',
 );
 
-const api = useApi();
+const api = TestApi.create();
+const create = fixtures(api.db);
 
 let tenant: Tenant;
 let other: Tenant;
 
 beforeEach(async () => {
-  tenant = await createTenant();
-  other = await createTenant();
+  tenant = await create.tenant();
+  other = await create.tenant();
 
-  const organizer = await createOrganizer({ password: 'hunter2', tenants: [tenant, other] });
+  const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant, other] });
   await api.login(organizer.email, 'hunter2');
 });
 
@@ -105,7 +106,7 @@ describe('file deletion', () => {
 
   it('refuses to delete a file used as a participant image', async () => {
     const { body: file } = await upload(tenant, png);
-    await createParticipant(tenant, { imageUrl: file.url });
+    await create.participant(tenant, { imageUrl: file.url });
 
     const res = await api.delete(`/admin/tenants/${tenant.id}/files/${file.id}`);
 
@@ -116,7 +117,10 @@ describe('file deletion', () => {
   it('refuses to delete a file used by the theme', async () => {
     const { body: file } = await upload(tenant, png);
 
-    await api.put(`/admin/tenants/${tenant.id}/theme`, { ...theme, logo: { wordmarkUrl: null, iconUrl: file.url } });
+    await api.put(
+      `/admin/tenants/${tenant.id}/theme`,
+      create.theme({ logo: { wordmarkUrl: null, iconUrl: file.url } }),
+    );
 
     const res = await api.delete(`/admin/tenants/${tenant.id}/files/${file.id}`);
 

@@ -2,21 +2,22 @@ import type { Tenant as TenantDto } from '@festivapp/contracts';
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 
-import { useApi } from './helpers/api.ts';
-import { createOrganizer, createPushSubscription, createTenant } from './helpers/fixtures.ts';
+import { TestApi } from './helpers/api.ts';
+import { fixtures } from './helpers/fixtures.ts';
 
 import type { Tenant } from '../src/db/schema.ts';
 
-const api = useApi();
+const api = TestApi.create();
+const create = fixtures(api.db);
 
 let tenant: Tenant;
 let other: Tenant;
 
 beforeEach(async () => {
-  tenant = await createTenant({ domain: 'coolfest.localhost', name: 'Cool Fest', mapUrl: '/files/map' });
-  other = await createTenant();
+  tenant = await create.tenant({ domain: 'coolfest.localhost', name: 'Cool Fest', mapUrl: '/files/map' });
+  other = await create.tenant();
 
-  const organizer = await createOrganizer({ password: 'hunter2', tenants: [tenant, other] });
+  const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant, other] });
   await api.login(organizer.email, 'hunter2');
 });
 
@@ -36,9 +37,9 @@ describe('GET /admin/tenants/:tenantId', () => {
   });
 
   it('counts only the devices registered to this festival', async () => {
-    await createPushSubscription(tenant);
-    await createPushSubscription(tenant);
-    await createPushSubscription(other);
+    await create.pushSubscription(tenant);
+    await create.pushSubscription(tenant);
+    await create.pushSubscription(other);
 
     const res = await api.get<TenantDto>(`/admin/tenants/${tenant.id}`);
 
@@ -48,7 +49,7 @@ describe('GET /admin/tenants/:tenantId', () => {
 
 describe('PATCH /admin/tenants/:tenantId', () => {
   it('answers with the updated festival and its device count', async () => {
-    await createPushSubscription(tenant);
+    await create.pushSubscription(tenant);
 
     const res = await api.patch<TenantDto>(`/admin/tenants/${tenant.id}`, { name: 'Cooler Fest' });
 

@@ -4,6 +4,9 @@ import type { RequestHandler } from 'express';
 import { readSessionToken } from '../auth/session.ts';
 import { authSessions, type Organizer, organizers, organizerTenants, tenants } from '../db/schema.ts';
 
+import type { Database } from '../db/client.ts';
+import type { Logger } from '../logger.ts';
+
 declare global {
   namespace Express {
     interface Request {
@@ -12,60 +15,58 @@ declare global {
   }
 }
 
-export const requireOrganizer: RequestHandler = async (req, res, next) => {
-  const db = req.container.resolve('db');
-  const logger = req.container.resolve('logger');
+export function requireOrganizer({ logger, db }: { logger: Logger; db: Database }): RequestHandler {
+  return async (req, res, next) => {
+    const token = readSessionToken(req);
 
-  const token = readSessionToken(req);
+    if (token === undefined) {
+      logger.debug('rejected a request carrying no session cookie');
+      return res.status(401).json({ error: 'unauthenticated' });
+    }
 
-  if (token === undefined) {
-    logger.debug('rejected a request carrying no session cookie');
-    return res.status(401).json({ error: 'unauthenticated' });
-  }
+    const [row] = await db
+      .select({ organizer: organizers })
+      .from(authSessions)
+      .innerJoin(organizers, eq(authSessions.organizerId, organizers.id))
+      .where(and(eq(authSessions.token, token), gt(authSessions.expiresAt, new Date())))
+      .limit(1);
 
-  const [row] = await db
-    .select({ organizer: organizers })
-    .from(authSessions)
-    .innerJoin(organizers, eq(authSessions.organizerId, organizers.id))
-    .where(and(eq(authSessions.token, token), gt(authSessions.expiresAt, new Date())))
-    .limit(1);
+    if (!row) {
+      logger.warn('rejected an unknown or expired session');
+      return res.status(401).json({ error: 'unauthenticated' });
+    }
 
-  if (!row) {
-    logger.warn('rejected an unknown or expired session');
-    return res.status(401).json({ error: 'unauthenticated' });
-  }
+    req.organizer = row.organizer;
+    next();
+  };
+}
 
-  req.organizer = row.organizer;
-  next();
-};
+export function requireTenantMembership({ logger, db }: { logger: Logger; db: Database }): RequestHandler {
+  return async (req, res, next) => {
+    const organizer = req.organizer;
+    const tenantId = req.params.tenantId;
 
-export const requireTenantMembership: RequestHandler = async (req, res, next) => {
-  const db = req.container.resolve('db');
-  const logger = req.container.resolve('logger');
+    if (!organizer) {
+      return res.status(401).json({ error: 'unauthenticated' });
+    }
 
-  const organizer = req.organizer;
-  const tenantId = req.params.tenantId;
+    if (typeof tenantId !== 'string') {
+      return res.status(400).json({ error: 'invalid_tenant_id' });
+    }
 
-  if (!organizer) {
-    return res.status(401).json({ error: 'unauthenticated' });
-  }
+    const [row] = await db
+      .select({ tenant: tenants })
+      .from(organizerTenants)
+      .innerJoin(tenants, eq(organizerTenants.tenantId, tenants.id))
+      .where(and(eq(organizerTenants.organizerId, organizer.id), eq(organizerTenants.tenantId, tenantId)))
+      .limit(1);
 
-  if (typeof tenantId !== 'string') {
-    return res.status(400).json({ error: 'invalid_tenant_id' });
-  }
+    if (!row) {
+      logger.warn('organizer is not a member of this tenant', { organizer: organizer.email, tenantId });
+      return res.status(403).json({ error: 'forbidden' });
+    }
 
-  const [row] = await db
-    .select({ tenant: tenants })
-    .from(organizerTenants)
-    .innerJoin(tenants, eq(organizerTenants.tenantId, tenants.id))
-    .where(and(eq(organizerTenants.organizerId, organizer.id), eq(organizerTenants.tenantId, tenantId)))
-    .limit(1);
-
-  if (!row) {
-    logger.warn('organizer is not a member of this tenant', { organizer: organizer.email, tenantId });
-    return res.status(403).json({ error: 'forbidden' });
-  }
-
-  req.tenant = row.tenant;
-  next();
-};
+    req.tenant = row.tenant;
+    next();
+  };
+}

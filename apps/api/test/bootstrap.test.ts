@@ -4,25 +4,26 @@ import { sub } from 'date-fns';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { useApi } from './helpers/api.ts';
-import { createLocation, createMessage, createParticipant, createSession, createTenant } from './helpers/fixtures.ts';
+import { TestApi } from './helpers/api.ts';
+import { fixtures } from './helpers/fixtures.ts';
 
-const api = useApi();
+const api = TestApi.create();
+const create = fixtures(api.db);
 
 describe('GET /bootstrap', () => {
   it('returns the whole festival, and nothing but the contract fields', async () => {
-    const tenant = await createTenant({ domain: 'coolfest.localhost', name: 'Cool Fest', mapUrl: '/files/map' });
-    const stage = await createLocation(tenant, { name: 'Main stage', description: 'Outdoors', position: 1 });
-    const artist = await createParticipant(tenant, { name: 'Artist', origin: 'FR', styles: ['psytrance'] });
+    const tenant = await create.tenant({ domain: 'coolfest.localhost', name: 'Cool Fest', mapUrl: '/files/map' });
+    const stage = await create.location(tenant, { name: 'Main stage', description: 'Outdoors', position: 1 });
+    const artist = await create.participant(tenant, { name: 'Artist', origin: 'FR', styles: ['psytrance'] });
 
-    const session = await createSession(tenant, stage, {
+    const session = await create.session(tenant, stage, {
       type: 'dj_set',
       startsAt: new Date('2026-07-01T22:00:00Z'),
       endsAt: new Date('2026-07-01T23:30:00Z'),
       participants: [artist],
     });
 
-    const message = await createMessage(tenant, { title: 'Gates are open', body: 'Come on in.' });
+    const message = await create.message(tenant, { title: 'Gates are open', body: 'Come on in.' });
 
     const res = await api.get<BootstrapResponse>('/bootstrap', { host: 'coolfest.localhost' });
 
@@ -82,15 +83,15 @@ describe('GET /bootstrap', () => {
   });
 
   it('excludes the data of other tenants', async () => {
-    const tenant = await createTenant({ domain: 'coolfest.localhost' });
-    const other = await createTenant({ domain: 'other.localhost' });
+    const tenant = await create.tenant({ domain: 'coolfest.localhost' });
+    const other = await create.tenant({ domain: 'other.localhost' });
 
-    const stage = await createLocation(tenant, { name: 'Main stage' });
-    const otherStage = await createLocation(other, { name: 'Other stage' });
+    const stage = await create.location(tenant, { name: 'Main stage' });
+    const otherStage = await create.location(other, { name: 'Other stage' });
 
-    await createParticipant(other, { name: 'Other artist' });
-    await createSession(other, otherStage);
-    await createMessage(other, { title: 'Other announcement' });
+    await create.participant(other, { name: 'Other artist' });
+    await create.session(other, otherStage);
+    await create.message(other, { title: 'Other announcement' });
 
     const res = await api.get<BootstrapResponse>('/bootstrap', { host: 'coolfest.localhost' });
 
@@ -101,10 +102,10 @@ describe('GET /bootstrap', () => {
   });
 
   it('sorts messages newest first', async () => {
-    const tenant = await createTenant({ domain: 'coolfest.localhost' });
+    const tenant = await create.tenant({ domain: 'coolfest.localhost' });
 
-    const older = await createMessage(tenant, { createdAt: sub(Date.now(), { hours: 1 }) });
-    const newer = await createMessage(tenant);
+    const older = await create.message(tenant, { createdAt: sub(Date.now(), { hours: 1 }) });
+    const newer = await create.message(tenant);
 
     const res = await api.get<BootstrapResponse>('/bootstrap', { host: 'coolfest.localhost' });
 
@@ -112,16 +113,16 @@ describe('GET /bootstrap', () => {
   });
 
   it('sorts locations by position, participants by name and sessions by start time', async () => {
-    const tenant = await createTenant({ domain: 'coolfest.localhost' });
+    const tenant = await create.tenant({ domain: 'coolfest.localhost' });
 
-    const second = await createLocation(tenant, { name: 'Second', position: 2 });
-    const first = await createLocation(tenant, { name: 'First', position: 1 });
+    const second = await create.location(tenant, { name: 'Second', position: 2 });
+    const first = await create.location(tenant, { name: 'First', position: 1 });
 
-    await createParticipant(tenant, { name: 'Zoe' });
-    await createParticipant(tenant, { name: 'Amir' });
+    await create.participant(tenant, { name: 'Zoe' });
+    await create.participant(tenant, { name: 'Amir' });
 
-    const late = await createSession(tenant, first, { startsAt: new Date('2026-07-01T23:00:00Z') });
-    const early = await createSession(tenant, second, { startsAt: new Date('2026-07-01T20:00:00Z') });
+    const late = await create.session(tenant, first, { startsAt: new Date('2026-07-01T23:00:00Z') });
+    const early = await create.session(tenant, second, { startsAt: new Date('2026-07-01T20:00:00Z') });
 
     const res = await api.get<BootstrapResponse>('/bootstrap', { host: 'coolfest.localhost' });
 
@@ -131,13 +132,13 @@ describe('GET /bootstrap', () => {
   });
 
   it('lists the participants of a session in their line-up order', async () => {
-    const tenant = await createTenant({ domain: 'coolfest.localhost' });
-    const stage = await createLocation(tenant);
+    const tenant = await create.tenant({ domain: 'coolfest.localhost' });
+    const stage = await create.location(tenant);
 
-    const headliner = await createParticipant(tenant, { name: 'Zoe' });
-    const support = await createParticipant(tenant, { name: 'Amir' });
+    const headliner = await create.participant(tenant, { name: 'Zoe' });
+    const support = await create.participant(tenant, { name: 'Amir' });
 
-    await createSession(tenant, stage, { participants: [headliner, support] });
+    await create.session(tenant, stage, { participants: [headliner, support] });
 
     const res = await api.get<BootstrapResponse>('/bootstrap', { host: 'coolfest.localhost' });
     const [session] = res.body.sessions;

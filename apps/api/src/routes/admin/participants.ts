@@ -5,9 +5,9 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { participants, type Participant } from '../../db/schema.ts';
-import { optionalString } from '../../utils.ts';
+import { filterEmptyStrings, optionalString } from '../../utils.ts';
 
-export const participantsRouter = Router({ mergeParams: true });
+import type { Database } from '../../db/client.ts';
 
 const createSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -19,11 +19,76 @@ const createSchema = z.object({
   socialLinks: z.array(z.string().trim().max(400)).transform(filterEmptyStrings).pipe(z.array(z.url())).optional(),
 });
 
-function filterEmptyStrings(values: string[]) {
-  return values.filter((value) => value.length > 0);
-}
-
 const updateSchema = createSchema.partial();
+
+export function participantsRoutes({ db }: { db: Database }) {
+  const router = Router({ mergeParams: true });
+
+  router.get('/', async (req, res) => {
+    assert(req.tenant);
+
+    const rows = await db.query.participants.findMany({
+      where: { tenantId: req.tenant.id },
+      orderBy: { name: 'asc' },
+    });
+
+    res.json(rows.map(toParticipantDto));
+  });
+
+  router.post('/', async (req, res) => {
+    assert(req.tenant);
+
+    const values = createSchema.parse(req.body);
+
+    const [row] = await db
+      .insert(participants)
+      .values({
+        tenantId: req.tenant.id,
+        ...values,
+      })
+      .returning();
+
+    res.status(201).json(toParticipantDto(defined(row)));
+  });
+
+  router.patch('/:id', async (req, res) => {
+    assert(req.tenant);
+
+    const values = updateSchema.parse(req.body);
+
+    const [row] = await db
+      .update(participants)
+      .set({
+        ...values,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(participants.id, req.params.id), eq(participants.tenantId, req.tenant.id)))
+      .returning();
+
+    if (!row) {
+      return res.status(404).json({ error: 'not_found' });
+    }
+
+    res.json(toParticipantDto(row));
+  });
+
+  router.delete('/:id', async (req, res) => {
+    assert(req.tenant);
+
+    const [row] = await db
+      .delete(participants)
+      .where(and(eq(participants.id, req.params.id), eq(participants.tenantId, req.tenant.id)))
+      .returning();
+
+    if (!row) {
+      return res.status(404).json({ error: 'not_found' });
+    }
+
+    res.status(204).end();
+  });
+
+  return router;
+}
 
 function toParticipantDto(row: Participant): ParticipantDto {
   return {
@@ -37,74 +102,3 @@ function toParticipantDto(row: Participant): ParticipantDto {
     socialLinks: row.socialLinks,
   };
 }
-
-participantsRouter.get('/', async (req, res) => {
-  const db = req.container.resolve('db');
-
-  assert(req.tenant);
-
-  const rows = await db.query.participants.findMany({
-    where: { tenantId: req.tenant.id },
-    orderBy: { name: 'asc' },
-  });
-
-  res.json(rows.map(toParticipantDto));
-});
-
-participantsRouter.post('/', async (req, res) => {
-  const db = req.container.resolve('db');
-
-  assert(req.tenant);
-
-  const values = createSchema.parse(req.body);
-
-  const [row] = await db
-    .insert(participants)
-    .values({
-      tenantId: req.tenant.id,
-      ...values,
-    })
-    .returning();
-
-  res.status(201).json(toParticipantDto(defined(row)));
-});
-
-participantsRouter.patch('/:id', async (req, res) => {
-  const db = req.container.resolve('db');
-
-  assert(req.tenant);
-
-  const values = updateSchema.parse(req.body);
-
-  const [row] = await db
-    .update(participants)
-    .set({
-      ...values,
-      updatedAt: new Date(),
-    })
-    .where(and(eq(participants.id, req.params.id), eq(participants.tenantId, req.tenant.id)))
-    .returning();
-
-  if (!row) {
-    return res.status(404).json({ error: 'not_found' });
-  }
-
-  res.json(toParticipantDto(row));
-});
-
-participantsRouter.delete('/:id', async (req, res) => {
-  const db = req.container.resolve('db');
-
-  assert(req.tenant);
-
-  const [row] = await db
-    .delete(participants)
-    .where(and(eq(participants.id, req.params.id), eq(participants.tenantId, req.tenant.id)))
-    .returning();
-
-  if (!row) {
-    return res.status(404).json({ error: 'not_found' });
-  }
-
-  res.status(204).end();
-});

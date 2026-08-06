@@ -18,26 +18,40 @@ packages/     contracts (type-only) · config (tsconfig/oxlint/oxfmt) · utils (
   and `packages/contracts` is `import type` only.
 - **Narrow with `assert(value)` / `defined(value)`** (`@festivapp/utils`) — `!` is a lint error.
 - **`packages/utils` stays pure and dependency-free** — app-specific helpers go in that app's `lib/`.
-- **Every environment variable is optional**, read via `env()` in `envConfig()`; unset switches
-  behaviour rather than crashing (no `DATABASE_URL` runs wasm Postgres in-process, no `STORAGE_DIR`
-  keeps uploads in memory, no VAPID keys turn push off), so `pnpm dev` and `pnpm test` must work on
-  a machine with nothing installed. Each app has its own `.env`.
+- **Every environment variable is optional**, read via `env()` in `envConfig()` and never
+  `process.env` elsewhere; unset switches behaviour rather than crashing (no `DATABASE_URL` runs wasm
+  Postgres in-process, no `STORAGE_DIR` keeps uploads in memory, no VAPID keys turn push off), so
+  `pnpm dev` and `pnpm test` must work on a machine with nothing installed. Each app has its own
+  `.env`.
 
 ## API (`apps/api`)
 
-- **Dependencies come from the awilix container** (`src/container.ts`), never a module singleton.
-  Injection is `PROXY`, so **every factory takes the cradle and destructures** — a positional
-  parameter silently receives the cradle. A singleton may not depend on a scoped registration.
-- **A request gets a child scope on `req`** — `req.container.resolve('db')`; `db` is scoped so queries
-  log under the request id, and `container.dispose()` closes the singleton pool. `cli.ts`, `seed.ts`
-  and the tests resolve the imported container. Never build from config at module level.
-- **Log through the container's logger, never `console`**, context in the second argument
-  (`logger.warn('…', { domain, err })`); `requestLogger` already logs status/duration/tenant. The
-  CLI keeps `console.log`, its output being a result rather than a log.
-- **With no `DATABASE_URL` the client is pglite**, created empty, so `container.ts` runs
-  `applyMigrations` on that branch only; each process gets its own, so CLI writes are invisible to a
-  live server. `@electric-sql/pglite` and `drizzle-kit` are **runtime** dependencies — moving either
-  to `devDependencies` kills the production image with tests and typecheck still green.
+- **Dependencies are parameters, never module singletons or imports of a shared instance.** Anything
+  that needs `config`, `logger`, `db`, `storage` or `push` is a factory taking **one destructured
+  object** — `createPush({ config, logger, db })`, `requireTenant({ logger, db })`,
+  `messagesRoutes({ logger, db, push })` — returning the router, handler or service. Order the
+  properties `config, logger, db, storage, push` in both the parameter and the type. A factory that
+  currently needs nothing still takes no argument and is still called (`notFound()`,
+  `payloadErrorHandler()`, `manifestRoutes()`), so adding a dependency later is not a call-site churn.
+- **Entry points are the only place instances are built**: `index.ts` and `cli.ts` each construct the
+  graph top-down and pass it in. `seed.ts` takes its deps as its first argument. Nothing below the
+  entry point reaches for a global, and nothing builds from config at module level.
+- **A router factory's helpers live below it** — `to<Name>Dto`, schemas shared across handlers and
+  pure predicates stay module-level functions after the exported factory, not closures inside it.
+- **Log through the injected logger, never `console`**, context in the second argument
+  (`logger.warn('…', { domain, error })`); `requestLogger` already logs status/duration/tenant. Name
+  a caught error `error`, except in Express error middleware where the first parameter is `err` by
+  convention. The CLI prints with `console.log` — its output is a result, not a log, and a timestamp
+  prefix would break `festival list --json` and `push keys`.
+- **The request id rides an `AsyncLocalStorage`** (`middleware/request-context.ts`), which is what
+  lets `consoleLogger` tag drizzle's query lines without threading a request-scoped logger through
+  every call. It is also stashed on `req.requestId`, which is what `requestLogger` reads — its
+  `res.on('finish')` listener is detached from the request's async context.
+- **With no `DATABASE_URL` the client is pglite**, created empty, so `index.ts` runs `applyMigrations`
+  on that branch and refuses it when `config.env` is `production`. **The CLI requires a real
+  `DATABASE_URL`** and asserts on it: its own pglite would be a separate empty database, invisible to
+  any server. `@electric-sql/pglite` is a **runtime** dependency; `drizzle-kit` is a dev one, so
+  `applyMigrations` imports it dynamically and `db:push`/`db:migrate` are dev-only commands.
 - **Read with the relational query API** (`db.query.<table>.findMany({ where, orderBy })`,
   traversing declared `relations`); writes stay explicit with `.returning()`.
 - **Map rows to a contract DTO at the response boundary** — reads return full rows, so never hand one
@@ -49,22 +63,30 @@ packages/     contracts (type-only) · config (tsconfig/oxlint/oxfmt) · utils (
 - **Mount shared middleware on a parent segment**, nesting resource routers under it, grouped by
   audience in `routes/{app,admin}/`. Admin routes take the tenant from the URL/session, **never** the
   `Host`; only attendee routes run `requireTenant` (`?__tenant=`, `x-tenant-domain`, hostname).
-- **Files go through the `storage` registration** (disk under `STORAGE_DIR`, else memory), never
-  `node:fs`; `/files/:id` serves them immutable, so bytes must not change under an id.
+- **Files go through the injected `storage`** (disk under `STORAGE_DIR`, else memory), never
+  `node:fs`; `/files/:id` (`routes/public-files.ts`, unauthenticated) serves them immutable, so bytes
+  must not change under an id.
 - **Web push is fire-and-forget**: respond `201`, then `void push.sendToTenant(...)`, which logs
   failures and prunes subscriptions on 404/410. VAPID keys are global to the deployment.
-- **Dev uses `pnpm db:push`, production committed migrations** (`pnpm db:migrate`) — never point
-  `db:push` at production. `src/seed.ts` is the canonical dev dataset.
+- **`db:push` and `db:migrate` are dev commands** — never point either at production, which has no
+  `drizzle-kit`. `src/seed.ts` is the canonical dev dataset.
+- **`/health` probes the database** and answers `503 { status: 'degraded' }` rather than letting the
+  error reach `errorHandler` as a 500.
 
 ## Tests (`apps/api/test`)
 
 - **`node --test` + `node:assert/strict` only**, no framework, in `test/<subject>.test.ts`, with rows
-  built by `test/helpers/fixtures.ts` rather than raw inserts.
-- Tests hit a real database over real HTTP. Call **`useApi()` once per file at the top level** —
-  inside a `describe` its hooks close the pool for the other suites.
-- **Override the container, never the environment**: `useApi({ … })` takes a partial `Config` and
-  `registerTestDependencies` re-applies config + logger as **values** after every `beforeEach`
-  (re-registering a factory does not evict a cached singleton). Each file gets its own wasm Postgres.
+  built by `fixtures(api.db)` rather than raw inserts — `const create = fixtures(api.db)`, then
+  `create.tenant()`, `create.session(tenant, stage, { … })`. `create.theme()` is the one synchronous
+  member; don't `await` it.
+- Tests hit a real database over real HTTP. Call **`TestApi.create()` once per file at the top
+  level** — it registers the `before`/`after`/`beforeEach`/`afterEach` hooks, and inside a `describe`
+  they would close the server for the other suites.
+- **Configure through `TestApi.create({ … })`, never the environment**: it takes a partial `Config`,
+  builds its own dependency graph from it and exposes `api.config/logger/db/storage/push` for
+  assertions (`api.push.sendToTenant(...)`, `api.db.query.…`). `beforeEach` truncates every table.
+- **The stub logger prints itself on a failing test** — `afterEach` dumps the recorded lines as
+  `diagnostic` output, so a failure comes with the server-side log that explains it.
 - **Critical paths only** — tenant resolution and isolation, auth and membership, validation
   rejections, and each read's body. `deepEqual` a full payload at least once per endpoint, and give
   every resource route its tenant-scoping test (another festival's row answers 404).
@@ -150,7 +172,7 @@ restart) and a volume for `STORAGE_DIR`.
 - Root: `pnpm typecheck`, `pnpm lint`, `pnpm format` — CI runs those plus the API tests and both
   frontend builds.
 - `apps/api`: `pnpm dev`, `pnpm db:push`, `pnpm db:migrate`, `pnpm test`, `pnpm cli` (`organizer
-  create <email> <password> <domain…>`, `seed <file>`); `apps/app` / `apps/admin`: `pnpm dev`,
+create <email> <password> <domain…>`, `seed <file>`); `apps/app` / `apps/admin`: `pnpm dev`,
   `pnpm build`, `pnpm preview`.
 
 **Typecheck and lint passing do not prove the app runs** — a wrong import extension passes both and
