@@ -3,7 +3,11 @@ import { get } from '@festivapp/utils';
 import assert from 'node:assert/strict';
 import { describe, it, type TestContext } from 'node:test';
 
-import { TestSuite } from './helpers/api.ts';
+import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { TestSuite, type TestDependencies } from './helpers/api.ts';
 import { fixtures } from './helpers/fixtures.ts';
 
 import type { Tenant } from '../src/db/schema.ts';
@@ -16,8 +20,8 @@ const png = Buffer.from(
 const suite = TestSuite.create();
 const create = fixtures(suite.db);
 
-async function setup(t: TestContext) {
-  const api = suite.api(t);
+async function setup(t: TestContext, dependencies: TestDependencies = {}) {
+  const api = suite.api(t, dependencies);
   const tenant = await create.tenant();
   const other = await create.tenant();
   const organizer = await create.organizer({ password: 'hunter2', tenants: [tenant, other] });
@@ -157,5 +161,27 @@ describe('file deletion', () => {
 
     const download = await api.get(file.url);
     assert.equal(download.status, 200);
+  });
+});
+
+describe('disk storage', () => {
+  it('writes the bytes under STORAGE_DIR and removes them on delete', async (t) => {
+    const storageDir = await mkdtemp(join(tmpdir(), 'festivapp-'));
+
+    t.after(() => rm(storageDir, { recursive: true, force: true }));
+
+    const { api, tenant, upload } = await setup(t, { config: { storageDir } });
+
+    const { body: file } = await upload(tenant, png);
+
+    assert.deepEqual(await readdir(join(storageDir, tenant.id)), [`${file.id}.png`]);
+
+    const download = await api.get<Buffer>(file.url);
+    assert.deepEqual(download.body, png);
+
+    const deleted = await api.delete(`/admin/tenants/${tenant.id}/files/${file.id}`);
+    assert.equal(deleted.status, 204);
+
+    assert.deepEqual(await readdir(storageDir), []);
   });
 });

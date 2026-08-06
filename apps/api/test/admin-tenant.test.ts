@@ -61,4 +61,13 @@ describe('PATCH /admin/tenants/:tenantId', () => {
     assert.equal(res.body.name, 'Cooler Fest');
     assert.equal(res.body.registeredSubscriptions, 1);
   });
+
+  it('refuses a domain another festival already owns', async (t) => {
+    const { api, tenant, other } = await setup(t);
+
+    const res = await api.patch(`/admin/tenants/${tenant.id}`, { domain: other.domain });
+
+    assert.equal(res.status, 409);
+    assert.deepEqual(res.body, { error: 'domain_taken' });
+  });
 });
