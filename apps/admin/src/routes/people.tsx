@@ -1,39 +1,28 @@
-import { Form } from '@base-ui/react/form';
 import type { Participant, ParticipantInput, TenantSummary } from '@festivapp/contracts';
 import { has, matchesSearch } from '@festivapp/utils';
+import { revalidateLogic } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import { Pencil, Plus, Trash2, Users } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import * as z from 'zod/mini';
 
 import { Button, IconButton, LinkButton } from '../components/button.tsx';
 import { Chip } from '../components/chip.tsx';
 import { useConfirmDialog } from '../components/confirm-dialog.tsx';
 import { Drawer, useDrawer } from '../components/drawer.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
-import { FieldArray, getFieldArrayValues, useFieldArray } from '../components/field-array.tsx';
-import { Field } from '../components/field.tsx';
-import { FileInput } from '../components/file-input.tsx';
-import { Input } from '../components/input.tsx';
+import { Form, SubmitButton, useAppForm } from '../components/form/form.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { QueryBoundary } from '../components/query-boundary.tsx';
 import { NoMatch, SearchInput, SearchSummary } from '../components/search.tsx';
 import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '../components/table.tsx';
-import { Textarea } from '../components/textarea.tsx';
 import { Thumbnail } from '../components/thumbnail.tsx';
 import { useSearchParam } from '../hooks/use-search-param.ts';
 import { api } from '../lib/api.ts';
-import { parseValidationError } from '../lib/errors.ts';
+import { submitToApi } from '../lib/errors.ts';
 import { getThemeOptions, listParticipantsOptions, listSessionsOptions } from '../lib/queries.ts';
 
 const from = '/festivals/$tenantId/people';
-
-type FormValues = {
-  name: string;
-  origin: string;
-  label: string;
-  description: string;
-};
 
 export function People() {
   const { tenant } = useRouteContext({ from });
@@ -258,60 +247,77 @@ function ParticipantForm({
     onSuccess: invalidate,
   });
 
-  const [imageUrl, setImageUrl] = useState(defaultValue?.imageUrl ?? null);
+  const form = useAppForm({
+    defaultValues: toFormValues(defaultValue),
+    validationLogic: revalidateLogic(),
+    validators: { onDynamic: schema },
+    onSubmit: async ({ value, formApi }) => {
+      const input = toInput(value);
 
-  const pending = createMutation.isPending || updateMutation.isPending;
+      const saved = await submitToApi(formApi, () => {
+        if (!defaultValue) {
+          return createMutation.mutateAsync(input);
+        }
 
-  const errors = useMemo(() => {
-    return parseValidationError(createMutation.error ?? updateMutation.error);
-  }, [createMutation.error, updateMutation.error]);
+        return updateMutation.mutateAsync([defaultValue.id, input]);
+      });
 
-  const handleSubmit = (values: FormValues) => {
-    const input: ParticipantInput = {
-      name: values.name,
-      description: values.description,
-      imageUrl,
-      origin: values.origin,
-      label: values.label,
-      styles: getFieldArrayValues(values, 'styles', String),
-      socialLinks: getFieldArrayValues(values, 'socialLinks', String),
-    };
-
-    if (!defaultValue) {
-      createMutation.mutate(input, { onSuccess: onClose });
-    } else {
-      updateMutation.mutate([defaultValue.id, input], { onSuccess: onClose });
-    }
-  };
+      if (saved) {
+        onClose();
+      }
+    },
+  });
 
   return (
-    <Form errors={errors} onFormSubmit={handleSubmit} className="col min-h-0 flex-1">
+    <Form form={form} className="col min-h-0 flex-1">
       <div className="col min-h-0 flex-1 gap-6 overflow-y-auto p-4">
-        <Field name="name" label="Name" errors={[{ match: 'valueMissing', message: 'A name is required.' }]}>
-          <Input required defaultValue={defaultValue?.name} placeholder="Johnny Purple" />
-        </Field>
+        <form.AppField name="name">
+          {({ InputField }) => <InputField label="Name" placeholder="Johnny Purple" />}
+        </form.AppField>
 
-        <Field label="Picture" hint="Shown on the session's page in the app.">
-          <FileInput tenantId={tenant.id} value={imageUrl} onValueChange={setImageUrl} />
-        </Field>
+        <form.AppField name="imageUrl">
+          {({ FileField }) => (
+            <FileField tenantId={tenant.id} label="Picture" hint="Shown on the session's page in the app." />
+          )}
+        </form.AppField>
 
         <div className="grid gap-6 sm:grid-cols-2">
-          <Field name="label" label="Label" hint="Artists only.">
-            <Input defaultValue={defaultValue?.label ?? ''} placeholder="Trip Records" />
-          </Field>
+          <form.AppField name="label">
+            {({ InputField }) => <InputField label="Label" hint="Artists only." placeholder="Trip Records" />}
+          </form.AppField>
 
-          <Field name="origin" label="Origin" hint="Artists only.">
-            <Input defaultValue={defaultValue?.origin ?? ''} placeholder="Berlin" />
-          </Field>
+          <form.AppField name="origin">
+            {({ InputField }) => <InputField label="Origin" hint="Artists only." placeholder="Berlin" />}
+          </form.AppField>
         </div>
 
-        <StylesEditor styles={defaultValue?.styles} />
+        <form.AppField name="styles" mode="array">
+          {({ ArrayField }) => (
+            <ArrayField label="Styles" add="Add a style" empty="">
+              {(index) => (
+                <form.AppField name={`styles[${index}]`}>
+                  {({ InputField }) => <InputField placeholder="e.g. techno" />}
+                </form.AppField>
+              )}
+            </ArrayField>
+          )}
+        </form.AppField>
 
-        <Field name="description" label="Description">
-          <Textarea rows={6} defaultValue={defaultValue?.description ?? ''} />
-        </Field>
+        <form.AppField name="description">
+          {(field) => <field.TextareaField label="Description" rows={6} />}
+        </form.AppField>
 
-        <SocialLinksEditor links={defaultValue?.socialLinks} />
+        <form.AppField name="socialLinks" mode="array">
+          {({ ArrayField }) => (
+            <ArrayField label="Links" add="Add a link" empty="">
+              {(index) => (
+                <form.AppField name={`socialLinks[${index}]`}>
+                  {({ InputField }) => <InputField type="url" placeholder="https://" />}
+                </form.AppField>
+              )}
+            </ArrayField>
+          )}
+        </form.AppField>
       </div>
 
       <div className="row gap-4 border-t p-4">
@@ -319,52 +325,42 @@ function ParticipantForm({
           Cancel
         </Button>
 
-        <Button type="submit" className="flex-1" disabled={pending}>
-          {!defaultValue ? 'Add person' : 'Save changes'}
-        </Button>
+        <SubmitButton className="flex-1">{!defaultValue ? 'Add person' : 'Save changes'}</SubmitButton>
       </div>
     </Form>
   );
 }
 
-function StylesEditor({ styles = [] }: { styles?: string[] }) {
-  const { fields, append, remove } = useFieldArray(styles);
+const schema = z.object({
+  name: z.string().check(z.minLength(1, 'A name is required.')),
+  imageUrl: z.nullable(z.string()),
+  label: z.string(),
+  origin: z.string(),
+  description: z.string(),
+  styles: z.array(z.string()),
+  socialLinks: z.array(z.union([z.literal(''), z.url({ error: 'Enter a full URL, starting with https://' })])),
+});
 
-  return (
-    <FieldArray
-      fields={fields}
-      name="styles"
-      onAdd={() => append('')}
-      onRemove={remove}
-      label="Styles"
-      add="Add a style"
-    >
-      {(style, index) => (
-        <Field>
-          <Input name={`styles.${index}`} defaultValue={style} placeholder="e.g. techno" />
-        </Field>
-      )}
-    </FieldArray>
-  );
+function toFormValues(participant?: Participant) {
+  return {
+    name: participant?.name ?? '',
+    imageUrl: participant?.imageUrl ?? null,
+    label: participant?.label ?? '',
+    origin: participant?.origin ?? '',
+    description: participant?.description ?? '',
+    styles: participant?.styles ?? [],
+    socialLinks: participant?.socialLinks ?? [],
+  };
 }
 
-function SocialLinksEditor({ links = [] }: { links?: string[] }) {
-  const { fields, append, remove } = useFieldArray(links);
-
-  return (
-    <FieldArray
-      fields={fields}
-      name="socialLinks"
-      onAdd={() => append('')}
-      onRemove={remove}
-      label="Links"
-      add="Add a link"
-    >
-      {(link, index) => (
-        <Field errors={[{ match: 'typeMismatch', message: 'Enter a full URL, starting with https://' }]}>
-          <Input type="url" name={`socialLinks.${index}`} defaultValue={link} placeholder="https://" />
-        </Field>
-      )}
-    </FieldArray>
-  );
+function toInput(values: z.infer<typeof schema>): ParticipantInput {
+  return {
+    name: values.name,
+    description: values.description,
+    imageUrl: values.imageUrl,
+    origin: values.origin,
+    label: values.label,
+    styles: values.styles.filter((value) => value.trim() !== ''),
+    socialLinks: values.socialLinks.filter((value) => value.trim() !== ''),
+  };
 }

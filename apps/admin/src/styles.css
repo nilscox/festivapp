@@ -65,6 +65,10 @@
     outline-width: 2px;
   }
 
+  [data-invalid] {
+    outline-color: var(--color-danger);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     * {
       transition: none;

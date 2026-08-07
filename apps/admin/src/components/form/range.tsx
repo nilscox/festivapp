@@ -3,9 +3,8 @@ import clsx from 'clsx';
 import { useState } from 'react';
 
 export function Range({ defaultValue, className, ...props }: React.ComponentProps<'input'>) {
-  const [value, setValue] = useState(
-    typeof props.value === 'number' ? props.value : typeof defaultValue === 'number' ? defaultValue : 0,
-  );
+  const [uncontrolled, setUncontrolled] = useState(typeof defaultValue === 'number' ? defaultValue : 0);
+  const value = typeof props.value === 'number' ? props.value : uncontrolled;
 
   return (
     <div className="row items-center gap-3">
@@ -14,7 +13,7 @@ export function Range({ defaultValue, className, ...props }: React.ComponentProp
         type="range"
         value={value}
         onChange={(event) => {
-          setValue(Number(event.currentTarget.value));
+          setUncontrolled(Number(event.currentTarget.value));
           props.onChange?.(event);
         }}
         className={clsx(

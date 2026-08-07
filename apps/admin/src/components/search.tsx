@@ -3,7 +3,7 @@ import { Search, SearchX } from 'lucide-react';
 
 import { Button } from './button.tsx';
 import { EmptyState } from './empty-state.tsx';
-import { Input } from './input.tsx';
+import { Input } from './form/input.tsx';
 
 export function SearchInput({
   value,

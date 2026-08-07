@@ -1,7 +1,24 @@
-import type { Form } from '@base-ui/react/form';
+import type { AnyFormApi } from '@tanstack/react-form';
 import * as z from 'zod/mini';
 
 import { ApiError } from './api.ts';
+
+export async function submitToApi(form: AnyFormApi, submit: () => Promise<unknown>) {
+  form.setErrorMap({ onServer: undefined });
+
+  try {
+    await submit();
+    return true;
+  } catch (error) {
+    const fields = parseValidationError(error);
+
+    if (fields) {
+      form.setErrorMap({ onServer: { fields } });
+    }
+
+    return false;
+  }
+}
 
 type ErrorTree = {
   errors: string[];
@@ -19,7 +36,7 @@ const schema: z.ZodMiniType<ErrorTree> = z.object({
   },
 });
 
-export function parseValidationError(error: unknown): Form.Props['errors'] {
+export function parseValidationError(error: unknown) {
   if (ApiError.is(error, 400)) {
     const { success, data } = schema.safeParse(error.body);
 
@@ -29,9 +46,9 @@ export function parseValidationError(error: unknown): Form.Props['errors'] {
   }
 }
 
-function flatten(tree: ErrorTree, path = '', errors: Record<string, string[]> = {}) {
-  if (path !== '' && tree.errors.length > 0) {
-    errors[path] = tree.errors;
+function flatten(tree: ErrorTree, path = '', errors: Record<string, string> = {}) {
+  if (path !== '' && tree.errors[0] !== undefined) {
+    errors[path] = tree.errors[0];
   }
 
   for (const [key, child] of Object.entries(tree.properties ?? {})) {
@@ -48,5 +65,9 @@ function flatten(tree: ErrorTree, path = '', errors: Record<string, string[]> = 
 }
 
 function join(path: string, key: string | number) {
-  return path === '' ? String(key) : `${path}.${key}`;
+  if (typeof key === 'number') {
+    return `${path}[${key}]`;
+  }
+
+  return path === '' ? key : `${path}.${key}`;
 }

@@ -9,17 +9,23 @@ export function Checkbox({
   label,
   hint,
   defaultChecked,
+  checked,
+  onCheckedChange,
 }: {
   name?: string;
   label: React.ReactNode;
   hint?: React.ReactNode;
   defaultChecked?: boolean;
+  checked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
 }) {
   return (
     <label className="row cursor-pointer items-start gap-2">
       <Root
         name={name}
         defaultChecked={defaultChecked}
+        checked={checked}
+        onCheckedChange={onCheckedChange}
         className={clsx(
           'bg-surface hover:border-line-strong flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-md border',
           'data-checked:bg-accent data-checked:border-accent',

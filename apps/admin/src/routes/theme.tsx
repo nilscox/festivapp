@@ -8,14 +8,14 @@ import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 
 import { Button } from '../components/button.tsx';
-import { Field } from '../components/field.tsx';
-import { FileInput } from '../components/file-input.tsx';
-import { Input } from '../components/input.tsx';
+import { Field } from '../components/form/field.tsx';
+import { FileInput } from '../components/form/file-input.tsx';
+import { Input } from '../components/form/input.tsx';
+import { Range } from '../components/form/range.tsx';
+import { Textarea } from '../components/form/textarea.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { QueryBoundary } from '../components/query-boundary.tsx';
-import { Range } from '../components/range.tsx';
 import { Section } from '../components/section.tsx';
-import { Textarea } from '../components/textarea.tsx';
 import { api } from '../lib/api.ts';
 import { getThemeOptions } from '../lib/queries.ts';
 

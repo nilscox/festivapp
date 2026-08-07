@@ -2,7 +2,7 @@ import { Field } from '@base-ui/react/field';
 import { Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, IconButton } from './button.tsx';
+import { Button, IconButton } from '../button.tsx';
 
 export function FieldArray<T>({
   fields,

@@ -7,8 +7,8 @@ import { useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 
 import { Button } from '../components/button.tsx';
-import { Field, Label } from '../components/field.tsx';
-import { Input } from '../components/input.tsx';
+import { Field, Label } from '../components/form/field.tsx';
+import { Input } from '../components/form/input.tsx';
 import { api, ApiError } from '../lib/api.ts';
 import { parseValidationError } from '../lib/errors.ts';
 

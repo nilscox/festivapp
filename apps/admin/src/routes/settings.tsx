@@ -6,10 +6,10 @@ import { useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 
 import { Button } from '../components/button.tsx';
-import { Combobox } from '../components/combobox.tsx';
 import { useConfirmDialog } from '../components/confirm-dialog.tsx';
-import { Field } from '../components/field.tsx';
-import { Input } from '../components/input.tsx';
+import { Combobox } from '../components/form/combobox.tsx';
+import { Field } from '../components/form/field.tsx';
+import { Input } from '../components/form/input.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { QueryBoundary } from '../components/query-boundary.tsx';
 import { Section } from '../components/section.tsx';

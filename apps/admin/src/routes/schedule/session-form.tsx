@@ -6,11 +6,11 @@ import clsx from 'clsx';
 import { useMemo, useState } from 'react';
 
 import { Button } from '../../components/button.tsx';
-import { FieldArray, useFieldArray } from '../../components/field-array.tsx';
-import { Field } from '../../components/field.tsx';
-import { Input } from '../../components/input.tsx';
-import { Select } from '../../components/select.tsx';
-import { Textarea } from '../../components/textarea.tsx';
+import { FieldArray, useFieldArray } from '../../components/form/field-array.tsx';
+import { Field } from '../../components/form/field.tsx';
+import { Input } from '../../components/form/input.tsx';
+import { Select } from '../../components/form/select.tsx';
+import { Textarea } from '../../components/form/textarea.tsx';
 import { api } from '../../lib/api.ts';
 import { formatDayKey, formatTime, nextDay, toInstant } from '../../lib/datetime.ts';
 import { parseValidationError } from '../../lib/errors.ts';

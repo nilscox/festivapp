@@ -4,12 +4,12 @@ import { defined, has } from '@festivapp/utils';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeftRight } from 'lucide-react';
 
-import { getThemeOptions, listFilesOptions } from '../lib/queries.ts';
-import { Button } from './button.tsx';
-import { useDrawer } from './drawer.tsx';
-import { FilePicker } from './file-picker.tsx';
-import { Thumbnail } from './thumbnail.tsx';
-import { UploadButton } from './upload-button.tsx';
+import { getThemeOptions, listFilesOptions } from '../../lib/queries.ts';
+import { Button } from '../button.tsx';
+import { useDrawer } from '../drawer.tsx';
+import { FilePicker } from '../file-picker.tsx';
+import { Thumbnail } from '../thumbnail.tsx';
+import { UploadButton } from '../upload-button.tsx';
 
 export function FileInput({
   tenantId,
