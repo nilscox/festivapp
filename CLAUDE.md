@@ -129,9 +129,12 @@ packages/     contracts (type-only) · config (tsconfig/oxlint/oxfmt) · utils (
   on the object pushing an issue at the field's `path`.
 - **Controls are the bound field components**, never the raw primitives: `<form.AppField name>` gives
   a typed name, its render prop destructures the one it needs (`{({ InputField }) => …}`), and
-  arrays are `mode="array"` plus `ArrayField`, addressing items as `` `styles[${index}]` ``. The
-  primitives beside them (`input.tsx`, `select.tsx`, …) stay presentational — Base UI still owns the
-  markup and gets `invalid`/`touched` from the field.
+  arrays are `mode="array"` plus `ArrayField`, addressing items as `` `styles[${index}]` ``.
+- **A control and its field component share a file**, the bound one first and the presentational one
+  below (`input.tsx` is `InputField` then `Input`) — a new control means one file plus a line in
+  `form.tsx`'s `fieldComponents`. The presentational half stays dumb and controlled; `field.tsx` owns
+  the `Field` wrapper that hands Base UI `invalid`/`touched`, so it is what keeps the markup and the
+  aria wiring identical across all of them.
 - **Submit through `submitToApi(formApi, …)`** (`lib/errors.ts`), which puts a 400 on the form's
   `onServer` error map via `parseValidationError` and returns whether it saved; anything else is
   already toasted by the `MutationCache`. Its third argument maps a non-400 onto a field (settings'

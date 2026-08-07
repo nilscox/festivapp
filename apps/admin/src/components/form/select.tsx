@@ -1,6 +1,9 @@
 import { Select as BaseSelect } from '@base-ui/react/select';
 import { Check, ChevronDown } from 'lucide-react';
 
+import { useFieldContext } from './context.ts';
+import { Field, type FieldProps } from './field.tsx';
+
 const { Root, Trigger, Value, Icon, Portal, Positioner, Popup, Item, ItemText, ItemIndicator } = BaseSelect;
 
 type Item<T> = { value: T; label: React.ReactNode };
@@ -53,5 +56,26 @@ export function Select<T extends string | number>({
         </Positioner>
       </Portal>
     </Root>
+  );
+}
+
+export function SelectField<T extends string | number>({
+  label,
+  hint,
+  items,
+  placeholder,
+}: FieldProps & Pick<SelectProps<T>, 'items' | 'placeholder'>) {
+  const field = useFieldContext<T>();
+
+  return (
+    <Field label={label} hint={hint}>
+      <Select
+        name={field.name}
+        items={items}
+        placeholder={placeholder}
+        value={field.state.value}
+        onValueChange={(value) => value !== null && field.handleChange(value)}
+      />
+    </Field>
   );
 }

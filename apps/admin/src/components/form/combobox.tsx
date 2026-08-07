@@ -1,6 +1,8 @@
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox';
 import { Check, ChevronDown } from 'lucide-react';
 
+import { useFieldContext } from './context.ts';
+import { Field, type FieldProps } from './field.tsx';
 import { Input } from './input.tsx';
 
 const { Root, Icon, Portal, Positioner, Popup, Empty, List, Item, ItemIndicator } = BaseCombobox;
@@ -47,5 +49,26 @@ export function Combobox({ items, name, defaultValue, value, onValueChange, plac
         </Positioner>
       </Portal>
     </Root>
+  );
+}
+
+export function ComboboxField({
+  label,
+  hint,
+  items,
+  placeholder,
+}: FieldProps & Pick<ComboboxProps, 'items' | 'placeholder'>) {
+  const field = useFieldContext<string>();
+
+  return (
+    <Field label={label} hint={hint}>
+      <Combobox
+        name={field.name}
+        items={items}
+        placeholder={placeholder}
+        value={field.state.value}
+        onValueChange={(value) => field.handleChange(value ?? '')}
+      />
+    </Field>
   );
 }

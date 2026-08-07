@@ -2,17 +2,15 @@ import { type AnyFormApi, createFormHook } from '@tanstack/react-form';
 
 import { Button } from '../button.tsx';
 import { ArrayField } from './array-field.tsx';
+import { CheckboxField } from './checkbox.tsx';
+import { ColorField } from './color-input.tsx';
+import { ComboboxField } from './combobox.tsx';
 import { FieldContext, FormContext, useFormContext } from './context.ts';
-import {
-  CheckboxField,
-  ColorField,
-  ComboboxField,
-  FileField,
-  InputField,
-  RangeField,
-  SelectField,
-  TextareaField,
-} from './fields.tsx';
+import { FileField } from './file-input.tsx';
+import { InputField } from './input.tsx';
+import { RangeField } from './range.tsx';
+import { SelectField } from './select.tsx';
+import { TextareaField } from './textarea.tsx';
 
 export const { useAppForm } = createFormHook({
   fieldContext: FieldContext,
@@ -23,10 +21,10 @@ export const { useAppForm } = createFormHook({
     ColorField,
     ComboboxField,
     FileField,
+    InputField,
     RangeField,
     SelectField,
     TextareaField,
-    InputField,
   },
   formComponents: {},
 });

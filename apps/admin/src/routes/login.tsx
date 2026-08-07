@@ -6,7 +6,7 @@ import { CircleAlert } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as z from 'zod/mini';
 
-import { Label } from '../components/form/fields.tsx';
+import { Label } from '../components/form/field.tsx';
 import { Form, SubmitButton, useAppForm } from '../components/form/form.tsx';
 import { api, ApiError } from '../lib/api.ts';
 import { submitToApi } from '../lib/errors.ts';

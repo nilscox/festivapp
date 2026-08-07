@@ -10,6 +10,8 @@ import { useDrawer } from '../drawer.tsx';
 import { FilePicker } from '../file-picker.tsx';
 import { Thumbnail } from '../thumbnail.tsx';
 import { UploadButton } from '../upload-button.tsx';
+import { useFieldContext } from './context.ts';
+import { Field, type FieldProps } from './field.tsx';
 
 export function FileInput({
   tenantId,
@@ -80,5 +82,15 @@ export function FileInput({
 
       <FilePicker tenantId={tenantId} background={theme?.backgroundColor} drawer={drawer} onSelect={onSelect} />
     </>
+  );
+}
+
+export function FileField({ label, hint, tenantId }: FieldProps & { tenantId: string }) {
+  const field = useFieldContext<string | null>();
+
+  return (
+    <Field label={label} hint={hint}>
+      <FileInput tenantId={tenantId} value={field.state.value} onValueChange={field.handleChange} />
+    </Field>
   );
 }

@@ -3,7 +3,7 @@ import { Plus, Trash2 } from 'lucide-react';
 
 import { Button, IconButton } from '../button.tsx';
 import { useFieldContext } from './context.ts';
-import { fieldError } from './fields.tsx';
+import { fieldError } from './field.tsx';
 
 export function ArrayField<T>({
   label,

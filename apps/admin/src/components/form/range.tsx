@@ -1,21 +1,18 @@
-import { Field } from '@base-ui/react/field';
+import { Field as BaseField } from '@base-ui/react/field';
+import type { Override } from '@festivapp/utils';
 import clsx from 'clsx';
-import { useState } from 'react';
 
-export function Range({ defaultValue, className, ...props }: React.ComponentProps<'input'>) {
-  const [uncontrolled, setUncontrolled] = useState(typeof defaultValue === 'number' ? defaultValue : 0);
-  const value = typeof props.value === 'number' ? props.value : uncontrolled;
+import { useFieldContext } from './context.ts';
+import { Field, type FieldProps } from './field.tsx';
 
+type RangeProps = Override<React.ComponentProps<'input'>, { value?: number }>;
+
+export function Range({ className, ...props }: RangeProps) {
   return (
     <div className="row items-center gap-3">
-      <Field.Control
+      <BaseField.Control
         {...props}
         type="range"
-        value={value}
-        onChange={(event) => {
-          setUncontrolled(Number(event.currentTarget.value));
-          props.onChange?.(event);
-        }}
         className={clsx(
           'accent-accent flex-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50',
           className,
@@ -23,8 +20,23 @@ export function Range({ defaultValue, className, ...props }: React.ComponentProp
       />
 
       <span className={clsx('text-muted w-10 text-right font-mono text-xs', props.disabled && 'opacity-50')}>
-        {Math.round(value * 100)}%
+        {Math.round((props.value ?? 0) * 100)}%
       </span>
     </div>
+  );
+}
+
+export function RangeField({ label, hint, ...props }: FieldProps & RangeProps) {
+  const field = useFieldContext<number>();
+
+  return (
+    <Field label={label} hint={hint}>
+      <Range
+        {...props}
+        name={field.name}
+        value={field.state.value}
+        onChange={(event) => field.handleChange(Number(event.currentTarget.value))}
+      />
+    </Field>
   );
 }

@@ -2,6 +2,9 @@ import { Checkbox as BaseCheckbox } from '@base-ui/react/checkbox';
 import clsx from 'clsx';
 import { Check } from 'lucide-react';
 
+import { useFieldContext } from './context.ts';
+import { Field, type FieldProps } from './field.tsx';
+
 const { Root, Indicator } = BaseCheckbox;
 
 export function Checkbox({
@@ -41,5 +44,21 @@ export function Checkbox({
         {hint && <div className="text-muted mt-0.5 text-xs">{hint}</div>}
       </div>
     </label>
+  );
+}
+
+export function CheckboxField({ label, hint }: FieldProps) {
+  const field = useFieldContext<boolean>();
+
+  return (
+    <Field>
+      <Checkbox
+        name={field.name}
+        label={label}
+        hint={hint}
+        checked={field.state.value}
+        onCheckedChange={field.handleChange}
+      />
+    </Field>
   );
 }
