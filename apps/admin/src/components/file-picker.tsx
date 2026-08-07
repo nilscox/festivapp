@@ -12,22 +12,20 @@ import { Thumbnail } from './thumbnail.tsx';
 import { UploadButton } from './upload-button.tsx';
 
 export function FilePicker({
+  drawer,
   tenantId,
   background,
-  open,
-  onOpenChange,
   onSelect,
 }: {
+  drawer: { open: boolean; onOpenChange: (open: boolean) => void };
   tenantId: string;
   background?: string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   onSelect: (file: UploadedFile) => void;
 }) {
   const query = useQuery(listFilesOptions(tenantId));
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} eyebrow="File upload" title="Choose a file">
+    <Drawer {...drawer} eyebrow="File upload" title="Choose a file">
       <div className="col flex-1 gap-4 overflow-y-auto p-4">
         <QueryBoundary query={query}>
           {(files) => <FileList files={files} background={background} onSelect={onSelect} />}

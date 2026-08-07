@@ -8,6 +8,7 @@ import { useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 
 import { Button, IconButton } from '../components/button.tsx';
+import { useDrawer } from '../components/drawer.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
 import { FilePicker } from '../components/file-picker.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
@@ -20,19 +21,24 @@ const from = '/festivals/$tenantId/map';
 
 export function FestivalMap() {
   const { tenant } = useRouteContext({ from });
-  const [picking, setPicking] = useState(false);
+  const picker = useDrawer();
 
   const tenantQuery = useQuery(getTenantOptions(tenant.id));
   const locationsQuery = useQuery(listLocationsOptions(tenant.id));
   const themeQuery = useQuery(getThemeOptions(tenant.id));
 
-  const mutation = useSetMapUrl(tenant.id);
-  const mapUrl = tenantQuery.data?.mapUrl ?? null;
+  const queryClient = useQueryClient();
 
-  const setMapUrl = (mapUrl: string | null) => {
-    setPicking(false);
-    mutation.mutate({ mapUrl }, { onSuccess: () => toast.success(mapUrl ? 'Map updated' : 'Map removed') });
-  };
+  const mutation = useMutation({
+    mutationFn: (input: Partial<TenantInput>) => api.patch<Tenant>(`/admin/tenants/${tenant.id}`, input),
+    onSuccess: async (_, { mapUrl }) => {
+      await queryClient.invalidateQueries(getTenantOptions(tenant.id));
+      picker.onClose();
+      toast.success(mapUrl ? 'Map updated' : 'Map removed');
+    },
+  });
+
+  const mapUrl = tenantQuery.data?.mapUrl ?? null;
 
   return (
     <Page
@@ -46,8 +52,8 @@ export function FestivalMap() {
             mapUrl && (
               <HeaderActions
                 pending={mutation.isPending}
-                onChange={() => setPicking(true)}
-                onRemove={() => setMapUrl(null)}
+                onChange={picker.onOpen}
+                onRemove={() => mutation.mutate({ mapUrl: null })}
               />
             )
           }
@@ -63,7 +69,7 @@ export function FestivalMap() {
                 title="No map yet"
                 description="Upload a picture of the festival grounds, then drag a pin onto it for each location to show attendees where things are."
                 cta={
-                  <Button onClick={() => setPicking(true)}>
+                  <Button onClick={picker.onOpen}>
                     <Upload className="size-4" /> Set a map
                   </Button>
                 }
@@ -73,11 +79,10 @@ export function FestivalMap() {
             )}
 
             <FilePicker
+              drawer={picker}
               tenantId={tenant.id}
               background={themeQuery.data?.backgroundColor}
-              open={picking}
-              onOpenChange={setPicking}
-              onSelect={(file) => setMapUrl(file.url)}
+              onSelect={(file) => mutation.mutate({ mapUrl: file.url })}
             />
           </>
         )}
@@ -236,13 +241,4 @@ function Pin({
       </span>
     </div>
   );
-}
-
-function useSetMapUrl(tenantId: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (input: Partial<TenantInput>) => api.patch<Tenant>(`/admin/tenants/${tenantId}`, input),
-    onSuccess: () => queryClient.invalidateQueries(getTenantOptions(tenantId)),
-  });
 }

@@ -10,6 +10,7 @@ export default defineConfig({
   rules: {
     'no-shadow': ['off'],
     'no-underscore-dangle': ['warn'],
+    'no-unused-vars': ['error', { ignoreRestSiblings: true, argsIgnorePattern: '^_' }],
     'import/extensions': ['warn', 'ignorePackages'],
     'import/no-unassigned-import': ['warn', { allow: ['@fontsource-variable/*', '**/*.css'] }],
     'typescript/no-non-null-assertion': 'error',

@@ -8,7 +8,7 @@ import { CalendarDays, MapPin, Pencil, Plus, Trash2, TriangleAlert } from 'lucid
 import { IconButton, LinkButton } from '../../components/button.tsx';
 import { Chip } from '../../components/chip.tsx';
 import { useConfirmDialog } from '../../components/confirm-dialog.tsx';
-import { Drawer } from '../../components/drawer.tsx';
+import { Drawer, useDrawer } from '../../components/drawer.tsx';
 import { EmptyState } from '../../components/empty-state.tsx';
 import { Page, PageHeader } from '../../components/page.tsx';
 import { QueryBoundary } from '../../components/query-boundary.tsx';
@@ -132,20 +132,20 @@ function SessionDrawer({
   participants: Participant[];
 }) {
   const { create, edit: editId } = useSearch({ from });
-  const open = create !== undefined || editId !== undefined;
+  const drawer = useDrawer(create !== undefined || editId !== undefined);
 
   const navigate = useNavigate({ from });
-  const onClose = () => navigate({ search: (prev) => ({ search: prev.search }) });
+  const onClosed = () => navigate({ search: ({ create, edit, ...prev }) => prev, replace: true });
 
   return (
-    <Drawer open={open} onOpenChange={(open) => !open && onClose()} title={create ? 'New session' : 'Edit session'}>
+    <Drawer {...drawer} onClosed={onClosed} title={create ? 'New session' : 'Edit session'}>
       <SessionForm
         session={editId ? sessions.find(has('id', editId)) : undefined}
         tenantId={festival.id}
         locations={locations}
         participants={participants}
         timezone={festival.timezone}
-        onClose={onClose}
+        onClose={drawer.onClose}
       />
     </Drawer>
   );

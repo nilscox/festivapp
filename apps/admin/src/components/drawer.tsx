@@ -1,20 +1,37 @@
 import { Dialog } from '@base-ui/react/dialog';
 import clsx from 'clsx';
 import { X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Eyebrow } from './eyebrow.tsx';
+
+export function useDrawer(isOpen = false) {
+  const [open, setOpen] = useState(isOpen);
+
+  useEffect(() => {
+    setOpen(isOpen);
+  }, [isOpen]);
+
+  return {
+    open,
+    onOpenChange: setOpen,
+    onOpen: useCallback(() => setOpen(true), []),
+    onClose: useCallback(() => setOpen(false), []),
+  };
+}
 
 type DrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onClosed?: () => void;
   eyebrow?: React.ReactNode;
   title: React.ReactNode;
   children: React.ReactNode;
 };
 
-export function Drawer({ open, onOpenChange, eyebrow, title, children }: DrawerProps) {
+export function Drawer({ open, onOpenChange, onClosed, eyebrow, title, children }: DrawerProps) {
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={onOpenChange} onOpenChangeComplete={(open) => !open && onClosed?.()}>
       <Dialog.Portal>
         <Dialog.Backdrop className="base-ui-fade bg-ink/40 fixed inset-0 transition-opacity" />
         <Dialog.Popup

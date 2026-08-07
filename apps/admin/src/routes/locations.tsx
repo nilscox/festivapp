@@ -8,7 +8,7 @@ import { useMemo } from 'react';
 
 import { Button, IconButton, LinkButton } from '../components/button.tsx';
 import { useConfirmDialog } from '../components/confirm-dialog.tsx';
-import { Drawer } from '../components/drawer.tsx';
+import { Drawer, useDrawer } from '../components/drawer.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
 import { Field } from '../components/field.tsx';
 import { Input } from '../components/input.tsx';
@@ -157,18 +157,18 @@ function LocationItem({ location, onDelete }: { location: Location; onDelete: ()
 
 function LocationDrawer({ tenant, locations }: { tenant: TenantSummary; locations: Location[] }) {
   const { create, edit: editId } = useSearch({ from });
-  const open = create !== undefined || editId !== undefined;
+  const drawer = useDrawer(create !== undefined || editId !== undefined);
 
   const navigate = useNavigate({ from });
-  const onClose = () => navigate({ search: {} });
+  const onClosed = () => navigate({ search: ({ create, edit, ...prev }) => prev, replace: true });
 
   return (
-    <Drawer open={open} onOpenChange={(open) => !open && onClose()} title={create ? 'New location' : 'Edit location'}>
+    <Drawer {...drawer} onClosed={onClosed} title={create ? 'New location' : 'Edit location'}>
       <LocationForm
         tenant={tenant}
         locations={locations}
         defaultValue={editId ? locations.find(has('id', editId)) : undefined}
-        onClose={onClose}
+        onClose={drawer.onClose}
       />
     </Drawer>
   );

@@ -3,10 +3,10 @@ import type { UploadedFile } from '@festivapp/contracts';
 import { defined, has } from '@festivapp/utils';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeftRight } from 'lucide-react';
-import { useState } from 'react';
 
 import { getThemeOptions, listFilesOptions } from '../lib/queries.ts';
 import { Button } from './button.tsx';
+import { useDrawer } from './drawer.tsx';
 import { FilePicker } from './file-picker.tsx';
 import { Thumbnail } from './thumbnail.tsx';
 import { UploadButton } from './upload-button.tsx';
@@ -21,7 +21,7 @@ export function FileInput({
   onValueChange: (value: string | null) => void;
 }) {
   const { data: theme } = useQuery(getThemeOptions(tenantId));
-  const [open, setOpen] = useState(false);
+  const drawer = useDrawer();
 
   const { data: selected } = useQuery({
     ...listFilesOptions(tenantId),
@@ -30,7 +30,7 @@ export function FileInput({
 
   const onSelect = (file: UploadedFile) => {
     onValueChange(file.url);
-    setOpen(false);
+    drawer.onClose();
   };
 
   return (
@@ -63,7 +63,7 @@ export function FileInput({
             </BaseField.Control>
 
             {value !== null && (
-              <BaseField.Control render={<Button variant="secondary" size="sm" />} onClick={() => setOpen(true)}>
+              <BaseField.Control render={<Button variant="secondary" size="sm" />} onClick={drawer.onOpen}>
                 <ArrowLeftRight className="size-4" />
                 Change
               </BaseField.Control>
@@ -78,13 +78,7 @@ export function FileInput({
         </div>
       </div>
 
-      <FilePicker
-        tenantId={tenantId}
-        background={theme?.backgroundColor}
-        open={open}
-        onOpenChange={setOpen}
-        onSelect={onSelect}
-      />
+      <FilePicker tenantId={tenantId} background={theme?.backgroundColor} drawer={drawer} onSelect={onSelect} />
     </>
   );
 }

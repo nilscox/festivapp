@@ -10,7 +10,7 @@ import { useMemo } from 'react';
 import { Button, IconButton, LinkButton } from '../components/button.tsx';
 import { Checkbox } from '../components/checkbox.tsx';
 import { useConfirmDialog } from '../components/confirm-dialog.tsx';
-import { Drawer } from '../components/drawer.tsx';
+import { Drawer, useDrawer } from '../components/drawer.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
 import { Field } from '../components/field.tsx';
 import { Input } from '../components/input.tsx';
@@ -160,18 +160,18 @@ function MessageItem({ message, onDelete }: { message: Message; onDelete: () => 
 
 function MessageDrawer({ tenant, theme, messages }: { tenant: Tenant; theme: TenantTheme; messages: Message[] }) {
   const { create, edit: editId } = useSearch({ from });
-  const open = create !== undefined || editId !== undefined;
+  const drawer = useDrawer(create !== undefined || editId !== undefined);
 
   const navigate = useNavigate({ from });
-  const onClose = () => navigate({ search: {} });
+  const onClosed = () => navigate({ search: ({ create, edit, ...prev }) => prev, replace: true });
 
   return (
-    <Drawer open={open} onOpenChange={(open) => !open && onClose()} title={create ? 'New message' : 'Edit message'}>
+    <Drawer {...drawer} onClosed={onClosed} title={create ? 'New message' : 'Edit message'}>
       <MessageForm
         tenant={tenant}
         theme={theme}
         defaultValue={editId ? messages.find(has('id', editId)) : undefined}
-        onClose={onClose}
+        onClose={drawer.onClose}
       />
     </Drawer>
   );

@@ -9,7 +9,7 @@ import { useMemo, useState } from 'react';
 import { Button, IconButton, LinkButton } from '../components/button.tsx';
 import { Chip } from '../components/chip.tsx';
 import { useConfirmDialog } from '../components/confirm-dialog.tsx';
-import { Drawer } from '../components/drawer.tsx';
+import { Drawer, useDrawer } from '../components/drawer.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
 import { FieldArray, getFieldArrayValues, useFieldArray } from '../components/field-array.tsx';
 import { Field } from '../components/field.tsx';
@@ -218,21 +218,17 @@ function ParticipantItem({
 
 function ParticipantDrawer({ tenant, participants }: { tenant: TenantSummary; participants: Participant[] }) {
   const { create, edit: editId } = useSearch({ from });
-  const open = create !== undefined || editId !== undefined;
+  const drawer = useDrawer(create !== undefined || editId !== undefined);
 
   const navigate = useNavigate({ from });
-  const onClose = () => navigate({ search: (prev) => ({ search: prev.search }) });
+  const onClosed = () => navigate({ search: ({ create, edit, ...prev }) => prev, replace: true });
 
   return (
-    <Drawer
-      open={open}
-      onOpenChange={(open) => !open && onClose()}
-      title={create ? 'New person or band' : 'Edit person or band'}
-    >
+    <Drawer {...drawer} onClosed={onClosed} title={create ? 'New person or band' : 'Edit person or band'}>
       <ParticipantForm
         tenant={tenant}
         defaultValue={editId ? participants.find(has('id', editId)) : undefined}
-        onClose={onClose}
+        onClose={drawer.onClose}
       />
     </Drawer>
   );
