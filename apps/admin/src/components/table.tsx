@@ -37,8 +37,12 @@ export function TableBody({ children }: { children: React.ReactNode }) {
   return <tbody className="divide-line/60 divide-y">{children}</tbody>;
 }
 
-export function TableRow({ children }: { children: React.ReactNode }) {
-  return <tr className="hover:bg-subtle">{children}</tr>;
+export function TableRow({ id, className, children }: { id?: string; className?: string; children: React.ReactNode }) {
+  return (
+    <tr id={id} className={clsx('hover:bg-subtle', className)}>
+      {children}
+    </tr>
+  );
 }
 
 export function TableCell({ children, className }: { children: React.ReactNode; className?: string }) {

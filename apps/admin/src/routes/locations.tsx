@@ -2,7 +2,8 @@ import type { Location, LocationInput, LocationUpdate, TenantSummary } from '@fe
 import { has } from '@festivapp/utils';
 import { revalidateLogic } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
+import { useLocation, useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
+import clsx from 'clsx';
 import { MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
 import * as z from 'zod/mini';
 
@@ -94,6 +95,8 @@ function LocationsList({ tenant, locations }: { tenant: TenantSummary; locations
     });
   };
 
+  const hash = useLocation({ select: (location) => location.hash });
+
   return (
     <div className="col gap-4">
       <SearchSummary items={locations} matching={locations} search="">
@@ -109,7 +112,12 @@ function LocationsList({ tenant, locations }: { tenant: TenantSummary; locations
 
         <TableBody>
           {locations.map((location) => (
-            <LocationItem key={location.id} location={location} onDelete={() => onDelete(location)} />
+            <LocationItem
+              key={location.id}
+              location={location}
+              highlighted={hash === location.id}
+              onDelete={() => onDelete(location)}
+            />
           ))}
         </TableBody>
       </Table>
@@ -117,9 +125,17 @@ function LocationsList({ tenant, locations }: { tenant: TenantSummary; locations
   );
 }
 
-function LocationItem({ location, onDelete }: { location: Location; onDelete: () => void }) {
+function LocationItem({
+  location,
+  highlighted,
+  onDelete,
+}: {
+  location: Location;
+  highlighted: boolean;
+  onDelete: () => void;
+}) {
   return (
-    <TableRow>
+    <TableRow id={location.id} className={clsx('scroll-mt-32', highlighted && 'bg-accent/5')}>
       <TableCell className="text-accent text-center font-mono text-sm font-semibold">{location.position}</TableCell>
 
       <TableCell>

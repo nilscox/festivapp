@@ -2,7 +2,8 @@ import type { Participant, ParticipantInput, TenantSummary } from '@festivapp/co
 import { has, matchesSearch } from '@festivapp/utils';
 import { revalidateLogic } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
+import { useLocation, useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
+import clsx from 'clsx';
 import { Pencil, Plus, Trash2, Users } from 'lucide-react';
 import { useDeferredValue } from 'react';
 import * as z from 'zod/mini';
@@ -90,6 +91,8 @@ function PeopleList({ tenant, participants }: { tenant: TenantSummary; participa
     matchesSearch(deferredSearch, participant.name, participant.label, participant.origin, ...participant.styles),
   );
 
+  const hash = useLocation({ select: (location) => location.hash });
+
   if (participants.length === 0) {
     return (
       <EmptyState
@@ -141,6 +144,7 @@ function PeopleList({ tenant, participants }: { tenant: TenantSummary; participa
                 key={participant.id}
                 tenant={tenant}
                 participant={participant}
+                highlighted={hash === participant.id}
                 onDelete={() => onDelete(participant)}
               />
             ))}
@@ -154,16 +158,18 @@ function PeopleList({ tenant, participants }: { tenant: TenantSummary; participa
 function ParticipantItem({
   tenant,
   participant,
+  highlighted,
   onDelete,
 }: {
   tenant: TenantSummary;
   participant: Participant;
+  highlighted: boolean;
   onDelete: () => void;
 }) {
   const { data: theme } = useQuery(getThemeOptions(tenant.id));
 
   return (
-    <TableRow>
+    <TableRow id={participant.id} className={clsx('scroll-mt-32', highlighted && 'bg-accent/8')}>
       <TableCell>
         <div className="row items-center gap-3 md:gap-4">
           <Thumbnail

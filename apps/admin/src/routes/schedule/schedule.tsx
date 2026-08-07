@@ -1,7 +1,7 @@
 import type { Location, Participant, Tenant, TenantSummary } from '@festivapp/contracts';
-import { get, has } from '@festivapp/utils';
+import { has } from '@festivapp/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { CalendarDays, MapPin, Pencil, Plus, Trash2, TriangleAlert } from 'lucide-react';
 import { useDeferredValue } from 'react';
@@ -313,14 +313,26 @@ function SessionRow({
       </TableCell>
 
       <TableCell className="max-md:hidden">
-        <Chip size="lg">
-          <MapPin className="text-faint size-3 shrink-0" />
-          <span className="truncate">{session.location.name}</span>
-        </Chip>
+        <Link from={from} to="/festivals/$tenantId/locations" hash={session.location.id}>
+          <Chip size="lg">
+            <MapPin className="text-faint size-3 shrink-0" />
+            <span className="truncate">{session.location.name}</span>
+          </Chip>
+        </Link>
       </TableCell>
 
       <TableCell className="max-lg:hidden">
-        <div className="text-muted truncate text-sm">{session.participants.map(get('name')).join(' · ') || '—'}</div>
+        <div className="row flex-wrap items-center gap-1 truncate">
+          {session.participants.length === 0 && '—'}
+
+          {session.participants.map((participant) => (
+            <Chip key={participant.id} size="lg">
+              <Link from={from} to="/festivals/$tenantId/people" hash={participant.id} className="truncate">
+                {participant.name}
+              </Link>
+            </Chip>
+          ))}
+        </div>
       </TableCell>
 
       <TableCell>
