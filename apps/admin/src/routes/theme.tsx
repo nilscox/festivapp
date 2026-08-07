@@ -1,44 +1,21 @@
-import { Field as BaseField } from '@base-ui/react/field';
-import { Form } from '@base-ui/react/form';
 import type { TenantSummary, TenantTheme } from '@festivapp/contracts';
 import { contrastRatio } from '@festivapp/utils';
+import { revalidateLogic } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouteContext } from '@tanstack/react-router';
-import { useState } from 'react';
 import { toast } from 'react-hot-toast';
+import * as z from 'zod/mini';
 
-import { Button } from '../components/button.tsx';
-import { Field } from '../components/form/field.tsx';
-import { FileInput } from '../components/form/file-input.tsx';
-import { Input } from '../components/form/input.tsx';
-import { Range } from '../components/form/range.tsx';
-import { Textarea } from '../components/form/textarea.tsx';
+import { Form, SubmitButton, useAppForm } from '../components/form/form.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { QueryBoundary } from '../components/query-boundary.tsx';
 import { Section } from '../components/section.tsx';
 import { api } from '../lib/api.ts';
+import { submitToApi } from '../lib/errors.ts';
 import { getThemeOptions } from '../lib/queries.ts';
 
 const from = '/festivals/$tenantId/theme';
 const minimumContrast = 4.5;
-
-type FormValues = {
-  backgroundColor: string;
-  accentColor: string;
-  display: string;
-  body: string;
-  mono: string;
-  backgroundImageOpacity: string;
-  pwaName: string;
-  pwaShortName: string;
-  customCss: string;
-};
-
-type Images = {
-  wordmarkUrl: string | null;
-  iconUrl: string | null;
-  backgroundImageUrl: string | null;
-};
 
 export function Theme() {
   const { tenant } = useRouteContext({ from });
@@ -56,119 +33,100 @@ function ThemeForm({ tenant, theme }: { tenant: TenantSummary; theme: TenantThem
 
   const mutation = useMutation({
     mutationFn: (theme: TenantTheme) => api.put<TenantTheme>(`/admin/tenants/${tenant.id}/theme`, theme),
-    onSuccess: () => queryClient.invalidateQueries(getThemeOptions(tenant.id)),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries(getThemeOptions(tenant.id));
+      toast.success('Theme saved');
+    },
   });
 
-  const [backgroundColor, setBackgroundColor] = useState(theme.backgroundColor);
-  const [accentColor, setAccentColor] = useState(theme.accentColor);
-
-  const [images, setImages] = useState<Images>({
-    wordmarkUrl: theme.logo.wordmarkUrl,
-    iconUrl: theme.logo.iconUrl,
-    backgroundImageUrl: theme.backgroundImage?.url ?? null,
+  const form = useAppForm({
+    defaultValues: toFormValues(theme),
+    validationLogic: revalidateLogic(),
+    validators: { onDynamic: schema },
+    onSubmit: ({ value, formApi }) => submitToApi(formApi, () => mutation.mutateAsync(toTheme(value))),
   });
-
-  const setImage = (key: keyof Images) => (value: string | null) => {
-    setImages((images) => ({ ...images, [key]: value }));
-  };
-
-  const contrast = contrastRatio(backgroundColor, accentColor);
-
-  const handleSubmit = (values: FormValues) => {
-    if (contrast < minimumContrast) {
-      return toast.error('Pick an accent color that contrasts more with the background.');
-    }
-
-    mutation.mutate(toTheme(values, images), { onSuccess: () => toast.success('Theme saved') });
-  };
 
   return (
-    <Form onFormSubmit={handleSubmit} className="col gap-8">
+    <Form form={form} className="col gap-8">
       <Section
         title="Colors"
         description="Everything else — surfaces, text, borders — is shaded from the background, so these two are the whole palette."
       >
         <div className="col gap-4 sm:max-w-100">
-          <ColorField
-            name="backgroundColor"
-            label="Background"
-            value={backgroundColor}
-            onValueChange={setBackgroundColor}
-          />
+          <form.AppField name="backgroundColor">{({ ColorField }) => <ColorField label="Background" />}</form.AppField>
 
-          <ColorField
-            name="accentColor"
-            label="Accent"
-            value={accentColor}
-            onValueChange={setAccentColor}
-            error={
-              contrast < minimumContrast &&
-              `Too close to the background (${contrast.toFixed(1)}:1, needs ${minimumContrast}:1).`
-            }
-          />
+          <form.AppField name="accentColor">{({ ColorField }) => <ColorField label="Accent" />}</form.AppField>
         </div>
       </Section>
 
       <Section title="Fonts" description="CSS font stacks, used as-is. Uploading font files comes later.">
         <div className="col gap-4">
-          <Field name="display" label="Display (headings)">
-            <Input required defaultValue={theme.fonts.display} className="font-mono text-xs" />
-          </Field>
+          <form.AppField name="display">
+            {({ InputField }) => <InputField label="Display (headings)" className="font-mono text-xs" />}
+          </form.AppField>
 
-          <Field name="body" label="Body">
-            <Input required defaultValue={theme.fonts.body} className="font-mono text-xs" />
-          </Field>
+          <form.AppField name="body">
+            {({ InputField }) => <InputField label="Body" className="font-mono text-xs" />}
+          </form.AppField>
 
-          <Field name="mono" label="Labels and times">
-            <Input required defaultValue={theme.fonts.mono} className="font-mono text-xs" />
-          </Field>
+          <form.AppField name="mono">
+            {({ InputField }) => <InputField label="Labels and times" className="font-mono text-xs" />}
+          </form.AppField>
         </div>
       </Section>
 
       <Section title="Logo" description="Pick an image you have uploaded, or upload one on the spot.">
         <div className="col gap-4">
-          <Field label="Wordmark" hint="Shown in the app header, in place of the name.">
-            <FileInput tenantId={tenant.id} value={images.wordmarkUrl} onValueChange={setImage('wordmarkUrl')} />
-          </Field>
+          <form.AppField name="wordmarkUrl">
+            {({ FileField }) => (
+              <FileField tenantId={tenant.id} label="Wordmark" hint="Shown in the app header, in place of the name." />
+            )}
+          </form.AppField>
 
-          <Field label="Square icon" hint="Used as the install icon and the favicon.">
-            <FileInput tenantId={tenant.id} value={images.iconUrl} onValueChange={setImage('iconUrl')} />
-          </Field>
+          <form.AppField name="iconUrl">
+            {({ FileField }) => (
+              <FileField tenantId={tenant.id} label="Square icon" hint="Used as the install icon and the favicon." />
+            )}
+          </form.AppField>
         </div>
       </Section>
 
       <Section title="Background image" description="Sits behind the whole app, dimmed into the background color.">
         <div className="col gap-4">
-          <Field label="Image">
-            <FileInput
-              tenantId={tenant.id}
-              value={images.backgroundImageUrl}
-              onValueChange={setImage('backgroundImageUrl')}
-            />
-          </Field>
+          <form.AppField name="backgroundImageUrl">
+            {({ FileField }) => <FileField tenantId={tenant.id} label="Image" />}
+          </form.AppField>
 
-          <Field name="backgroundImageOpacity" label="Opacity">
-            <Range
-              min={0}
-              max={1}
-              step={0.01}
-              disabled={images.backgroundImageUrl === null}
-              defaultValue={theme.backgroundImage?.opacity ?? 0.2}
-              className="max-w-sm"
-            />
-          </Field>
+          <form.Subscribe selector={(state) => state.values.backgroundImageUrl === null}>
+            {(noImage) => (
+              <form.AppField name="backgroundImageOpacity">
+                {({ RangeField }) => (
+                  <RangeField label="Opacity" min={0} max={1} step={0.01} disabled={noImage} className="max-w-sm" />
+                )}
+              </form.AppField>
+            )}
+          </form.Subscribe>
         </div>
       </Section>
 
       <Section title="Installed app" description="How the app names itself once added to a home screen.">
         <div className="col gap-4">
-          <Field name="pwaName" label="Name" hint={`Defaults to ${tenant.name}.`}>
-            <Input maxLength={60} defaultValue={theme.pwa.name ?? ''} placeholder={tenant.name} />
-          </Field>
+          <form.AppField name="pwaName">
+            {({ InputField }) => (
+              <InputField label="Name" hint={`Defaults to ${tenant.name}.`} maxLength={60} placeholder={tenant.name} />
+            )}
+          </form.AppField>
 
-          <Field name="pwaShortName" label="Short name" hint="Shown under the icon. Keep it under 12 characters.">
-            <Input maxLength={12} defaultValue={theme.pwa.shortName ?? ''} placeholder={tenant.name} />
-          </Field>
+          <form.AppField name="pwaShortName">
+            {({ InputField }) => (
+              <InputField
+                label="Short name"
+                hint="Shown under the icon. Keep it under 12 characters."
+                maxLength={12}
+                placeholder={tenant.name}
+              />
+            )}
+          </form.AppField>
         </div>
       </Section>
 
@@ -176,34 +134,80 @@ function ThemeForm({ tenant, theme }: { tenant: TenantSummary; theme: TenantThem
         title="Custom CSS"
         description="Appended after the app's own styles, so it wins ties. Attendees load it offline, so avoid @import and anything hosted elsewhere."
       >
-        <Field name="customCss" label="Stylesheet" hint="Up to 20,000 characters.">
-          <Textarea
-            rows={12}
-            maxLength={20_000}
-            defaultValue={theme.customCss ?? ''}
-            placeholder={[
-              '.app-background {',
-              '  background-size: auto;',
-              '  background-repeat: no-repeat;',
-              '  background-position: right;',
-              '}',
-            ].join('\n')}
-            spellCheck={false}
-            className="font-mono text-xs"
-          />
-        </Field>
+        <form.AppField name="customCss">
+          {({ TextareaField }) => (
+            <TextareaField
+              label="Stylesheet"
+              hint="Up to 20,000 characters."
+              rows={12}
+              maxLength={20_000}
+              placeholder={[
+                '.app-background {',
+                '  background-size: auto;',
+                '  background-repeat: no-repeat;',
+                '  background-position: right;',
+                '}',
+              ].join('\n')}
+              spellCheck={false}
+              className="font-mono text-xs"
+            />
+          )}
+        </form.AppField>
       </Section>
 
       <div className="row border-t pt-6">
-        <Button type="submit" disabled={mutation.isPending}>
-          Save theme
-        </Button>
+        <SubmitButton>Save theme</SubmitButton>
       </div>
     </Form>
   );
 }
 
-function toTheme(values: FormValues, images: Images): TenantTheme {
+const schema = z
+  .object({
+    backgroundColor: z.string(),
+    accentColor: z.string(),
+    display: z.string().check(z.minLength(1, 'A display font stack is required.')),
+    body: z.string().check(z.minLength(1, 'A body font stack is required.')),
+    mono: z.string().check(z.minLength(1, 'A mono font stack is required.')),
+    wordmarkUrl: z.nullable(z.string()),
+    iconUrl: z.nullable(z.string()),
+    backgroundImageUrl: z.nullable(z.string()),
+    backgroundImageOpacity: z.number(),
+    pwaName: z.string(),
+    pwaShortName: z.string(),
+    customCss: z.string(),
+  })
+  .check((ctx) => {
+    const contrast = contrastRatio(ctx.value.backgroundColor, ctx.value.accentColor);
+
+    if (contrast < minimumContrast) {
+      ctx.issues.push({
+        code: 'custom',
+        input: ctx.value,
+        path: ['accentColor'],
+        message: `Too close to the background (${contrast.toFixed(1)}:1, needs ${minimumContrast}:1).`,
+      });
+    }
+  });
+
+function toFormValues(theme: TenantTheme) {
+  return {
+    backgroundColor: theme.backgroundColor,
+    accentColor: theme.accentColor,
+    display: theme.fonts.display,
+    body: theme.fonts.body,
+    mono: theme.fonts.mono,
+    wordmarkUrl: theme.logo.wordmarkUrl,
+    iconUrl: theme.logo.iconUrl,
+    backgroundImageUrl: theme.backgroundImage?.url ?? null,
+    backgroundImageOpacity: theme.backgroundImage?.opacity ?? 0.2,
+    pwaName: theme.pwa.name ?? '',
+    pwaShortName: theme.pwa.shortName ?? '',
+    customCss: theme.customCss ?? '',
+  };
+}
+
+function toTheme(values: ReturnType<typeof toFormValues>): TenantTheme {
   return {
     backgroundColor: values.backgroundColor,
     accentColor: values.accentColor,
@@ -213,11 +217,11 @@ function toTheme(values: FormValues, images: Images): TenantTheme {
       mono: values.mono,
     },
     logo: {
-      wordmarkUrl: images.wordmarkUrl,
-      iconUrl: images.iconUrl,
+      wordmarkUrl: values.wordmarkUrl,
+      iconUrl: values.iconUrl,
     },
-    backgroundImage: images.backgroundImageUrl
-      ? { url: images.backgroundImageUrl, opacity: Number(values.backgroundImageOpacity) }
+    backgroundImage: values.backgroundImageUrl
+      ? { url: values.backgroundImageUrl, opacity: values.backgroundImageOpacity }
       : null,
     customCss: values.customCss,
     pwa: {
@@ -225,33 +229,4 @@ function toTheme(values: FormValues, images: Images): TenantTheme {
       shortName: values.pwaShortName,
     },
   };
-}
-
-function ColorField({
-  name,
-  label,
-  value,
-  onValueChange,
-  error,
-}: {
-  name: string;
-  label: string;
-  value: string;
-  onValueChange: (value: string) => void;
-  error?: React.ReactNode;
-}) {
-  return (
-    <Field name={name} label={label} error={error}>
-      <div className="row items-center gap-3">
-        <BaseField.Control
-          type="color"
-          value={value}
-          onChange={(event) => onValueChange(event.currentTarget.value)}
-          className="size-12 shrink-0 cursor-pointer rounded-lg border bg-transparent p-1"
-        />
-
-        <span className="text-muted font-mono text-xs uppercase">{value}</span>
-      </div>
-    </Field>
-  );
 }

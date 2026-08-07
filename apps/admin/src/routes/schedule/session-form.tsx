@@ -1,33 +1,19 @@
-import { Form } from '@base-ui/react/form';
 import type { Location, Participant, Session, SessionInput, SessionType } from '@festivapp/contracts';
-import { get, has } from '@festivapp/utils';
+import { has } from '@festivapp/utils';
+import { revalidateLogic } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { useMemo, useState } from 'react';
+import * as z from 'zod/mini';
 
 import { Button } from '../../components/button.tsx';
-import { FieldArray, useFieldArray } from '../../components/form/field-array.tsx';
-import { Field } from '../../components/form/field.tsx';
-import { Input } from '../../components/form/input.tsx';
-import { Select } from '../../components/form/select.tsx';
-import { Textarea } from '../../components/form/textarea.tsx';
+import { Form, SubmitButton, useAppForm } from '../../components/form/form.tsx';
 import { api } from '../../lib/api.ts';
 import { formatDayKey, formatTime, nextDay, toInstant } from '../../lib/datetime.ts';
-import { parseValidationError } from '../../lib/errors.ts';
+import { submitToApi } from '../../lib/errors.ts';
 import { listSessionsOptions } from '../../lib/queries.ts';
 import { sessionTypes } from './session-types.ts';
 
 import type { ScheduleSession } from '../../lib/schedule.ts';
-
-type FormValues = {
-  locationId: string;
-  type: SessionType;
-  date: string;
-  startsAt: string;
-  endsAt: string;
-  title: string;
-  description: string;
-};
 
 const typeOptions = Object.entries(sessionTypes).map(([type, { label, dot }]) => ({
   value: type as SessionType,
@@ -59,14 +45,10 @@ export function SessionForm({
     label: location.name,
   }));
 
-  const peopleFieldArray = useFieldArray(session?.participantIds ?? []);
-
-  const people = peopleFieldArray.fields.map(([, id]) => participants.find(has('id', id)));
-  const solePerson = people.length === 1 ? people[0] : undefined;
-
-  const [startsAt, setStartsAt] = useState(session ? formatTime(session.startsAt, timezone) : '');
-  const [endsAt, setEndsAt] = useState(session ? formatTime(session.endsAt, timezone) : '');
-  const rollsOver = Boolean(startsAt && endsAt) && endsAt <= startsAt;
+  const participantOptions = participants.map((participant) => ({
+    value: participant.id,
+    label: participant.name,
+  }));
 
   const queryClient = useQueryClient();
 
@@ -83,77 +65,87 @@ export function SessionForm({
     onSuccess: invalidate,
   });
 
-  const pending = createMutation.isPending || updateMutation.isPending;
+  const form = useAppForm({
+    defaultValues: toFormValues(session, locations, timezone),
+    validationLogic: revalidateLogic(),
+    validators: { onDynamic: schema },
+    onSubmit: async ({ value, formApi }) => {
+      const input = toInput(value, timezone);
 
-  const errors = useMemo(() => {
-    return parseValidationError(createMutation.error ?? updateMutation.error);
-  }, [createMutation.error, updateMutation.error]);
+      const saved = await submitToApi(formApi, () => {
+        if (!session) {
+          return createMutation.mutateAsync(input);
+        }
 
-  const handleSubmit = (values: FormValues) => {
-    // an end at or before the start is a set running past midnight, so it belongs to the next day
-    const endsOn = values.endsAt <= values.startsAt ? nextDay(values.date) : values.date;
+        return updateMutation.mutateAsync([session.id, input]);
+      });
 
-    const input: SessionInput = {
-      locationId: values.locationId,
-      type: values.type,
-      title: values.title,
-      description: values.description,
-      participantIds: people.filter((person) => person !== undefined).map(get('id')),
-      startsAt: toInstant(values.date, values.startsAt, timezone),
-      endsAt: toInstant(endsOn, values.endsAt, timezone),
-    };
-
-    if (!session) {
-      createMutation.mutate(input, { onSuccess: onClose });
-    } else {
-      updateMutation.mutate([session.id, input], { onSuccess: onClose });
-    }
-  };
+      if (saved) {
+        onClose();
+      }
+    },
+  });
 
   return (
-    <Form errors={errors} onFormSubmit={handleSubmit} className="col min-h-0 flex-1">
+    <Form form={form} className="col min-h-0 flex-1">
       <div className="col min-h-0 flex-1 gap-6 overflow-y-auto p-4">
-        <Field name="locationId" label="Location">
-          <Select defaultValue={session?.locationId ?? locations[0]?.id} items={locationOptions} />
-        </Field>
+        <form.AppField name="locationId">
+          {({ SelectField }) => <SelectField label="Location" items={locationOptions} />}
+        </form.AppField>
 
-        <Field name="type" label="Type">
-          <Select defaultValue={session?.type ?? 'live'} items={typeOptions} />
-        </Field>
+        <form.AppField name="type">
+          {({ SelectField }) => <SelectField label="Type" items={typeOptions} />}
+        </form.AppField>
 
-        <Field name="date" label="Date" hint={`Read in the festival's timezone (${timezone}).`}>
-          <Input required type="date" defaultValue={session && formatDayKey(session.startsAt, timezone)} />
-        </Field>
+        <form.AppField name="date">
+          {({ InputField }) => (
+            <InputField label="Date" hint={`Read in the festival's timezone (${timezone}).`} type="date" />
+          )}
+        </form.AppField>
 
         <div className="grid gap-6 sm:grid-cols-2">
-          <Field name="startsAt" label="Starts at">
-            <Input
-              required
-              type="time"
-              defaultValue={session && formatTime(session.startsAt, timezone)}
-              onChange={(event) => setStartsAt(event.target.value)}
-            />
-          </Field>
+          <form.AppField name="startsAt">
+            {({ InputField }) => <InputField label="Starts at" type="time" />}
+          </form.AppField>
 
-          <Field name="endsAt" label="Ends at" hint={rollsOver && 'Ends the next day.'}>
-            <Input
-              required
-              type="time"
-              defaultValue={session && formatTime(session.endsAt, timezone)}
-              onChange={(event) => setEndsAt(event.target.value)}
-            />
-          </Field>
+          <form.Subscribe selector={(state) => rollsOver(state.values.startsAt, state.values.endsAt)}>
+            {(rollsOver) => (
+              <form.AppField name="endsAt">
+                {({ InputField }) => (
+                  <InputField label="Ends at" hint={rollsOver && 'Ends the next day.'} type="time" />
+                )}
+              </form.AppField>
+            )}
+          </form.Subscribe>
         </div>
 
-        <PeopleEditor participants={participants} fieldArray={peopleFieldArray} />
+        <form.AppField name="participantIds" mode="array">
+          {({ ArrayField }) => (
+            <ArrayField label="People" add="Add people" empty="">
+              {(index) => (
+                <form.AppField name={`participantIds[${index}]`}>
+                  {({ SelectField }) => <SelectField items={participantOptions} placeholder="Pick someone" />}
+                </form.AppField>
+              )}
+            </ArrayField>
+          )}
+        </form.AppField>
 
-        <Field name="title" label="Title">
-          <Input defaultValue={session?.title ?? ''} placeholder={solePerson?.name ?? 'e.g. Opening ceremony'} />
-        </Field>
+        <form.Subscribe selector={(state) => solePerson(state.values.participantIds, participants)}>
+          {(person) => (
+            <>
+              <form.AppField name="title">
+                {({ InputField }) => <InputField label="Title" placeholder={person?.name ?? 'e.g. Opening ceremony'} />}
+              </form.AppField>
 
-        <Field name="description" label="Description">
-          <Textarea rows={5} defaultValue={session?.description ?? ''} placeholder={solePerson?.description ?? ''} />
-        </Field>
+              <form.AppField name="description">
+                {({ TextareaField }) => (
+                  <TextareaField label="Description" rows={5} placeholder={person?.description ?? ''} />
+                )}
+              </form.AppField>
+            </>
+          )}
+        </form.Subscribe>
       </div>
 
       <div className="row gap-4 border-t p-4">
@@ -161,43 +153,57 @@ export function SessionForm({
           Cancel
         </Button>
 
-        <Button type="submit" className="flex-1" disabled={pending}>
-          {!session ? 'Add session' : 'Save changes'}
-        </Button>
+        <SubmitButton className="flex-1">{!session ? 'Add session' : 'Save changes'}</SubmitButton>
       </div>
     </Form>
   );
 }
 
-function PeopleEditor({
-  participants,
-  fieldArray: { fields, append, remove, update },
-}: {
-  participants: Participant[];
-  fieldArray: FieldArray<string>;
-}) {
-  const options = participants.map((participant) => ({ value: participant.id, label: participant.name }));
+const schema = z.object({
+  locationId: z.string().check(z.minLength(1, 'A location is required.')),
+  type: z.enum(Object.keys(sessionTypes) as SessionType[]),
+  date: z.string().check(z.minLength(1, 'A date is required.')),
+  startsAt: z.string().check(z.minLength(1, 'A start time is required.')),
+  endsAt: z.string().check(z.minLength(1, 'An end time is required.')),
+  participantIds: z.array(z.string()),
+  title: z.string(),
+  description: z.string(),
+});
 
-  return (
-    <FieldArray
-      fields={fields}
-      name="participantIds"
-      onAdd={() => append('')}
-      onRemove={remove}
-      label="People"
-      add="Add people"
-    >
-      {(participantId, index) => (
-        <Field>
-          <Select
-            name={`participantIds.${index}`}
-            value={participantId}
-            onValueChange={(value) => update(index, value ?? '')}
-            items={options}
-            placeholder="Pick someone"
-          />
-        </Field>
-      )}
-    </FieldArray>
-  );
+function toFormValues(session: ScheduleSession | undefined, locations: Location[], timezone: string) {
+  return {
+    locationId: session?.locationId ?? locations[0]?.id ?? '',
+    type: session?.type ?? ('live' as SessionType),
+    date: session ? formatDayKey(session.startsAt, timezone) : '',
+    startsAt: session ? formatTime(session.startsAt, timezone) : '',
+    endsAt: session ? formatTime(session.endsAt, timezone) : '',
+    participantIds: session?.participantIds ?? [],
+    title: session?.title ?? '',
+    description: session?.description ?? '',
+  };
+}
+
+function toInput(values: ReturnType<typeof toFormValues>, timezone: string): SessionInput {
+  const endsOn = rollsOver(values.startsAt, values.endsAt) ? nextDay(values.date) : values.date;
+
+  return {
+    locationId: values.locationId,
+    type: values.type,
+    title: values.title,
+    description: values.description,
+    participantIds: values.participantIds.filter((id) => id !== ''),
+    startsAt: toInstant(values.date, values.startsAt, timezone),
+    endsAt: toInstant(endsOn, values.endsAt, timezone),
+  };
+}
+
+// an end at or before the start is a set running past midnight, so it belongs to the next day
+function rollsOver(startsAt: string, endsAt: string) {
+  return Boolean(startsAt && endsAt) && endsAt <= startsAt;
+}
+
+function solePerson(participantIds: string[], participants: Participant[]) {
+  const people = participantIds.map((id) => participants.find(has('id', id)));
+
+  return people.length === 1 ? people[0] : undefined;
 }

@@ -1,35 +1,26 @@
-import { Form } from '@base-ui/react/form';
 import type { Message, MessageInput, MessageUpdate, Tenant, TenantSummary, TenantTheme } from '@festivapp/contracts';
 import { has } from '@festivapp/utils';
+import { revalidateLogic } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import { format } from 'date-fns';
 import { Bell, Megaphone, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useMemo } from 'react';
+import * as z from 'zod/mini';
 
 import { Button, IconButton, LinkButton } from '../components/button.tsx';
 import { useConfirmDialog } from '../components/confirm-dialog.tsx';
 import { Drawer, useDrawer } from '../components/drawer.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
-import { Checkbox } from '../components/form/checkbox.tsx';
-import { Field } from '../components/form/field.tsx';
-import { Input } from '../components/form/input.tsx';
-import { Textarea } from '../components/form/textarea.tsx';
+import { Form, SubmitButton, useAppForm } from '../components/form/form.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { QueryBoundary } from '../components/query-boundary.tsx';
 import { SearchSummary } from '../components/search.tsx';
 import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '../components/table.tsx';
 import { api } from '../lib/api.ts';
-import { parseValidationError } from '../lib/errors.ts';
+import { submitToApi } from '../lib/errors.ts';
 import { getTenantOptions, getThemeOptions, listMessagesOptions } from '../lib/queries.ts';
 
 const from = '/festivals/$tenantId/messages';
-
-type FormValues = {
-  title: string;
-  body: string;
-  notify?: boolean;
-};
 
 export function Messages() {
   const { tenant } = useRouteContext({ from });
@@ -202,64 +193,80 @@ function MessageForm({
     onSuccess: invalidate,
   });
 
-  const pending = createMutation.isPending || updateMutation.isPending;
-
-  const errors = useMemo(() => {
-    return parseValidationError(createMutation.error ?? updateMutation.error);
-  }, [createMutation.error, updateMutation.error]);
-
   const confirm = useConfirmDialog();
 
-  const confirmNotify = (values: FormValues) => {
+  const confirmNotify = (value: z.infer<typeof schema>, publish: () => Promise<boolean>) => {
     confirm({
       title: 'Send notification',
       description: (
-        <>
-          <div className="mb-4">
-            A push notification will be sent to {tenant.registeredSubscriptions} device
-            {tenant.registeredSubscriptions === 1 ? '' : 's'}.
-          </div>
-          <NotificationPreview theme={theme} title={values.title} body={values.body} />
-        </>
+        <NotificationPreview
+          theme={theme}
+          devices={tenant.registeredSubscriptions}
+          title={value.title}
+          body={value.body}
+        />
       ),
       confirmLabel: 'Send',
       confirmVariant: 'primary',
-      onConfirm: () => createMutation.mutateAsync(values, { onSuccess: onClose }),
+      onConfirm: async () => {
+        if (await publish()) {
+          onClose();
+        }
+      },
     });
   };
 
-  const handleSubmit = (values: FormValues) => {
-    if (defaultValue) {
-      updateMutation.mutate([defaultValue.id, { title: values.title, body: values.body }], { onSuccess: onClose });
-    } else {
-      if (values.notify && tenant.registeredSubscriptions > 0) {
-        confirmNotify(values);
-      } else {
-        createMutation.mutate(values, { onSuccess: onClose });
+  const form = useAppForm({
+    defaultValues: {
+      title: defaultValue?.title ?? '',
+      body: defaultValue?.body ?? '',
+      notify: true,
+    },
+    validationLogic: revalidateLogic(),
+    validators: { onDynamic: schema },
+    onSubmit: async ({ value, formApi }) => {
+      const publish = () => {
+        return submitToApi(formApi, () => {
+          if (defaultValue) {
+            return updateMutation.mutateAsync([defaultValue.id, { title: value.title, body: value.body }]);
+          }
+
+          return createMutation.mutateAsync(value);
+        });
+      };
+
+      if (!defaultValue && value.notify && tenant.registeredSubscriptions > 0) {
+        return confirmNotify(value, publish);
       }
-    }
-  };
+
+      if (await publish()) {
+        onClose();
+      }
+    },
+  });
 
   return (
-    <Form errors={errors} onFormSubmit={handleSubmit} className="col flex-1">
+    <Form form={form} className="col flex-1">
       <div className="col flex-1 gap-6 overflow-y-auto p-4">
-        <Field name="title" label="Title" errors={[{ match: 'valueMissing', message: 'A title is required.' }]}>
-          <Input required defaultValue={defaultValue?.title} placeholder="e.g. Main stage delayed" />
-        </Field>
+        <form.AppField name="title">
+          {({ InputField }) => <InputField label="Title" placeholder="e.g. Main stage delayed" />}
+        </form.AppField>
 
-        <Field name="body" label="Message" errors={[{ match: 'valueMissing', message: 'A message is required.' }]}>
-          <Textarea required rows={6} defaultValue={defaultValue?.body} placeholder="What do attendees need to know?" />
-        </Field>
+        <form.AppField name="body">
+          {({ TextareaField }) => (
+            <TextareaField label="Message" rows={6} placeholder="What do attendees need to know?" />
+          )}
+        </form.AppField>
 
         {!defaultValue && (
-          <Field name="notify">
-            <Checkbox
-              name="notify"
-              defaultChecked
-              label="Send a notification"
-              hint="Reaches every attendee who opted in. It cannot be sent again later, and editing the message does not resend it."
-            />
-          </Field>
+          <form.AppField name="notify">
+            {({ CheckboxField }) => (
+              <CheckboxField
+                label="Send a notification"
+                hint="Reaches every attendee who opted in. It cannot be sent again later, and editing the message does not resend it."
+              />
+            )}
+          </form.AppField>
         )}
       </div>
 
@@ -268,32 +275,52 @@ function MessageForm({
           Cancel
         </Button>
 
-        <Button type="submit" className="flex-1" disabled={pending}>
-          {!defaultValue ? 'Publish' : 'Save changes'}
-        </Button>
+        <SubmitButton className="flex-1">{!defaultValue ? 'Publish' : 'Save changes'}</SubmitButton>
       </div>
     </Form>
   );
 }
 
-function NotificationPreview({ theme, title, body }: { theme: TenantTheme; title: string; body: string }) {
+const schema = z.object({
+  title: z.string().check(z.minLength(1, 'A title is required.')),
+  body: z.string().check(z.minLength(1, 'A message is required.')),
+  notify: z.boolean(),
+});
+
+function NotificationPreview({
+  theme,
+  devices,
+  title,
+  body,
+}: {
+  theme: TenantTheme;
+  devices: number;
+  title: string;
+  body: string;
+}) {
   return (
-    <div className="row bg-subtle text-ink items-start gap-2 rounded-xl border p-3 shadow-md">
-      <div
-        className="bg-accent row size-8 shrink-0 items-center justify-center rounded-lg text-white"
-        style={{ backgroundColor: theme?.backgroundColor, color: theme?.accentColor }}
-      >
-        {theme.logo.iconUrl ? (
-          <img src={theme.logo.iconUrl} alt="" className="size-6 object-contain" />
-        ) : (
-          <Bell className="size-4" />
-        )}
+    <>
+      <div className="mb-4">
+        A push notification will be sent to {devices} device{devices === 1 ? '' : 's'}.
       </div>
 
-      <div className="col min-w-0 flex-1 gap-1">
-        <div className="text-base font-semibold tracking-tight">{title}</div>
-        <div className="text-muted text-sm leading-snug whitespace-pre-wrap">{body}</div>
+      <div className="row bg-subtle text-ink items-start gap-2 rounded-xl border p-3 shadow-md">
+        <div
+          className="bg-accent row size-8 shrink-0 items-center justify-center rounded-lg text-white"
+          style={{ backgroundColor: theme?.backgroundColor, color: theme?.accentColor }}
+        >
+          {theme.logo.iconUrl ? (
+            <img src={theme.logo.iconUrl} alt="" className="size-6 object-contain" />
+          ) : (
+            <Bell className="size-4" />
+          )}
+        </div>
+
+        <div className="col min-w-0 flex-1 gap-1">
+          <div className="text-base font-semibold tracking-tight">{title}</div>
+          <div className="text-muted text-sm leading-snug whitespace-pre-wrap">{body}</div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -3,14 +3,18 @@ import * as z from 'zod/mini';
 
 import { ApiError } from './api.ts';
 
-export async function submitToApi(form: AnyFormApi, submit: () => Promise<unknown>) {
+export async function submitToApi(
+  form: AnyFormApi,
+  submit: () => Promise<unknown>,
+  mapError?: (error: unknown) => Record<string, string> | undefined,
+) {
   form.setErrorMap({ onServer: undefined });
 
   try {
     await submit();
     return true;
   } catch (error) {
-    const fields = parseValidationError(error);
+    const fields = mapError?.(error) ?? parseValidationError(error);
 
     if (fields) {
       form.setErrorMap({ onServer: { fields } });

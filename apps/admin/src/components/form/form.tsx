@@ -3,7 +3,16 @@ import { type AnyFormApi, createFormHook } from '@tanstack/react-form';
 import { Button } from '../button.tsx';
 import { ArrayField } from './array-field.tsx';
 import { FieldContext, FormContext, useFormContext } from './context.ts';
-import { CheckboxField, ColorField, FileField, InputField, RangeField, SelectField, TextareaField } from './fields.tsx';
+import {
+  CheckboxField,
+  ColorField,
+  ComboboxField,
+  FileField,
+  InputField,
+  RangeField,
+  SelectField,
+  TextareaField,
+} from './fields.tsx';
 
 export const { useAppForm } = createFormHook({
   fieldContext: FieldContext,
@@ -12,6 +21,7 @@ export const { useAppForm } = createFormHook({
     ArrayField,
     CheckboxField,
     ColorField,
+    ComboboxField,
     FileField,
     RangeField,
     SelectField,
@@ -51,16 +61,12 @@ export function Form({
   );
 }
 
-export function SubmitButton({ className, children }: { className?: string; children: React.ReactNode }) {
+export function SubmitButton(props: Omit<React.ComponentProps<typeof Button>, 'type' | 'disabled'>) {
   const form = useFormContext();
 
   return (
     <form.Subscribe selector={(state) => state.isSubmitting}>
-      {(isSubmitting) => (
-        <Button type="submit" disabled={isSubmitting} className={className}>
-          {children}
-        </Button>
-      )}
+      {(isSubmitting) => <Button {...props} type="submit" disabled={isSubmitting} />}
     </form.Subscribe>
   );
 }

@@ -121,9 +121,21 @@ packages/     contracts (type-only) · config (tsconfig/oxlint/oxfmt) · utils (
 - **One `ApiError`, guarded by `ApiError.is(err, status?)`**, handled centrally in `main.tsx`: no
   retry on 4xx, a 401 clears the cache and re-runs the router, and the `MutationCache` toasts every
   failure except a 400 or a `useMutation` declaring its own `onError`.
-- **Forms are Base UI `<Form onFormSubmit>`**, inputs uncontrolled, every control in `<Field name>`;
-  server errors go to `<Form errors>` through `parseValidationError` behind a `useMemo`, leaving
-  `<Field error>` for client-computed messages.
+- **Forms are TanStack Form** (`components/form/`): `useAppForm` with `revalidateLogic()` and one
+  `zod/mini` schema under `validators.onDynamic`, so a form validates on submit and re-validates on
+  change. The schema, `toFormValues` and `toInput` are module-level functions **below** the
+  component, and **every value lives in the form** — no `useState` beside it, and no coercion in the
+  submit handler that the schema could do. Cross-field rules (contrast, roll-over) are a `.check()`
+  on the object pushing an issue at the field's `path`.
+- **Controls are the bound field components**, never the raw primitives: `<form.AppField name>` gives
+  a typed name, its render prop destructures the one it needs (`{({ InputField }) => …}`), and
+  arrays are `mode="array"` plus `ArrayField`, addressing items as `` `styles[${index}]` ``. The
+  primitives beside them (`input.tsx`, `select.tsx`, …) stay presentational — Base UI still owns the
+  markup and gets `invalid`/`touched` from the field.
+- **Submit through `submitToApi(formApi, …)`** (`lib/errors.ts`), which puts a 400 on the form's
+  `onServer` error map via `parseValidationError` and returns whether it saved; anything else is
+  already toasted by the `MutationCache`. Its third argument maps a non-400 onto a field (settings'
+  409 → `domain`). `<SubmitButton>` reads `isSubmitting`, so no form assembles its own `pending`.
 - **Compose the primitives in `components/`**: every inline tag is a `<Chip>`, every list a real
   `<table>` whose column widths are declared once on the `TableHeaderCell` (`table-fixed`).
 - **Keep the first paint small**: `lazyRouteComponent` for heavy components, and **`zod/mini`**.

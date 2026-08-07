@@ -1,34 +1,25 @@
-import { Form } from '@base-ui/react/form';
 import type { Location, LocationInput, LocationUpdate, TenantSummary } from '@festivapp/contracts';
 import { has } from '@festivapp/utils';
+import { revalidateLogic } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import { MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useMemo } from 'react';
+import * as z from 'zod/mini';
 
 import { Button, IconButton, LinkButton } from '../components/button.tsx';
 import { useConfirmDialog } from '../components/confirm-dialog.tsx';
 import { Drawer, useDrawer } from '../components/drawer.tsx';
 import { EmptyState } from '../components/empty-state.tsx';
-import { Field } from '../components/form/field.tsx';
-import { Input } from '../components/form/input.tsx';
-import { Select } from '../components/form/select.tsx';
-import { Textarea } from '../components/form/textarea.tsx';
+import { Form, SubmitButton, useAppForm } from '../components/form/form.tsx';
 import { Page, PageHeader } from '../components/page.tsx';
 import { QueryBoundary } from '../components/query-boundary.tsx';
 import { SearchSummary } from '../components/search.tsx';
 import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '../components/table.tsx';
 import { api } from '../lib/api.ts';
-import { parseValidationError } from '../lib/errors.ts';
+import { submitToApi } from '../lib/errors.ts';
 import { listLocationsOptions, listSessionsOptions } from '../lib/queries.ts';
 
 const from = '/festivals/$tenantId/locations';
-
-type FormValues = {
-  name: string;
-  description: string;
-  position: number;
-};
 
 export function Locations() {
   const { tenant } = useRouteContext({ from });
@@ -198,45 +189,48 @@ function LocationForm({
     onSuccess: () => queryClient.invalidateQueries(listLocationsOptions(tenant.id)),
   });
 
-  const pending = createMutation.isPending || updateMutation.isPending;
-
-  const errors = useMemo(() => {
-    return parseValidationError(createMutation.error ?? updateMutation.error);
-  }, [createMutation.error, updateMutation.error]);
-
   const positionOptions = Array.from(
     { length: Math.max(1, defaultValue ? locations.length : locations.length + 1) },
     (_, index) => ({ value: index + 1, label: String(index + 1) }),
   );
 
-  const handleSubmit = (values: FormValues) => {
-    const input = {
-      name: values.name,
-      description: values.description,
-      position: Number(values.position),
-    };
+  const form = useAppForm({
+    defaultValues: {
+      name: defaultValue?.name ?? '',
+      position: defaultValue?.position ?? locations.length + 1,
+      description: defaultValue?.description ?? '',
+    },
+    validationLogic: revalidateLogic(),
+    validators: { onDynamic: schema },
+    onSubmit: async ({ value, formApi }) => {
+      const saved = await submitToApi(formApi, () => {
+        if (!defaultValue) {
+          return createMutation.mutateAsync(value);
+        }
 
-    if (!defaultValue) {
-      createMutation.mutate(input, { onSuccess: onClose });
-    } else {
-      updateMutation.mutate([defaultValue.id, input], { onSuccess: onClose });
-    }
-  };
+        return updateMutation.mutateAsync([defaultValue.id, value]);
+      });
+
+      if (saved) {
+        onClose();
+      }
+    },
+  });
 
   return (
-    <Form errors={errors} onFormSubmit={handleSubmit} className="col flex-1">
+    <Form form={form} className="col flex-1">
       <div className="col flex-1 gap-6 overflow-y-auto p-4">
-        <Field name="name" label="Name" errors={[{ match: 'valueMissing', message: 'A location name is required.' }]}>
-          <Input required defaultValue={defaultValue?.name} placeholder="e.g. Main Stage" />
-        </Field>
+        <form.AppField name="name">
+          {({ InputField }) => <InputField label="Name" placeholder="e.g. Main Stage" />}
+        </form.AppField>
 
-        <Field name="position" label="Position">
-          <Select defaultValue={defaultValue?.position ?? locations.length + 1} items={positionOptions} />
-        </Field>
+        <form.AppField name="position">
+          {({ SelectField }) => <SelectField label="Position" items={positionOptions} />}
+        </form.AppField>
 
-        <Field name="description" label="Description" hint="Shown to attendees on the map.">
-          <Textarea rows={4} defaultValue={defaultValue?.description ?? ''} />
-        </Field>
+        <form.AppField name="description">
+          {({ TextareaField }) => <TextareaField label="Description" hint="Shown to attendees on the map." rows={4} />}
+        </form.AppField>
       </div>
 
       <div className="row gap-4 border-t p-4">
@@ -244,10 +238,14 @@ function LocationForm({
           Cancel
         </Button>
 
-        <Button type="submit" className="flex-1" disabled={pending}>
-          {!defaultValue ? 'Add location' : 'Save changes'}
-        </Button>
+        <SubmitButton className="flex-1">{!defaultValue ? 'Add location' : 'Save changes'}</SubmitButton>
       </div>
     </Form>
   );
 }
+
+const schema = z.object({
+  name: z.string().check(z.minLength(1, 'A location name is required.')),
+  position: z.number(),
+  description: z.string(),
+});

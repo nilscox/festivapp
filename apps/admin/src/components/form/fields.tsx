@@ -1,8 +1,8 @@
 import { Field as BaseField } from '@base-ui/react/field';
 
 import { Checkbox } from './checkbox.tsx';
+import { Combobox } from './combobox.tsx';
 import { useFieldContext } from './context.ts';
-import { Label } from './field.tsx';
 import { FileInput } from './file-input.tsx';
 import { Input } from './input.tsx';
 import { Range } from './range.tsx';
@@ -65,6 +65,27 @@ export function SelectField<T extends string | number>({
         placeholder={placeholder}
         value={field.state.value}
         onValueChange={(value) => value !== null && field.handleChange(value)}
+      />
+    </Field>
+  );
+}
+
+export function ComboboxField({
+  label,
+  hint,
+  items,
+  placeholder,
+}: FieldProps & { items: string[]; placeholder?: string }) {
+  const field = useFieldContext<string>();
+
+  return (
+    <Field label={label} hint={hint}>
+      <Combobox
+        name={field.name}
+        items={items}
+        placeholder={placeholder}
+        value={field.state.value}
+        onValueChange={(value) => field.handleChange(value ?? '')}
       />
     </Field>
   );
@@ -150,6 +171,10 @@ export function Field({ label, hint, children }: FieldProps & { children: React.
       )}
     </BaseField.Root>
   );
+}
+
+export function Label({ children }: { children: React.ReactNode }) {
+  return <BaseField.Label className="text-muted text-label mb-1 font-medium">{children}</BaseField.Label>;
 }
 
 export function fieldError(errors: unknown[]) {
