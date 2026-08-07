@@ -164,7 +164,7 @@ function SessionsList({
 }) {
   const overlapping = sessions.filter((session) => session.overlaps.length > 0);
 
-  const [search, setSearch] = useSearchParam(from);
+  const [search = '', setSearch] = useSearchParam({ from, name: 'search' });
   const matching = sessions.filter((session) => session.matches(search));
 
   const days = groupByDay(matching, festival.timezone);

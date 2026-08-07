@@ -93,7 +93,7 @@ function PeopleList({ tenant, participants }: { tenant: TenantSummary; participa
     });
   };
 
-  const [search, setSearch] = useSearchParam(from);
+  const [search = '', setSearch] = useSearchParam({ from, name: 'search' });
 
   const matching = participants.filter((participant) =>
     matchesSearch(search, participant.name, participant.label, participant.origin, ...participant.styles),

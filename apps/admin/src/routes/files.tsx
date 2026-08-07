@@ -79,7 +79,7 @@ function FilesList({
     });
   };
 
-  const [search, setSearch] = useSearchParam(from);
+  const [search = '', setSearch] = useSearchParam({ from, name: 'search' });
   const matching = files.filter((file) => matchesSearch(search, file.name));
 
   if (files.length === 0) {
