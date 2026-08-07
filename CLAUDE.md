@@ -133,8 +133,8 @@ packages/     contracts (type-only) · config (tsconfig/oxlint/oxfmt) · utils (
 - **Controls are the bound field components**, never the raw primitives: `<form.AppField name>` gives
   a typed name, its render prop destructures the one it needs (`{({ InputField }) => …}`), and
   arrays are `mode="array"` plus `ArrayField`, addressing items as `` `styles[${index}]` ``.
-- **A control and its field component share a file**, the bound one first and the presentational one
-  below (`input.tsx` is `InputField` then `Input`) — a new control means one file plus a line in
+- **A control and its field component share a file**, the presentational one first and the bound one
+  below (`input.tsx` is `Input` then `InputField`) — a new control means one file plus a line in
   `form.tsx`'s `fieldComponents`. The presentational half stays dumb and controlled; `field.tsx` owns
   the `Field` wrapper that hands Base UI `invalid`/`touched`, so it is what keeps the markup and the
   aria wiring identical across all of them. It only ever forces `touched` **on** — a literal `false`
@@ -153,7 +153,10 @@ packages/     contracts (type-only) · config (tsconfig/oxlint/oxfmt) · utils (
 - **All data comes from one `/bootstrap` query**, shaped once in `select` and read through
   `useTenant()`/`useSession(id)`; add derived reads there, not in components.
 - **Offline-first**: `PersistQueryClientProvider` over `idb-keyval` plus `vite-plugin-pwa`, and
-  anything that breaks a cold offline start is a bug.
+  anything that breaks a cold offline start is a bug. A restored cache renders before any refetch, so
+  the persist `buster` is the build's git sha (`APP_VERSION`, defined by `vite.config.ts` alongside
+  `version`): a deploy drops every persisted cache instead of handing an older `/bootstrap`
+  payload to code that cannot read it, and a bundle only ever restores what it wrote itself.
 - **The service worker is hand-written** (`src/sw.ts`) because a generated one cannot carry a `push`
   handler; it owns the precache and the `/files/` `CacheFirst` route, so re-verify a cold offline
   boot after touching it.
@@ -178,6 +181,13 @@ packages/     contracts (type-only) · config (tsconfig/oxlint/oxfmt) · utils (
 
 ## Styling & code style
 
+- **An image only ever crops around a focal point** — `object-cover` goes with an
+  `object-position` built by `formatImagePosition`, never on its own, so a participant's
+  `imagePosition` decides what survives the crop. Admin's `<Thumbnail>` has no `fit` prop for that
+  reason: it is given a `position` and crops, or it is not and fits the image whole. The organizer
+  sets that point by dragging the picture inside its own frame — `<FileInput>`'s `renderThumbnail`
+  is what lets the person form swap its preview for the draggable `ImagePositionField` — so only the
+  axis a square frame actually crops can move, which is the axis the app crops too.
 - **Prefer Tailwind scale tokens over arbitrary values** unless required (`clamp()`, delays, `env()`);
   use the `.row`/`.col` utilities and each app's text tokens, and wrap static class lists in
   `clsx(...)` so oxfmt sorts them. In admin, `border` needs no color (a global `* { border-color }`).

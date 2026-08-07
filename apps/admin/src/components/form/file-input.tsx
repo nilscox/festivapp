@@ -13,15 +13,14 @@ import { UploadButton } from '../upload-button.tsx';
 import { useFieldContext } from './context.ts';
 import { Field, type FieldProps } from './field.tsx';
 
-export function FileInput({
-  tenantId,
-  value,
-  onValueChange,
-}: {
+type FileInputProps = {
   tenantId: string;
   value: string | null;
   onValueChange: (value: string | null) => void;
-}) {
+  renderThumbnail?: (url: string | null) => React.ReactNode;
+};
+
+export function FileInput({ tenantId, value, onValueChange, renderThumbnail }: FileInputProps) {
   const { data: theme } = useQuery(getThemeOptions(tenantId));
   const drawer = useDrawer();
 
@@ -38,12 +37,9 @@ export function FileInput({
   return (
     <>
       <div className="row items-center gap-3">
-        <Thumbnail
-          url={value}
-          fit="cover"
-          background={theme?.backgroundColor}
-          className="size-16 shrink-0 rounded-lg border"
-        />
+        {renderThumbnail?.(value) ?? (
+          <Thumbnail url={value} background={theme?.backgroundColor} className="size-16 shrink-0 rounded-lg border" />
+        )}
 
         <div className="col min-w-0 flex-1 gap-2">
           <span className="text-faint text-xxs min-h-3 truncate font-mono">
@@ -64,12 +60,10 @@ export function FileInput({
               Upload
             </BaseField.Control>
 
-            {value !== null && (
-              <Button variant="secondary" size="sm" onClick={drawer.onOpen}>
-                <ArrowLeftRight className="size-4" />
-                Change
-              </Button>
-            )}
+            <Button variant="secondary" size="sm" onClick={drawer.onOpen}>
+              <ArrowLeftRight className="size-4" />
+              {value === null ? 'Choose' : 'Change'}
+            </Button>
 
             {value !== null && (
               <Button variant="ghost" size="sm" onClick={() => onValueChange(null)}>
@@ -85,12 +79,22 @@ export function FileInput({
   );
 }
 
-export function FileField({ label, hint, tenantId }: FieldProps & { tenantId: string }) {
+export function FileField({
+  label,
+  hint,
+  tenantId,
+  renderThumbnail,
+}: FieldProps & Pick<FileInputProps, 'tenantId' | 'renderThumbnail'>) {
   const field = useFieldContext<string | null>();
 
   return (
     <Field label={label} hint={hint}>
-      <FileInput tenantId={tenantId} value={field.state.value} onValueChange={field.handleChange} />
+      <FileInput
+        tenantId={tenantId}
+        value={field.state.value}
+        onValueChange={field.handleChange}
+        renderThumbnail={renderThumbnail}
+      />
     </Field>
   );
 }

@@ -1,17 +1,20 @@
+import type { ImagePosition } from '@festivapp/contracts';
+import { formatImagePosition } from '@festivapp/utils';
 import clsx from 'clsx';
 import { Image } from 'lucide-react';
 
+// a focal point is what makes cropping safe, so a thumbnail given one crops and the rest fit whole
 export function Thumbnail({
   url,
   alt = '',
-  fit = 'contain',
+  position,
   background,
   className,
 }: {
   url?: string | null;
   alt?: string;
   background?: string;
-  fit?: 'contain' | 'cover';
+  position?: ImagePosition;
   className?: string;
 }) {
   if (!url) {
@@ -36,7 +39,8 @@ export function Thumbnail({
         src={url}
         alt={alt}
         loading="lazy"
-        className={clsx({ 'max-h-full max-w-full object-cover': fit === 'cover', 'object-contain': fit === 'contain' })}
+        style={position !== undefined ? { objectPosition: formatImagePosition(position) } : undefined}
+        className={clsx(position !== undefined ? 'size-full object-cover' : 'object-contain')}
       />
     </div>
   );

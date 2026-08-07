@@ -20,11 +20,11 @@ export type Day = {
 
 export function useBootstrapQuery() {
   return useQuery({
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
     queryKey: ['bootstrap'],
     queryFn: fetchBootstrap,
     select: selectBootstrap,
-    refetchOnMount: false,
-    refetchOnWindowFocus: true,
   });
 }
 

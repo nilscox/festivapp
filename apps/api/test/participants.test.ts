@@ -28,6 +28,7 @@ describe('participants', () => {
       name: '  Johnny Purple  ',
       description: '  ',
       imageUrl: '/files/abc',
+      imagePosition: { x: 20, y: 80 },
       origin: 'FR',
       label: 'Purple Records',
       styles: ['psytrance', '', ' forest '],
@@ -40,11 +41,34 @@ describe('participants', () => {
       name: 'Johnny Purple',
       description: null,
       imageUrl: '/files/abc',
+      imagePosition: { x: 20, y: 80 },
       origin: 'FR',
       label: 'Purple Records',
       styles: ['psytrance', 'forest'],
       socialLinks: ['https://example.com/johnny'],
     });
+  });
+
+  it('centers the image of a participant created without a position', async (t) => {
+    const { api, tenant } = await setup(t);
+
+    const res = await api.post<ParticipantDto>(`/admin/tenants/${tenant.id}/participants`, { name: 'Johnny Purple' });
+
+    assert.equal(res.status, 201);
+    assert.deepEqual(res.body.imagePosition, { x: 50, y: 50 });
+  });
+
+  it('moves the focal point of a participant image', async (t) => {
+    const { api, tenant } = await setup(t);
+
+    const participant = await create.participant(tenant, { imageUrl: '/files/abc' });
+
+    const res = await api.patch<ParticipantDto>(`/admin/tenants/${tenant.id}/participants/${participant.id}`, {
+      imagePosition: { x: 33.5, y: 0 },
+    });
+
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body.imagePosition, { x: 33.5, y: 0 });
   });
 
   it('lists the festival participants by name', async (t) => {

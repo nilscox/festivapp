@@ -17,6 +17,8 @@ RUN pnpm install --frozen-lockfile --filter @festivapp/app...
 COPY packages packages
 COPY apps/app apps/app
 
+ARG GIT_SHA
+
 RUN pnpm --filter @festivapp/app build
 
 FROM nginx:alpine

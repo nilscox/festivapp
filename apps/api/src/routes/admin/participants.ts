@@ -13,6 +13,12 @@ const createSchema = z.object({
   name: z.string().trim().min(1).max(200),
   description: optionalString(),
   imageUrl: optionalString(),
+  imagePosition: z
+    .strictObject({
+      x: z.number().min(0).max(100),
+      y: z.number().min(0).max(100),
+    })
+    .optional(),
   origin: optionalString(),
   label: optionalString(),
   styles: z.array(z.string().trim().max(25)).transform(filterEmptyStrings).optional(),
@@ -38,13 +44,15 @@ export function participantsRoutes({ db }: { db: Database }) {
   router.post('/', async (req, res) => {
     assert(req.tenant);
 
-    const values = createSchema.parse(req.body);
+    const { imagePosition, ...values } = createSchema.parse(req.body);
 
     const [row] = await db
       .insert(participants)
       .values({
         tenantId: req.tenant.id,
         ...values,
+        imageX: imagePosition?.x,
+        imageY: imagePosition?.y,
       })
       .returning();
 
@@ -54,12 +62,14 @@ export function participantsRoutes({ db }: { db: Database }) {
   router.patch('/:id', async (req, res) => {
     assert(req.tenant);
 
-    const values = updateSchema.parse(req.body);
+    const { imagePosition, ...values } = updateSchema.parse(req.body);
 
     const [row] = await db
       .update(participants)
       .set({
         ...values,
+        imageX: imagePosition?.x,
+        imageY: imagePosition?.y,
         updatedAt: new Date(),
       })
       .where(and(eq(participants.id, req.params.id), eq(participants.tenantId, req.tenant.id)))
@@ -96,6 +106,7 @@ function toParticipantDto(row: Participant): ParticipantDto {
     name: row.name,
     description: row.description,
     imageUrl: row.imageUrl,
+    imagePosition: { x: row.imageX, y: row.imageY },
     origin: row.origin,
     label: row.label,
     styles: row.styles,

@@ -1,10 +1,11 @@
+import { formatImagePosition } from '@festivapp/utils';
 import { Link } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { isWithinInterval } from 'date-fns';
 import { Radio } from 'lucide-react';
 
 import { type ResolvedSession } from '../lib/bootstrap.ts';
-import { formatSessionType, sessionImageUrl, sessionListMeta, sessionTitle } from '../lib/session.ts';
+import { formatSessionType, sessionImage, sessionListMeta, sessionTitle } from '../lib/session.ts';
 import { Chip } from './chip.tsx';
 
 export function SessionCard({
@@ -40,13 +41,13 @@ export function SessionCard({
 }
 
 function Thumbnail({ session }: { session: ResolvedSession }) {
-  const imageUrl = sessionImageUrl(session);
+  const image = sessionImage(session);
 
   const times = (
     <div
       className={clsx(
         'col absolute inset-x-0 rounded-b-lg bottom-0 px-2 pt-2 pb-0.5 font-mono leading-tight tabular-nums',
-        imageUrl ? 'bg-linear-to-t from-black/80 via-black/50 via-60% to-transparent' : 'bg-black/60',
+        image ? 'bg-linear-to-t from-black/80 via-black/50 via-60% to-transparent' : 'bg-black/60',
       )}
     >
       <span className="text-xs font-semibold text-white text-shadow-sm">{session.startTime}</span>
@@ -54,10 +55,15 @@ function Thumbnail({ session }: { session: ResolvedSession }) {
     </div>
   );
 
-  if (imageUrl) {
+  if (image) {
     return (
       <div className="relative size-20 shrink-0 overflow-hidden rounded-lg">
-        <img src={imageUrl} alt="" className="size-full object-cover" />
+        <img
+          src={image.url}
+          alt=""
+          style={{ objectPosition: formatImagePosition(image.position) }}
+          className="size-full object-cover"
+        />
         {times}
       </div>
     );

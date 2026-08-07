@@ -133,7 +133,6 @@ function FileCard({ file, background, onDelete }: { file: UploadedFile; backgrou
       <Thumbnail
         url={file.url}
         alt={file.name ?? 'Uploaded file'}
-        fit="cover"
         background={background}
         className="h-36 rounded-b-none"
       />

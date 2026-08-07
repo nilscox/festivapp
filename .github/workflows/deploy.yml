@@ -40,6 +40,8 @@ jobs:
           context: .
           file: apps/${{ matrix.image }}/Dockerfile
           push: true
+          build-args: |
+            GIT_SHA=${{ github.event.workflow_run.head_sha }}
           tags: |
             ghcr.io/${{ github.repository }}/${{ matrix.image }}:latest
             ghcr.io/${{ github.repository }}/${{ matrix.image }}:${{ github.event.workflow_run.head_sha }}

@@ -1,4 +1,4 @@
-import type { SessionType } from '@festivapp/contracts';
+import type { ImagePosition, SessionType } from '@festivapp/contracts';
 import { defined, get } from '@festivapp/utils';
 
 import type { ResolvedSession } from './bootstrap.ts';
@@ -29,9 +29,11 @@ export function sessionTitle(session: ResolvedSession): string | null {
   return null;
 }
 
-export function sessionImageUrl(session: ResolvedSession): string | null {
-  if (isMusicSession(session.type) && session.participants.length === 1 && session.participants[0]?.imageUrl) {
-    return session.participants[0].imageUrl;
+export function sessionImage(session: ResolvedSession): { url: string; position: ImagePosition } | null {
+  const [participant] = session.participants;
+
+  if (isMusicSession(session.type) && session.participants.length === 1 && participant?.imageUrl) {
+    return { url: participant.imageUrl, position: participant.imagePosition };
   }
 
   return null;

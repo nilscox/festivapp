@@ -175,6 +175,7 @@ function ParticipantItem({
           <Thumbnail
             background={theme?.backgroundColor}
             url={participant.imageUrl}
+            position={participant.imagePosition}
             alt={participant.name}
             className="size-10 shrink-0"
           />
@@ -283,9 +284,25 @@ function ParticipantForm({
           {({ InputField }) => <InputField label="Name" placeholder="Johnny Purple" />}
         </form.AppField>
 
-        <form.AppField name="imageUrl">
+        <form.AppField
+          name="imageUrl"
+          listeners={{ onChange: () => form.setFieldValue('imagePosition', { x: 50, y: 50 }) }}
+        >
           {({ FileField }) => (
-            <FileField tenantId={tenant.id} label="Picture" hint="Shown on the session's page in the app." />
+            <FileField
+              tenantId={tenant.id}
+              label="Picture"
+              hint="Drag it to set what stays in frame once cropped."
+              renderThumbnail={(url) =>
+                url === null ? (
+                  <Thumbnail className="size-24 shrink-0" />
+                ) : (
+                  <form.AppField name="imagePosition">
+                    {({ ImagePositionField }) => <ImagePositionField url={url} className="size-24 shrink-0" />}
+                  </form.AppField>
+                )
+              }
+            />
           )}
         </form.AppField>
 
@@ -342,6 +359,7 @@ function ParticipantForm({
 const schema = z.object({
   name: z.string().check(z.minLength(1, 'A name is required.')),
   imageUrl: z.nullable(z.string()),
+  imagePosition: z.object({ x: z.number(), y: z.number() }),
   label: z.string(),
   origin: z.string(),
   description: z.string(),
@@ -358,6 +376,7 @@ function toFormValues(participant?: Participant) {
   return {
     name: participant?.name ?? '',
     imageUrl: participant?.imageUrl ?? null,
+    imagePosition: participant?.imagePosition ?? { x: 50, y: 50 },
     label: participant?.label ?? '',
     origin: participant?.origin ?? '',
     description: participant?.description ?? '',
@@ -371,6 +390,7 @@ function toInput(values: z.infer<typeof schema>): ParticipantInput {
     name: values.name,
     description: values.description,
     imageUrl: values.imageUrl,
+    imagePosition: values.imagePosition,
     origin: values.origin,
     label: values.label,
     styles: values.styles.filter((value) => value.trim() !== ''),

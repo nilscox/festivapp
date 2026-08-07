@@ -1,5 +1,5 @@
 import type { Location, Participant } from '@festivapp/contracts';
-import { defined, has } from '@festivapp/utils';
+import { defined, formatImagePosition, has } from '@festivapp/utils';
 import { Link, useParams } from '@tanstack/react-router';
 import { Calendar, ChevronLeft, Disc3, Map, MapPin } from 'lucide-react';
 
@@ -103,7 +103,12 @@ function SingleArtistDetails({ session, artist }: { session: ResolvedSession; ar
 function ArtistImage({ artist }: { artist: Participant }) {
   if (artist?.imageUrl) {
     return (
-      <img src={artist.imageUrl} alt={artist.name} className="border-line max-h-92 w-full border-b object-cover" />
+      <img
+        src={artist.imageUrl}
+        alt={artist.name}
+        style={{ objectPosition: formatImagePosition(artist.imagePosition) }}
+        className="border-line max-h-92 w-full border-b object-cover"
+      />
     );
   }
 

@@ -54,6 +54,7 @@ describe('GET /bootstrap', () => {
           name: 'Artist',
           description: null,
           imageUrl: null,
+          imagePosition: { x: 50, y: 50 },
           origin: 'FR',
           label: null,
           styles: ['psytrance'],

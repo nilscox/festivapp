@@ -50,6 +50,7 @@ export function bootstrapRoutes({ config, db }: { config: Config; db: Database }
       name: row.name,
       description: row.description,
       imageUrl: row.imageUrl,
+      imagePosition: { x: row.imageX, y: row.imageY },
       origin: row.origin,
       label: row.label,
       styles: row.styles,

@@ -7,6 +7,7 @@ import { ColorField } from './color-input.tsx';
 import { ComboboxField } from './combobox.tsx';
 import { FieldContext, FormContext, useFormContext } from './context.ts';
 import { FileField } from './file-input.tsx';
+import { ImagePositionField } from './image-position.tsx';
 import { InputField } from './input.tsx';
 import { RangeField } from './range.tsx';
 import { SelectField } from './select.tsx';
@@ -21,6 +22,7 @@ export const { useAppForm } = createFormHook({
     ColorField,
     ComboboxField,
     FileField,
+    ImagePositionField,
     InputField,
     RangeField,
     SelectField,

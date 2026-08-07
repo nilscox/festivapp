@@ -68,6 +68,8 @@ export const participants = p.pgTable('participants', {
   name: p.text().notNull(),
   description: p.text(),
   imageUrl: p.text(),
+  imageX: p.real().notNull().default(50),
+  imageY: p.real().notNull().default(50),
   origin: p.text(),
   label: p.text(),
   styles: p.text().array().notNull().default([]),

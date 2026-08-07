@@ -1,5 +1,5 @@
 import type { Location, LocationUpdate, MapPin } from '@festivapp/contracts';
-import { assert } from '@festivapp/utils';
+import { assert, roundPercent } from '@festivapp/utils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { PointerEvent, RefObject } from 'react';
 import { useState } from 'react';
@@ -54,7 +54,7 @@ export function useDraggablePins({
 
     const pointer = pointerPin(event);
     const pin = pinOf(location);
-    const moved = { ...pin, x: round(pointer.x + drag.offsetX), y: round(pointer.y + drag.offsetY) };
+    const moved = { ...pin, x: roundPercent(pointer.x + drag.offsetX), y: roundPercent(pointer.y + drag.offsetY) };
 
     if (moved.x === pin.x && moved.y === pin.y) {
       return;
@@ -135,8 +135,4 @@ function without(pins: Record<string, MapPin>, id: string) {
   const { [id]: _, ...rest } = pins;
 
   return rest;
-}
-
-function round(value: number): number {
-  return Math.round(Math.min(Math.max(value, 0), 100) * 10) / 10;
 }

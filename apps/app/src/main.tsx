@@ -19,6 +19,10 @@ import './styles.css';
 registerSW({ immediate: true });
 initAnalytics();
 
+declare global {
+  var APP_VERSION: string;
+}
+
 declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router;
@@ -33,7 +37,6 @@ const router = createRouter({
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: import.meta.env.PROD ? 60_000 : 0,
       gcTime: Number.POSITIVE_INFINITY,
       retry: 1,
     },
@@ -53,7 +56,7 @@ const container = defined(document.getElementById('root'));
 
 createRoot(container).render(
   <StrictMode>
-    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
+    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister, buster: APP_VERSION }}>
       <RouterProvider router={router} />
     </PersistQueryClientProvider>
   </StrictMode>,

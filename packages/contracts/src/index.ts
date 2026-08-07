@@ -102,6 +102,7 @@ export type Participant = {
   description: string | null;
   /** Path of an uploaded file (see `UploadedFile.url`), or null for no image. */
   imageUrl: string | null;
+  imagePosition: ImagePosition;
   /** Where the act is from. Musical acts only; null otherwise. */
   origin: string | null;
   /** Record label. Musical acts only; null otherwise. */
@@ -110,6 +111,17 @@ export type Participant = {
   styles: string[];
   /** URLs of the act's presence elsewhere; the platform is derived from the host. */
   socialLinks: string[];
+};
+
+/**
+ * Focal point of an image, as percentages of its own width and height from its
+ * top-left corner. It is the point that stays in frame wherever the image is
+ * cropped to fill its box (`object-fit: cover`), so it holds at any size and
+ * aspect ratio. 50/50 is the browser's own default, centered.
+ */
+export type ImagePosition = {
+  x: number;
+  y: number;
 };
 
 /** A scheduled item in the timetable. */
@@ -259,6 +271,8 @@ export type ParticipantInput = {
   description: string | null;
   /** Path of an uploaded file (see `UploadedFile.url`), or null for no image. */
   imageUrl: string | null;
+  /** Omit to center the image, which is also what a new picture resets it to. */
+  imagePosition?: ImagePosition;
   origin: string | null;
   label: string | null;
   styles: string[];

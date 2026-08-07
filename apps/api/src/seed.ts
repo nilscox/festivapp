@@ -60,6 +60,12 @@ const dataSchema = z.strictObject({
     z.strictObject({
       name: z.string(),
       image: z.string().nullable(),
+      imagePosition: z
+        .strictObject({
+          x: z.number().min(0).max(100),
+          y: z.number().min(0).max(100),
+        })
+        .optional(),
       styles: z.array(z.string()),
       label: z.string().nullable(),
       origin: z.string().nullable(),
@@ -162,7 +168,7 @@ export async function seed(
       });
     }
 
-    for (const { image, ...participant } of data.participants) {
+    for (const { image, imagePosition, ...participant } of data.participants) {
       const id = createId();
 
       participantsMap.set(participant.name, id);
@@ -171,6 +177,8 @@ export async function seed(
         id,
         tenantId,
         imageUrl: await uploadFile(image),
+        imageX: imagePosition?.x,
+        imageY: imagePosition?.y,
         ...participant,
       });
     }
