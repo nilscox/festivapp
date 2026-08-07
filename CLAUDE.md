@@ -134,14 +134,16 @@ packages/     contracts (type-only) · config (tsconfig/oxlint/oxfmt) · utils (
   below (`input.tsx` is `InputField` then `Input`) — a new control means one file plus a line in
   `form.tsx`'s `fieldComponents`. The presentational half stays dumb and controlled; `field.tsx` owns
   the `Field` wrapper that hands Base UI `invalid`/`touched`, so it is what keeps the markup and the
-  aria wiring identical across all of them.
+  aria wiring identical across all of them. It only ever forces `touched` **on** — a literal `false`
+  pins Base UI's own tracking off — so every bound control wires `onBlur={field.handleBlur}`.
 - **Submit through `submitToApi(formApi, …)`** (`lib/errors.ts`), which puts a 400 on the form's
   `onServer` error map via `parseValidationError` and returns whether it saved; anything else is
   already toasted by the `MutationCache`. Its third argument maps a non-400 onto a field (settings'
   409 → `domain`). `<SubmitButton>` reads `isSubmitting`, so no form assembles its own `pending`.
+  **`confirm()` returns a promise** resolving once the dialog is done, so a submit that asks first
+  (settings' domain move, messages' notification) awaits it and stays `isSubmitting` throughout.
 - **Compose the primitives in `components/`**: every inline tag is a `<Chip>`, every list a real
   `<table>` whose column widths are declared once on the `TableHeaderCell` (`table-fixed`).
-- **Keep the first paint small**: `lazyRouteComponent` for heavy components, and **`zod/mini`**.
 
 ## Attendee app (`apps/app`)
 

@@ -65,10 +65,10 @@ export function FileInput({
             </BaseField.Control>
 
             {value !== null && (
-              <BaseField.Control render={<Button variant="secondary" size="sm" />} onClick={drawer.onOpen}>
+              <Button variant="secondary" size="sm" onClick={drawer.onOpen}>
                 <ArrowLeftRight className="size-4" />
                 Change
-              </BaseField.Control>
+              </Button>
             )}
 
             {value !== null && (

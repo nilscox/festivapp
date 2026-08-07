@@ -8,12 +8,12 @@ import { fieldError } from './field.tsx';
 export function ArrayField<T>({
   label,
   add,
-  empty,
+  newItem,
   children,
 }: {
   label: React.ReactNode;
   add?: React.ReactNode;
-  empty: T;
+  newItem: T;
   children: (index: number) => React.ReactNode;
 }) {
   const field = useFieldContext<T[]>();
@@ -37,7 +37,7 @@ export function ArrayField<T>({
         </div>
       ))}
 
-      <Button variant="secondary" size="sm" className="mr-auto" onClick={() => field.pushValue(empty)}>
+      <Button variant="secondary" size="sm" className="mr-auto" onClick={() => field.pushValue(newItem)}>
         <Plus className="size-3" />
         {add}
       </Button>

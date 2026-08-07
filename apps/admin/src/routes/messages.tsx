@@ -196,7 +196,7 @@ function MessageForm({
   const confirm = useConfirmDialog();
 
   const confirmNotify = (value: z.infer<typeof schema>, publish: () => Promise<boolean>) => {
-    confirm({
+    return confirm({
       title: 'Send notification',
       description: (
         <NotificationPreview

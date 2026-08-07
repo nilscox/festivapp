@@ -12,7 +12,7 @@ export function Field({ label, hint, children }: FieldProps & { children: React.
   const error = fieldError(field.state.meta.errors);
 
   return (
-    <BaseField.Root name={field.name} invalid={error !== undefined} touched={field.state.meta.isTouched}>
+    <BaseField.Root name={field.name} invalid={error !== undefined} touched={field.state.meta.isTouched || undefined}>
       {typeof label === 'string' ? <Label>{label}</Label> : label}
 
       {children}

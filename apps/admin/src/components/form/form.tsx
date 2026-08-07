@@ -72,7 +72,7 @@ export function SubmitButton(props: Omit<React.ComponentProps<typeof Button>, 't
 // the errors are React state, so the invalid controls only exist after the next paint
 function focusFirstError(element: HTMLFormElement) {
   requestAnimationFrame(() => {
-    const control = element.querySelector<HTMLElement>('input[data-invalid], textarea[data-invalid]');
+    const control = element.querySelector<HTMLElement>('[data-invalid]:is(input, textarea, button, [tabindex])');
 
     control?.focus();
     control?.scrollIntoView({ block: 'center' });

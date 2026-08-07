@@ -14,6 +14,7 @@ export function Checkbox({
   defaultChecked,
   checked,
   onCheckedChange,
+  onBlur,
 }: {
   name?: string;
   label: React.ReactNode;
@@ -21,6 +22,7 @@ export function Checkbox({
   defaultChecked?: boolean;
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
+  onBlur?: React.FocusEventHandler;
 }) {
   return (
     <label className="row cursor-pointer items-start gap-2">
@@ -29,6 +31,7 @@ export function Checkbox({
         defaultChecked={defaultChecked}
         checked={checked}
         onCheckedChange={onCheckedChange}
+        onBlur={onBlur}
         className={clsx(
           'bg-surface hover:border-line-strong flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-md border',
           'data-checked:bg-accent data-checked:border-accent',
@@ -58,6 +61,7 @@ export function CheckboxField({ label, hint }: FieldProps) {
         hint={hint}
         checked={field.state.value}
         onCheckedChange={field.handleChange}
+        onBlur={field.handleBlur}
       />
     </Field>
   );

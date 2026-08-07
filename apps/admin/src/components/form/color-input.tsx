@@ -26,6 +26,7 @@ export function ColorField({ label, hint }: FieldProps) {
         name={field.name}
         value={field.state.value}
         onChange={(event) => field.handleChange(event.currentTarget.value)}
+        onBlur={field.handleBlur}
       />
     </Field>
   );

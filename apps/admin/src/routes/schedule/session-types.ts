@@ -8,3 +8,5 @@ export const sessionTypes: Record<SessionType, { label: string; badge: string; d
   workshop: { label: 'Workshop', badge: 'text-[#d97706] bg-[#d97706]/10', dot: 'bg-[#d97706]' },
   other:    { label: 'Other',    badge: 'text-[#424242] bg-[#424242]/10', dot: 'bg-[#424242]' },
 };
+
+export const sessionTypeValues = Object.keys(sessionTypes) as SessionType[];

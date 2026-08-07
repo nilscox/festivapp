@@ -14,6 +14,7 @@ type SelectProps<T> = {
   defaultValue?: T;
   value?: T;
   onValueChange?: (value: T | null) => void;
+  onBlur?: React.FocusEventHandler;
   placeholder?: string;
 };
 
@@ -23,11 +24,15 @@ export function Select<T extends string | number>({
   defaultValue,
   value,
   onValueChange,
+  onBlur,
   placeholder,
 }: SelectProps<T>) {
   return (
     <Root items={items} name={name} defaultValue={defaultValue} value={value} onValueChange={onValueChange}>
-      <Trigger className="text-form bg-surface text-ink hover:border-line-strong row h-11 w-full cursor-pointer items-center justify-between rounded-lg border px-3">
+      <Trigger
+        onBlur={onBlur}
+        className="text-form bg-surface text-ink hover:border-line-strong row h-11 w-full cursor-pointer items-center justify-between rounded-lg border px-3"
+      >
         <Value placeholder={<span className="text-faint">{placeholder}</span>} />
         <Icon className="text-faint shrink-0 data-popup-open:-scale-y-100">
           <ChevronDown className="size-4" />
@@ -75,6 +80,7 @@ export function SelectField<T extends string | number>({
         placeholder={placeholder}
         value={field.state.value}
         onValueChange={(value) => value !== null && field.handleChange(value)}
+        onBlur={field.handleBlur}
       />
     </Field>
   );

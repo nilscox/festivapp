@@ -36,6 +36,7 @@ export function RangeField({ label, hint, ...props }: FieldProps & RangeProps) {
         name={field.name}
         value={field.state.value}
         onChange={(event) => field.handleChange(Number(event.currentTarget.value))}
+        onBlur={field.handleBlur}
       />
     </Field>
   );

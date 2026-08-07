@@ -293,7 +293,7 @@ function ParticipantForm({
 
         <form.AppField name="styles" mode="array">
           {({ ArrayField }) => (
-            <ArrayField label="Styles" add="Add a style" empty="">
+            <ArrayField label="Styles" add="Add a style" newItem="">
               {(index) => (
                 <form.AppField name={`styles[${index}]`}>
                   {({ InputField }) => <InputField placeholder="e.g. techno" />}
@@ -304,12 +304,12 @@ function ParticipantForm({
         </form.AppField>
 
         <form.AppField name="description">
-          {(field) => <field.TextareaField label="Description" rows={6} />}
+          {({ TextareaField }) => <TextareaField label="Description" rows={6} />}
         </form.AppField>
 
         <form.AppField name="socialLinks" mode="array">
           {({ ArrayField }) => (
-            <ArrayField label="Links" add="Add a link" empty="">
+            <ArrayField label="Links" add="Add a link" newItem="">
               {(index) => (
                 <form.AppField name={`socialLinks[${index}]`}>
                   {({ InputField }) => <InputField type="url" placeholder="https://" />}
@@ -338,7 +338,12 @@ const schema = z.object({
   origin: z.string(),
   description: z.string(),
   styles: z.array(z.string()),
-  socialLinks: z.array(z.union([z.literal(''), z.url({ error: 'Enter a full URL, starting with https://' })])),
+  socialLinks: z.array(
+    z.union([
+      z.literal(''),
+      z.url({ protocol: /^https?$/, error: 'Enter a full URL, starting with http:// or https://' }),
+    ]),
+  ),
 });
 
 function toFormValues(participant?: Participant) {

@@ -1,10 +1,10 @@
 import { AlertDialog } from '@base-ui/react/alert-dialog';
 import { assert, defined } from '@festivapp/utils';
-import { createContext, use, useCallback, useState } from 'react';
+import { createContext, use, useCallback, useRef, useState } from 'react';
 
 import { Button, type ButtonVariant } from './button.tsx';
 
-const ConfirmContext = createContext<((options: ConfirmOptions) => void) | null>(null);
+const ConfirmContext = createContext<((options: ConfirmOptions) => Promise<boolean>) | null>(null);
 
 type ConfirmOptions = {
   title: React.ReactNode;
@@ -19,10 +19,23 @@ export function ConfirmDialogProvider({ children }: { children: React.ReactNode 
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
 
+  const settle = useRef<(confirmed: boolean) => void>(undefined);
+
   const confirm = useCallback((options: ConfirmOptions) => {
+    settle.current?.(false);
     setOptions(options);
     setOpen(true);
+
+    return new Promise<boolean>((resolve) => {
+      settle.current = resolve;
+    });
   }, []);
+
+  const close = (confirmed: boolean) => {
+    setOpen(false);
+    settle.current?.(confirmed);
+    settle.current = undefined;
+  };
 
   const onConfirm = async () => {
     assert(options);
@@ -31,7 +44,7 @@ export function ConfirmDialogProvider({ children }: { children: React.ReactNode 
 
     try {
       await options.onConfirm();
-      setOpen(false);
+      close(true);
     } catch {
     } finally {
       setPending(false);
@@ -44,7 +57,7 @@ export function ConfirmDialogProvider({ children }: { children: React.ReactNode 
 
       <AlertDialog.Root
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={(open) => !open && close(false)}
         onOpenChangeComplete={(open) => !open && setOptions(undefined)}
       >
         <AlertDialog.Portal>

@@ -1,4 +1,4 @@
-import type { MeResponse } from '@festivapp/contracts';
+import type { LoginRequest, MeResponse } from '@festivapp/contracts';
 import { revalidateLogic } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
@@ -18,7 +18,7 @@ export function Login() {
   const router = useRouter();
 
   const { mutateAsync, error } = useMutation({
-    mutationFn: (body: z.infer<typeof schema>) => api.post<MeResponse>('/admin/auth/login', body),
+    mutationFn: (body: LoginRequest) => api.post<MeResponse>('/admin/auth/login', body),
     onError: (error) => {
       if (!ApiError.is(error, 400) && !ApiError.is(error, 401)) {
         toast.error(error.message);

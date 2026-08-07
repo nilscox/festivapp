@@ -36,6 +36,11 @@ function SettingsForm({ tenant }: { tenant: Tenant }) {
 
   const mutation = useMutation({
     mutationFn: (input: Partial<TenantInput>) => api.patch<Tenant>(`/admin/tenants/${tenant.id}`, input),
+    onError: (error) => {
+      if (!ApiError.is(error, 409)) {
+        toast.error(error.message);
+      }
+    },
     onSuccess: async () => {
       await Promise.all([
         queryClient.refetchQueries(getTenantOptions(tenant.id)),
@@ -50,16 +55,17 @@ function SettingsForm({ tenant }: { tenant: Tenant }) {
     defaultValues: { name: tenant.name, timezone: tenant.timezone, domain: tenant.domain },
     validationLogic: revalidateLogic(),
     validators: { onDynamic: schema },
-    onSubmit: ({ value, formApi }) => {
+    onSubmit: async ({ value, formApi }) => {
       const save = () => {
         return submitToApi(formApi, () => mutation.mutateAsync(value), domainTaken);
       };
 
       if (value.domain === tenant.domain) {
-        return save();
+        await save();
+        return;
       }
 
-      confirm({
+      await confirm({
         title: 'Move the festival to a new address?',
         description: `Attendees will have to visit ${value.domain}; ${tenant.domain} stops working as soon as you save. Bookmarks and installed apps pointing at the old address break.`,
         confirmLabel: 'Move festival',

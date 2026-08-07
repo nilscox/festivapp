@@ -11,16 +11,16 @@ import { api } from '../../lib/api.ts';
 import { formatDayKey, formatTime, nextDay, toInstant } from '../../lib/datetime.ts';
 import { submitToApi } from '../../lib/errors.ts';
 import { listSessionsOptions } from '../../lib/queries.ts';
-import { sessionTypes } from './session-types.ts';
+import { sessionTypes, sessionTypeValues } from './session-types.ts';
 
 import type { ScheduleSession } from '../../lib/schedule.ts';
 
-const typeOptions = Object.entries(sessionTypes).map(([type, { label, dot }]) => ({
-  value: type as SessionType,
+const typeOptions = sessionTypeValues.map((type) => ({
+  value: type,
   label: (
     <span className="row items-center gap-2">
-      <span className={clsx('size-2 rounded-xs', dot)} />
-      {label}
+      <span className={clsx('size-2 rounded-xs', sessionTypes[type].dot)} />
+      {sessionTypes[type].label}
     </span>
   ),
 }));
@@ -121,7 +121,7 @@ export function SessionForm({
 
         <form.AppField name="participantIds" mode="array">
           {({ ArrayField }) => (
-            <ArrayField label="People" add="Add people" empty="">
+            <ArrayField label="People" add="Add people" newItem="">
               {(index) => (
                 <form.AppField name={`participantIds[${index}]`}>
                   {({ SelectField }) => <SelectField items={participantOptions} placeholder="Pick someone" />}
@@ -161,7 +161,7 @@ export function SessionForm({
 
 const schema = z.object({
   locationId: z.string().check(z.minLength(1, 'A location is required.')),
-  type: z.enum(Object.keys(sessionTypes) as SessionType[]),
+  type: z.enum(sessionTypeValues),
   date: z.string().check(z.minLength(1, 'A date is required.')),
   startsAt: z.string().check(z.minLength(1, 'A start time is required.')),
   endsAt: z.string().check(z.minLength(1, 'An end time is required.')),

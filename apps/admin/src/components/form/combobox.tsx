@@ -13,14 +13,15 @@ type ComboboxProps = {
   defaultValue?: string;
   value?: string;
   onValueChange?: (value: string | null) => void;
+  onBlur?: React.FocusEventHandler;
   placeholder?: string;
 };
 
-export function Combobox({ items, name, defaultValue, value, onValueChange, placeholder }: ComboboxProps) {
+export function Combobox({ items, name, defaultValue, value, onValueChange, onBlur, placeholder }: ComboboxProps) {
   return (
     <Root items={items} name={name} defaultValue={defaultValue} value={value} onValueChange={onValueChange}>
       <div className="relative">
-        <BaseCombobox.Input render={<Input />} placeholder={placeholder} />
+        <BaseCombobox.Input render={<Input />} onBlur={onBlur} placeholder={placeholder} />
         <Icon className="text-faint pointer-events-none absolute right-0 inline-flex h-full shrink-0 flex-row items-center px-3">
           <ChevronDown className="size-4" />
         </Icon>
@@ -68,6 +69,7 @@ export function ComboboxField({
         placeholder={placeholder}
         value={field.state.value}
         onValueChange={(value) => field.handleChange(value ?? '')}
+        onBlur={field.handleBlur}
       />
     </Field>
   );
