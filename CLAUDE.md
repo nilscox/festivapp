@@ -126,7 +126,10 @@ packages/     contracts (type-only) · config (tsconfig/oxlint/oxfmt) · utils (
   change. The schema, `toFormValues` and `toInput` are module-level functions **below** the
   component, and **every value lives in the form** — no `useState` beside it, and no coercion in the
   submit handler that the schema could do. Cross-field rules (contrast, roll-over) are a `.check()`
-  on the object pushing an issue at the field's `path`.
+  on the object pushing an issue at the field's `path`. **A rule the organizer may knowingly break is
+  a warning, not a validation issue** — a session overlapping another at its location renders from a
+  `form.Subscribe` and still submits, matching the schedule list, which flags overlaps rather than
+  forbidding them.
 - **Controls are the bound field components**, never the raw primitives: `<form.AppField name>` gives
   a typed name, its render prop destructures the one it needs (`{({ InputField }) => …}`), and
   arrays are `mode="array"` plus `ArrayField`, addressing items as `` `styles[${index}]` ``.

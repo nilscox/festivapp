@@ -3,6 +3,7 @@ import { has } from '@festivapp/utils';
 import { revalidateLogic } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
+import { TriangleAlert } from 'lucide-react';
 import * as z from 'zod/mini';
 
 import { Button } from '../../components/button.tsx';
@@ -11,9 +12,8 @@ import { api } from '../../lib/api.ts';
 import { formatDayKey, formatTime, nextDay, toInstant } from '../../lib/datetime.ts';
 import { submitToApi } from '../../lib/errors.ts';
 import { listSessionsOptions } from '../../lib/queries.ts';
+import { sessionSlotLabel, slotsOverlap, type ScheduleSession } from '../../lib/schedule.ts';
 import { sessionTypes, sessionTypeValues } from './session-types.ts';
-
-import type { ScheduleSession } from '../../lib/schedule.ts';
 
 const typeOptions = sessionTypeValues.map((type) => ({
   value: type,
@@ -27,6 +27,7 @@ const typeOptions = sessionTypeValues.map((type) => ({
 
 export function SessionForm({
   session,
+  sessions,
   tenantId,
   locations,
   participants,
@@ -34,6 +35,7 @@ export function SessionForm({
   onClose,
 }: {
   session?: ScheduleSession;
+  sessions: ScheduleSession[];
   tenantId: string;
   locations: Location[];
   participants: Participant[];
@@ -119,6 +121,10 @@ export function SessionForm({
           </form.Subscribe>
         </div>
 
+        <form.Subscribe selector={(state) => selectOverlapsWarning(state.values, sessions, session, timezone)}>
+          {(warning) => warning && <OverlapWarning warning={warning} />}
+        </form.Subscribe>
+
         <form.AppField name="participantIds" mode="array">
           {({ ArrayField }) => (
             <ArrayField label="People" add="Add people" newItem="">
@@ -200,6 +206,43 @@ function toInput(values: ReturnType<typeof toFormValues>, timezone: string): Ses
 // an end at or before the start is a set running past midnight, so it belongs to the next day
 function rollsOver(startsAt: string, endsAt: string) {
   return Boolean(startsAt && endsAt) && endsAt <= startsAt;
+}
+
+function OverlapWarning({ warning }: { warning: string }) {
+  return (
+    <output className="row border-warning-line bg-warning/5 text-warning-ink items-start gap-2 rounded-lg border p-3 text-sm">
+      <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+      <span>Overlaps {warning}.</span>
+    </output>
+  );
+}
+
+function selectOverlapsWarning(
+  values: ReturnType<typeof toFormValues>,
+  sessions: ScheduleSession[],
+  session: ScheduleSession | undefined,
+  timezone: string,
+  max = 3,
+) {
+  if (!values.locationId || !values.date || !values.startsAt || !values.endsAt) {
+    return undefined;
+  }
+
+  const slot = toInput(values, timezone);
+  const overlapping = sessions.filter((other) => other.id !== session?.id && slotsOverlap(slot, other));
+
+  if (overlapping.length === 0) {
+    return undefined;
+  }
+
+  const named = overlapping
+    .slice(0, max)
+    .map((other) => sessionSlotLabel(other, timezone))
+    .join(', ');
+
+  const rest = overlapping.length - max;
+
+  return rest > 0 ? `${named} and ${rest} more` : named;
 }
 
 function solePerson(participantIds: string[], participants: Participant[]) {

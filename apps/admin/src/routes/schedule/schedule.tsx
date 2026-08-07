@@ -23,7 +23,7 @@ import {
   listParticipantsOptions,
   listSessionsOptions,
 } from '../../lib/queries.ts';
-import { getScheduleSessions, groupByDay, type ScheduleSession } from '../../lib/schedule.ts';
+import { getScheduleSessions, groupByDay, sessionSlotLabel, type ScheduleSession } from '../../lib/schedule.ts';
 import { SessionForm } from './session-form.tsx';
 import { sessionTypes } from './session-types.ts';
 
@@ -141,6 +141,7 @@ function SessionDrawer({
     <Drawer {...drawer} onClosed={onClosed} title={create ? 'New session' : 'Edit session'}>
       <SessionForm
         session={editId ? sessions.find(has('id', editId)) : undefined}
+        sessions={sessions}
         tenantId={festival.id}
         locations={locations}
         participants={participants}
@@ -279,10 +280,6 @@ function SessionRow({
 }) {
   const type = sessionTypes[session.type];
 
-  const overlapTitle = (session: ScheduleSession) => {
-    return `${session.displayName} (${formatTime(session.startsAt, timezone)}-${formatTime(session.endsAt, timezone)})`;
-  };
-
   return (
     <TableRow>
       <TableCell className="font-mono text-sm font-semibold whitespace-nowrap">
@@ -299,7 +296,7 @@ function SessionRow({
             {session.overlaps.length > 0 && (
               <Chip
                 size="sm"
-                title={`Overlaps ${session.overlaps.map(overlapTitle).join(', ')}`}
+                title={`Overlaps ${session.overlaps.map((other) => sessionSlotLabel(other, timezone)).join(', ')}`}
                 className="bg-warning/5 text-warning-ink"
               >
                 <TriangleAlert className="size-2.5" />

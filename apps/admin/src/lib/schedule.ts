@@ -1,7 +1,7 @@
 import type { Location, Participant, Session } from '@festivapp/contracts';
 import { get, matchesSearch } from '@festivapp/utils';
 
-import { formatDayKey, formatDayLabel } from './datetime.ts';
+import { formatDayKey, formatDayLabel, formatTime } from './datetime.ts';
 
 export type ScheduleSession = Session & {
   displayName: string;
@@ -10,6 +10,8 @@ export type ScheduleSession = Session & {
   overlaps: ScheduleSession[];
   matches: (search: string) => boolean;
 };
+
+export type SessionSlot = Pick<Session, 'locationId' | 'startsAt' | 'endsAt'>;
 
 export type ScheduleDay = {
   key: string;
@@ -71,11 +73,7 @@ export function getScheduleSessions(
 
   for (const [index, session] of resolved.entries()) {
     for (const other of resolved.slice(index + 1)) {
-      if (session.locationId !== other.locationId) {
-        continue;
-      }
-
-      if (session.startsAt < other.endsAt && other.startsAt < session.endsAt) {
+      if (slotsOverlap(session, other)) {
         session.overlaps.push(other);
         other.overlaps.push(session);
       }
@@ -83,4 +81,12 @@ export function getScheduleSessions(
   }
 
   return resolved;
+}
+
+export function slotsOverlap(a: SessionSlot, b: SessionSlot): boolean {
+  return a.locationId === b.locationId && a.startsAt < b.endsAt && b.startsAt < a.endsAt;
+}
+
+export function sessionSlotLabel(session: ScheduleSession, timeZone: string): string {
+  return `"${session.displayName}" (${formatTime(session.startsAt, timeZone)}-${formatTime(session.endsAt, timeZone)})`;
 }
