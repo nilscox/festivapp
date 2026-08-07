@@ -4,6 +4,7 @@ import { revalidateLogic } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import { Pencil, Plus, Trash2, Users } from 'lucide-react';
+import { useDeferredValue } from 'react';
 import * as z from 'zod/mini';
 
 import { Button, IconButton, LinkButton } from '../components/button.tsx';
@@ -83,9 +84,10 @@ function PeopleList({ tenant, participants }: { tenant: TenantSummary; participa
   };
 
   const [search = '', setSearch] = useSearchParam({ from, name: 'search' });
+  const deferredSearch = useDeferredValue(search);
 
   const matching = participants.filter((participant) =>
-    matchesSearch(search, participant.name, participant.label, participant.origin, ...participant.styles),
+    matchesSearch(deferredSearch, participant.name, participant.label, participant.origin, ...participant.styles),
   );
 
   if (participants.length === 0) {

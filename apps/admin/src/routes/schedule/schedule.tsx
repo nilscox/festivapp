@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { CalendarDays, MapPin, Pencil, Plus, Trash2, TriangleAlert } from 'lucide-react';
+import { useDeferredValue } from 'react';
 
 import { IconButton, LinkButton } from '../../components/button.tsx';
 import { Chip } from '../../components/chip.tsx';
@@ -166,7 +167,8 @@ function SessionsList({
   const overlapping = sessions.filter((session) => session.overlaps.length > 0);
 
   const [search = '', setSearch] = useSearchParam({ from, name: 'search' });
-  const matching = sessions.filter((session) => session.matches(search));
+  const deferredSearch = useDeferredValue(search);
+  const matching = sessions.filter((session) => session.matches(deferredSearch));
 
   const days = groupByDay(matching, festival.timezone);
 

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouteContext } from '@tanstack/react-router';
 import { format } from 'date-fns';
 import { Image, Trash2 } from 'lucide-react';
+import { useDeferredValue } from 'react';
 import { toast } from 'react-hot-toast';
 
 import { IconButton } from '../components/button.tsx';
@@ -80,7 +81,8 @@ function FilesList({
   };
 
   const [search = '', setSearch] = useSearchParam({ from, name: 'search' });
-  const matching = files.filter((file) => matchesSearch(search, file.name));
+  const deferredSearch = useDeferredValue(search);
+  const matching = files.filter((file) => matchesSearch(deferredSearch, file.name));
 
   if (files.length === 0) {
     return (
