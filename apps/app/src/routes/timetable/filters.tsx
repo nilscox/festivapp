@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Heart, ListFilter, Search, X } from 'lucide-react';
+import { Heart, ListFilter, RotateCcw, Search, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 import { useOverflows } from '../../hooks/use-overflows.ts';
@@ -63,12 +63,8 @@ export function FilterChips({ chips, onClear }: { chips: FilterChip[]; onClear: 
         </button>
       ))}
 
-      <button
-        type="button"
-        onClick={onClear}
-        className="text-muted text-xxs px-1 py-1.5 font-mono tracking-wider uppercase underline"
-      >
-        Clear
+      <button type="button" onClick={onClear} aria-label="Clear filters" className="px-1 py-1.5">
+        <RotateCcw className="text-muted size-4" />
       </button>
     </div>
   );
@@ -93,7 +89,7 @@ export function TimetableFilters({
         <div className="row items-center justify-between">
           <h2 className="font-display text-lg font-bold">Filters</h2>
 
-          <div className="row items-center gap-5">
+          <div className="row items-center gap-4">
             <button
               type="button"
               onClick={filters.toggleLiked}
@@ -104,12 +100,8 @@ export function TimetableFilters({
               <Heart className={clsx('size-4', filters.liked && 'fill-accent text-accent')} />
             </button>
 
-            <button
-              type="button"
-              onClick={filters.clear}
-              className="text-muted text-xxs font-mono tracking-wider uppercase underline"
-            >
-              Clear all
+            <button type="button" onClick={filters.clear} aria-label="Clear all filters" className="-m-2 p-2">
+              <RotateCcw className="text-muted size-4" />
             </button>
           </div>
         </div>
