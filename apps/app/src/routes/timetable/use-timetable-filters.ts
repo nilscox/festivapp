@@ -2,6 +2,7 @@ import type { Location } from '@festivapp/contracts';
 import { get, has, matchesSearch } from '@festivapp/utils';
 import { useReducer } from 'react';
 
+import { useLikedSessions } from '../../lib/liked-sessions.ts';
 import { sessionStyles, sessionTitle } from '../../lib/session.ts';
 
 import type { Day, ResolvedSession } from '../../lib/bootstrap.ts';
@@ -13,6 +14,7 @@ type Filters = {
   day: string | null;
   locations: string[];
   styles: string[];
+  liked: boolean;
 };
 
 export type FilterChip = {
@@ -26,6 +28,7 @@ type Action =
   | { type: 'toggle-day'; day: string }
   | { type: 'toggle-location'; id: string }
   | { type: 'toggle-style'; style: string }
+  | { type: 'toggle-liked' }
   | { type: 'clear' };
 
 const noFilters: Filters = {
@@ -33,20 +36,24 @@ const noFilters: Filters = {
   day: null,
   locations: [],
   styles: [],
+  liked: false,
 };
 
 export function useTimetableFilters(days: Day[], locations: Location[]) {
   const [filters, dispatch] = useReducer(reducer, noFilters);
+  const { ids: likedIds } = useLikedSessions();
 
   const setSearch = (search: string) => dispatch({ type: 'set-search', search });
   const toggleDay = (day: string) => dispatch({ type: 'toggle-day', day });
   const toggleLocation = (id: string) => dispatch({ type: 'toggle-location', id });
   const toggleStyle = (style: string) => dispatch({ type: 'toggle-style', style });
+  const toggleLiked = () => dispatch({ type: 'toggle-liked' });
   const clear = () => dispatch({ type: 'clear' });
 
   const day = days.find(has('day', filters.day));
 
   const chips: FilterChip[] = [
+    ...(filters.liked ? [{ key: 'liked', label: 'Liked', onRemove: toggleLiked }] : []),
     ...(day ? [{ key: day.day, label: day.label, onRemove: () => toggleDay(day.day) }] : []),
     ...filters.locations.map((id) => ({
       key: id,
@@ -61,7 +68,7 @@ export function useTimetableFilters(days: Day[], locations: Location[]) {
   ];
 
   return {
-    filterSession: (session: ResolvedSession) => matchesFilters(session, filters),
+    filterSession: (session: ResolvedSession) => matchesFilters(session, filters, likedIds),
     filtersCount: countActiveFilters(filters),
     hasFilters: filters.search !== '' || countActiveFilters(filters) > 0,
     chips,
@@ -73,6 +80,8 @@ export function useTimetableFilters(days: Day[], locations: Location[]) {
     toggleLocation,
     styles: filters.styles,
     toggleStyle,
+    liked: filters.liked,
+    toggleLiked,
     clear,
   };
 }
@@ -91,13 +100,20 @@ function reducer(filters: Filters, action: Action): Filters {
     case 'toggle-style':
       return { ...filters, styles: toggle(filters.styles, action.style) };
 
+    case 'toggle-liked':
+      return { ...filters, liked: !filters.liked };
+
     case 'clear':
       return noFilters;
   }
 }
 
-function matchesFilters(session: ResolvedSession, filters: Filters): boolean {
-  const { search, day, locations, styles } = filters;
+function matchesFilters(session: ResolvedSession, filters: Filters, likedIds: string[]): boolean {
+  const { search, day, locations, styles, liked } = filters;
+
+  if (liked && !likedIds.includes(session.id)) {
+    return false;
+  }
 
   if (day !== null && session.day !== day) {
     return false;
@@ -129,8 +145,8 @@ function matchesFilters(session: ResolvedSession, filters: Filters): boolean {
   return true;
 }
 
-function countActiveFilters({ day, locations, styles }: Filters): number {
-  return (day === null ? 0 : 1) + locations.length + styles.length;
+function countActiveFilters({ day, locations, styles, liked }: Filters): number {
+  return (day === null ? 0 : 1) + locations.length + styles.length + (liked ? 1 : 0);
 }
 
 function toggle(values: string[], value: string): string[] {

@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { ListFilter, Search, X } from 'lucide-react';
+import { Heart, ListFilter, Search, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 import { useOverflows } from '../../hooks/use-overflows.ts';
@@ -93,13 +93,25 @@ export function TimetableFilters({
         <div className="row items-center justify-between">
           <h2 className="font-display text-lg font-bold">Filters</h2>
 
-          <button
-            type="button"
-            onClick={filters.clear}
-            className="text-muted text-xxs font-mono tracking-wider uppercase underline"
-          >
-            Clear all
-          </button>
+          <div className="row items-center gap-5">
+            <button
+              type="button"
+              onClick={filters.toggleLiked}
+              aria-pressed={filters.liked}
+              aria-label="Liked only"
+              className="-m-2 p-2"
+            >
+              <Heart className={clsx('size-4', filters.liked && 'fill-accent text-accent')} />
+            </button>
+
+            <button
+              type="button"
+              onClick={filters.clear}
+              className="text-muted text-xxs font-mono tracking-wider uppercase underline"
+            >
+              Clear all
+            </button>
+          </div>
         </div>
       </div>
 

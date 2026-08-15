@@ -1,12 +1,14 @@
 import type { Location, Participant } from '@festivapp/contracts';
 import { defined, formatImagePosition, has } from '@festivapp/utils';
 import { Link, useParams } from '@tanstack/react-router';
-import { Calendar, ChevronLeft, Disc3, Map, MapPin } from 'lucide-react';
+import clsx from 'clsx';
+import { Calendar, ChevronLeft, Disc3, Heart, Map, MapPin } from 'lucide-react';
 
 import { Chip } from '../../components/chip.tsx';
 import { SocialIcon } from '../../components/social-icon.tsx';
 import { useBootstrap, useTenant, type ResolvedSession } from '../../lib/bootstrap.ts';
 import { formatDayLabel } from '../../lib/datetime.ts';
+import { useLikedSessions } from '../../lib/liked-sessions.ts';
 import { formatSessionType, isMusicSession, sessionSubhead, sessionTitle } from '../../lib/session.ts';
 
 export function SessionDetail() {
@@ -36,7 +38,7 @@ export function SessionDetail() {
 
   return (
     <div className="col min-h-0 flex-1">
-      <Header />
+      <Header session={session} />
       <div className="reveal min-h-0 flex-1 overflow-y-auto pb-8">{content()}</div>
     </div>
   );
@@ -53,13 +55,26 @@ function SessionNotFound() {
   );
 }
 
-function Header() {
+function Header({ session }: { session: ResolvedSession }) {
+  const { ids, toggle } = useLikedSessions();
+  const isLiked = ids.includes(session.id);
+
   return (
-    <header className="border-line bg-app border-b p-4">
+    <header className="border-line bg-app row items-center justify-between border-b p-4">
       <Link to="/timetable" className="row items-center gap-2">
         <ChevronLeft className="size-4 shrink-0" />
         <span className="leading-none font-semibold">Back</span>
       </Link>
+
+      <button
+        type="button"
+        onClick={() => toggle(session.id)}
+        aria-label="Like"
+        aria-pressed={isLiked}
+        className="-m-2 p-2"
+      >
+        <Heart className={clsx('size-5', isLiked && 'fill-accent text-accent')} />
+      </button>
     </header>
   );
 }
