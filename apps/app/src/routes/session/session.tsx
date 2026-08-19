@@ -56,8 +56,8 @@ function SessionNotFound() {
 }
 
 function Header({ session }: { session: ResolvedSession }) {
-  const { ids, toggle } = useLikedSessions();
-  const isLiked = ids.includes(session.id);
+  const liked = useLikedSessions();
+  const isLiked = liked.ids.includes(session.id);
 
   return (
     <header className="border-line bg-app row items-center justify-between border-b p-4">
@@ -68,7 +68,7 @@ function Header({ session }: { session: ResolvedSession }) {
 
       <button
         type="button"
-        onClick={() => toggle(session.id)}
+        onClick={() => liked.toggle(session.id)}
         aria-label="Like"
         aria-pressed={isLiked}
         className="-m-2 p-2"
