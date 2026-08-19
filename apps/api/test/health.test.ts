@@ -22,7 +22,7 @@ describe('GET /health', () => {
 
     t.mock.method(suite.db, 'execute', () => Promise.reject(new Error('connection refused')));
 
-    const res = await api.get('/health');
+    const res = await api.get('/health?db');
 
     assert.equal(res.status, 503);
     assert.deepEqual(res.body, { status: 'degraded' });

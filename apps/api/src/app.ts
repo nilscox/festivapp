@@ -46,12 +46,14 @@ export function createApp({
 }
 
 function health({ logger, db }: { logger: Logger; db: Database }): RequestHandler {
-  return async (_req, res) => {
-    try {
-      await db.execute('SELECT 1');
-    } catch (error) {
-      logger.error('health check could not reach the database', { error });
-      return res.status(503).json({ status: 'degraded' });
+  return async (req, res) => {
+    if ('db' in req.query) {
+      try {
+        await db.execute('SELECT 1');
+      } catch (error) {
+        logger.error('health check could not reach the database', { error });
+        return res.status(503).json({ status: 'degraded' });
+      }
     }
 
     res.json({ status: 'ok' });
