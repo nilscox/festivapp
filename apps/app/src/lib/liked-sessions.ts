@@ -34,6 +34,9 @@ function readStorage(): string[] {
 
     return Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string') : [];
   } catch {
+    window.alert('Failed to load liked session');
+    localStorage.setItem(`${storageKey}:${Date.now()}`, localStorage.getItem(storageKey) ?? '');
+
     return [];
   }
 }
