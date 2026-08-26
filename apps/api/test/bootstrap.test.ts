@@ -45,6 +45,7 @@ describe('GET /bootstrap', () => {
           name: 'Main stage',
           description: 'Outdoors',
           position: 1,
+          hideOnBreak: false,
           mapPin: { x: 50, y: 50, labelPosition: 'bottom' },
         },
       ],

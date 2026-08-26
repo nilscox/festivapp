@@ -21,10 +21,12 @@ export function Now() {
   const { tenant, locations, sessions } = data;
   const tz = tenant.timezone;
 
-  const rows = locations.map((location) => ({
-    location,
-    ...findLocationNow(location.id, sessions, now),
-  }));
+  const rows = locations
+    .map((location) => ({
+      location,
+      ...findLocationNow(location.id, sessions, now),
+    }))
+    .filter(({ location, live }) => live !== null || !location.hideOnBreak);
 
   return (
     <div className="col min-h-0 flex-1">

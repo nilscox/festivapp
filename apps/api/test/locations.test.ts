@@ -28,6 +28,7 @@ describe('locations', () => {
       name: '  Main stage  ',
       description: '',
       position: 2,
+      hideOnBreak: false,
     });
 
     assert.equal(res.status, 201);

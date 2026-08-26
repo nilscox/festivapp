@@ -215,6 +215,7 @@ function LocationForm({
       name: defaultValue?.name ?? '',
       position: defaultValue?.position ?? locations.length + 1,
       description: defaultValue?.description ?? '',
+      hideOnBreak: defaultValue?.hideOnBreak ?? false,
     },
     validationLogic: revalidateLogic(),
     validators: { onDynamic: schema },
@@ -247,6 +248,12 @@ function LocationForm({
         <form.AppField name="description">
           {({ TextareaField }) => <TextareaField label="Description" hint="Shown to attendees on the map." rows={4} />}
         </form.AppField>
+
+        <form.AppField name="hideOnBreak">
+          {({ CheckboxField }) => (
+            <CheckboxField label="Hide on break" hint="Only show on the home page when something is live" />
+          )}
+        </form.AppField>
       </div>
 
       <div className="row gap-4 border-t p-4">
@@ -264,4 +271,5 @@ const schema = z.object({
   name: z.string().check(z.minLength(1, 'A location name is required.')),
   position: z.number(),
   description: z.string(),
+  hideOnBreak: z.boolean(),
 });

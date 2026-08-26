@@ -52,6 +52,7 @@ export const locations = p.pgTable('locations', {
   name: p.text().notNull(),
   description: p.text(),
   position: p.integer().notNull().default(0),
+  hideOnBreak: p.boolean().notNull().default(false),
   mapX: p.real().notNull().default(50),
   mapY: p.real().notNull().default(50),
   mapLabelPosition: mapLabelPosition().notNull().default('bottom'),

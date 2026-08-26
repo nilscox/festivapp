@@ -12,6 +12,7 @@ import type { Database } from '../../db/client.ts';
 const createSchema = z.strictObject({
   name: z.string().trim().min(1),
   description: optionalString(),
+  hideOnBreak: z.boolean(),
   position: z.number().int().min(0),
 });
 
@@ -106,5 +107,6 @@ function toLocationDto(row: Location): LocationDto {
     description: row.description,
     position: row.position,
     mapPin: { x: row.mapX, y: row.mapY, labelPosition: row.mapLabelPosition },
+    hideOnBreak: row.hideOnBreak,
   };
 }

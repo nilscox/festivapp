@@ -1,0 +1,1 @@
+ALTER TABLE "locations" ADD COLUMN "hide_on_break" boolean DEFAULT false NOT NULL;

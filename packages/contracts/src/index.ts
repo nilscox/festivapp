@@ -74,6 +74,7 @@ export type Location = {
   /** Sort order among the tenant's locations. */
   position: number;
   mapPin: MapPin;
+  hideOnBreak: boolean;
 };
 
 /**
@@ -247,6 +248,7 @@ export type LocationInput = {
   name: string;
   description: string | null;
   position: number;
+  hideOnBreak: boolean;
 };
 
 /**

@@ -88,6 +88,7 @@ export function bootstrapRoutes({ config, db }: { config: Config; db: Database }
         id: row.id,
         name: row.name,
         description: row.description,
+        hideOnBreak: row.hideOnBreak,
         position: row.position,
         mapPin: {
           x: row.mapX,
