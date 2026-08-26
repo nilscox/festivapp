@@ -58,11 +58,11 @@ export function sessionListMeta(session: ResolvedSession): string | null {
 export function sessionSubhead(session: ResolvedSession): string | null {
   const names = session.participants.map(get('name')).join(', ');
 
-  if (session.type === 'talk') {
+  if (session.type === 'talk' && names !== '') {
     return `Talk by ${names}`;
   }
 
-  if (session.type === 'workshop') {
+  if (session.type === 'workshop' && names !== '') {
     return `Facilitated by ${names}`;
   }
 
