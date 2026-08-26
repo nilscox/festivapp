@@ -37,6 +37,7 @@ describe('GET /bootstrap', () => {
         domain: 'coolfest.localhost',
         timezone: 'Europe/Paris',
         mapUrl: '/files/map',
+        tabs: ['home', 'timetable', 'map', 'info'],
         theme: tenant.theme,
       },
       locations: [

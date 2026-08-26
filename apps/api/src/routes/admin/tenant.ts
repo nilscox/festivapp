@@ -1,4 +1,4 @@
-import type { Tenant as TenantDto } from '@festivapp/contracts';
+import type { Tenant as TenantDto, TenantTab } from '@festivapp/contracts';
 import { assert, defined } from '@festivapp/utils';
 import { eq } from 'drizzle-orm';
 import { Router } from 'express';
@@ -27,6 +27,7 @@ export function tenantRoutes({ db }: { db: Database }) {
       domain: z.string().trim().toLowerCase().max(253).regex(hostname, 'must be a host name'),
       timezone: z.string().refine((value) => timezones.has(value), 'must be an IANA timezone'),
       mapUrl: optionalString().pipe(z.string().startsWith('/').nullable()),
+      tabs: z.array(z.enum(['home', 'timetable', 'map', 'info'] satisfies TenantTab[])).min(1),
     })
     .partial();
 
@@ -62,6 +63,7 @@ function toTenantDto(row: Tenant, registeredSubscriptions: number): TenantDto {
     domain: row.domain,
     timezone: row.timezone,
     mapUrl: row.mapUrl,
+    tabs: row.tabs,
     registeredSubscriptions,
   };
 }

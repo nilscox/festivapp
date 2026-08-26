@@ -1,4 +1,4 @@
-import type { TenantTheme } from '@festivapp/contracts';
+import type { TenantTab, TenantTheme } from '@festivapp/contracts';
 import { defineRelations } from 'drizzle-orm';
 import * as p from 'drizzle-orm/pg-core';
 
@@ -25,6 +25,7 @@ export const tenants = p.pgTable('tenants', {
   domain: p.text().notNull().unique(),
   timezone: p.text().notNull(),
   mapUrl: p.text(),
+  tabs: p.jsonb().$type<TenantTab[]>().notNull().default(['home', 'timetable', 'map', 'info']),
   theme: p.jsonb().$type<TenantTheme>().notNull(),
   createdAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: p.timestamp({ withTimezone: true }).notNull().defaultNow(),

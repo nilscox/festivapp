@@ -54,6 +54,8 @@ export type TenantPwa = {
   shortName: string | null;
 };
 
+export type TenantTab = 'home' | 'timetable' | 'map' | 'info';
+
 export type TenantConfig = {
   id: string;
   name: string;
@@ -63,6 +65,7 @@ export type TenantConfig = {
   timezone: string;
   /** Path of the map image (see `UploadedFile.url`), or null for no map. */
   mapUrl: string | null;
+  tabs: TenantTab[];
   theme: TenantTheme;
 };
 
@@ -209,6 +212,7 @@ export type Tenant = {
   timezone: string;
   /** Path of the map image (see `UploadedFile.url`), or null for no map. */
   mapUrl: string | null;
+  tabs: TenantTab[];
   registeredSubscriptions: number;
 };
 
@@ -237,6 +241,7 @@ export type TenantInput = {
   timezone: string;
   /** Path of an uploaded file (see `UploadedFile.url`), or null for no map. */
   mapUrl: string | null;
+  tabs: TenantTab[];
 };
 
 /**

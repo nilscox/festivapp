@@ -1,22 +1,29 @@
+import type { TenantTab } from '@festivapp/contracts';
 import { Link } from '@tanstack/react-router';
 import { CalendarDays, Info, Map as MapIcon, Radio } from 'lucide-react';
 import type { ComponentType } from 'react';
 
+import { useTenant } from '../lib/bootstrap.ts';
+
 type Tab = {
+  key: TenantTab;
   to: string;
   label: string;
   icon: ComponentType<React.SVGProps<SVGSVGElement>>;
   exact: boolean;
 };
 
-const tabs: Tab[] = [
-  { to: '/', label: 'Now', icon: Radio, exact: true },
-  { to: '/timetable', label: 'Timetable', icon: CalendarDays, exact: false },
-  { to: '/map', label: 'Map', icon: MapIcon, exact: false },
-  { to: '/info', label: 'Info', icon: Info, exact: false },
+const allTabs: Tab[] = [
+  { key: 'home', to: '/', label: 'Now', icon: Radio, exact: true },
+  { key: 'timetable', to: '/timetable', label: 'Timetable', icon: CalendarDays, exact: false },
+  { key: 'map', to: '/map', label: 'Map', icon: MapIcon, exact: false },
+  { key: 'info', to: '/info', label: 'Info', icon: Info, exact: false },
 ];
 
 export function TabBar() {
+  const { tabs: enabledTabs } = useTenant();
+  const tabs = allTabs.filter((tab) => enabledTabs.includes(tab.key));
+
   return (
     <nav
       aria-label="Main navigation"

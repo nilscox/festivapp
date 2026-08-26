@@ -1,0 +1,1 @@
+ALTER TABLE "tenants" ADD COLUMN "tabs" jsonb DEFAULT '["home","timetable","map","info"]' NOT NULL;

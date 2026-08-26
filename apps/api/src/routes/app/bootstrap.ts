@@ -82,6 +82,7 @@ export function bootstrapRoutes({ config, db }: { config: Config; db: Database }
         domain: tenant.domain,
         timezone: tenant.timezone,
         mapUrl: tenant.mapUrl,
+        tabs: tenant.tabs,
         theme: tenant.theme,
       },
       locations: locationRows.map((row) => ({

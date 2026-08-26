@@ -14,6 +14,8 @@ import { countdownLabel, formatNowHeading } from '../../lib/datetime.ts';
 import { usePushSubscription } from '../../lib/push.ts';
 import { sessionTitle } from '../../lib/session.ts';
 
+const showPushPrompt = false;
+
 export function Now() {
   const data = useBootstrap();
   const now = useClock();
@@ -32,7 +34,7 @@ export function Now() {
     <div className="col min-h-0 flex-1">
       <Header tenant={tenant} />
 
-      <PushPrompt />
+      {showPushPrompt && <PushPrompt />}
 
       <div className="reveal min-h-0 flex-1 overflow-y-auto pb-6">
         <div className="row items-baseline justify-start gap-2 p-4">

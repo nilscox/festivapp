@@ -32,6 +32,7 @@ describe('GET /admin/tenants/:tenantId', () => {
       domain: 'coolfest.localhost',
       timezone: 'Europe/Paris',
       mapUrl: '/files/map',
+      tabs: ['home', 'timetable', 'map', 'info'],
       registeredSubscriptions: 0,
     });
   });
